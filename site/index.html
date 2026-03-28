@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driftcut — Stop bad LLM migrations early</title>
+    <meta name="description" content="Driftcut is an early-stop canary for LLM model migrations. Know in minutes — not hours — whether a migration candidate is worth a full evaluation.">
+    <meta property="og:title" content="Driftcut — Stop bad LLM migrations early">
+    <meta property="og:description" content="Early-stop canary testing for LLM model migrations. Know in minutes — not hours — whether a migration is worth pursuing.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✂️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        drift: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                            950: '#0a2e18',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #0d9488 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-gradient {
+            background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(22, 163, 74, 0.15), transparent);
+        }
+        .card-hover {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        .terminal {
+            background: #0f172a;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .terminal-bar {
+            background: #1e293b;
+            border-radius: 8px 8px 0 0;
+            padding: 12px 16px;
+            display: flex;
+            gap: 8px;
+        }
+        .terminal-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 antialiased">
+
+    <!-- Nav -->
+    <nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-xl font-bold tracking-tight">drift<span class="text-drift-600">cut</span></span>
+            </div>
+            <div class="flex items-center gap-6">
+                <a href="https://github.com/riccardomerenda/driftcut" class="text-sm text-gray-600 hover:text-gray-900 transition-colors">GitHub</a>
+                <a href="#signup" class="text-sm font-medium bg-drift-600 text-white px-4 py-2 rounded-lg hover:bg-drift-700 transition-colors">Get Early Access</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero-gradient pt-32 pb-20 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-drift-50 border border-drift-200 text-drift-700 text-sm font-medium mb-8">
+                <span class="w-2 h-2 bg-drift-500 rounded-full animate-pulse"></span>
+                Coming soon — Open source CLI tool
+            </div>
+            <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-6">
+                Stop bad LLM migrations<br>
+                <span class="gradient-text">before they cost you.</span>
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed">
+                Driftcut is an early-stop canary for model migrations. Know in <strong>minutes</strong> — not hours — whether a migration candidate is worth a full evaluation.
+            </p>
+
+            <!-- Terminal preview -->
+            <div class="terminal max-w-2xl mx-auto text-left shadow-2xl mb-10">
+                <div class="terminal-bar">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="p-6 text-sm leading-relaxed">
+                    <p><span class="text-gray-500">$</span> <span class="text-green-400">driftcut run</span> <span class="text-gray-400">--config migration.yaml</span></p>
+                    <p class="mt-3 text-gray-400">Loading corpus… 847 prompts</p>
+                    <p class="text-gray-400">Baseline: gpt-4o  →  Candidate: gpt-4o-mini</p>
+                    <p class="mt-3 text-gray-400">Phase 1 — Quick scan <span class="text-green-400">████████████████████</span> 50/50</p>
+                    <p class="text-yellow-400">⚠  Semantic drift: 0.23 (threshold: 0.15)</p>
+                    <p class="text-gray-400">Phase 2 — Focused probe <span class="text-green-400">████████████</span> 30/100</p>
+                    <p class="text-red-400 mt-3 font-bold">✗ EARLY STOP — drift exceeds tolerance at 95% confidence</p>
+                    <p class="text-gray-500 mt-1">  Saved ~780 API calls ($12.40 estimated)</p>
+                    <p class="text-gray-500">  Full report: ./driftcut-results/report.html</p>
+                </div>
+            </div>
+
+            <a href="#signup" class="inline-flex items-center gap-2 bg-drift-600 text-white px-8 py-3.5 rounded-xl font-semibold text-lg hover:bg-drift-700 transition-colors shadow-lg shadow-drift-600/25">
+                Get notified at launch
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Problem / Solution -->
+    <section class="py-20 px-6 bg-gray-50">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold mb-4">The model migration tax</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Every time a provider ships a new model, you face the same question: <em>should we switch?</em> Answering it shouldn't cost more than the migration itself.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-2xl border border-gray-200 card-hover">
+                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-5">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Blind full-corpus runs</h3>
+                    <p class="text-gray-600">Teams run the entire test suite against every candidate, burning thousands of API calls before discovering obvious failures.</p>
+                </div>
+                <div class="bg-white p-8 rounded-2xl border border-gray-200 card-hover">
+                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-5">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Wasted budget</h3>
+                    <p class="text-gray-600">A migration that fails on 5% of prompts still costs 100% of the evaluation budget. Most of that spend is wasted.</p>
+                </div>
+                <div class="bg-white p-8 rounded-2xl border border-gray-200 card-hover">
+                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-5">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Slow decisions</h3>
+                    <p class="text-gray-600">Full evaluations take hours or days. By the time you have results, the next model version is already out.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="py-20 px-6">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold mb-4">How Driftcut works</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Sequential testing with statistical early stopping. Get a go/no-go decision using a fraction of your test corpus.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-drift-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                        <span class="text-2xl font-bold text-drift-700">1</span>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Quick scan</h3>
+                    <p class="text-gray-600">Run a small random sample through both models. Detect obvious regressions immediately and stop early if the candidate clearly fails.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-drift-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                        <span class="text-2xl font-bold text-drift-700">2</span>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Focused probing</h3>
+                    <p class="text-gray-600">Target edge cases and high-risk prompt categories. Adaptive sampling concentrates effort where drift is most likely.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-drift-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                        <span class="text-2xl font-bold text-drift-700">3</span>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Decision gate</h3>
+                    <p class="text-gray-600">Statistical confidence bounds give you a clear go/no-go. Stop early with confidence — no guessing, no wasted budget.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key features -->
+    <section class="py-20 px-6 bg-gray-50">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold mb-4">Built for real workflows</h2>
+            </div>
+            <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                <div class="flex gap-4 bg-white p-6 rounded-xl border border-gray-200">
+                    <div class="w-10 h-10 bg-drift-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-drift-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-1">CLI-first</h3>
+                        <p class="text-sm text-gray-600">Single command to run. Fits into CI/CD pipelines and automation workflows.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 bg-white p-6 rounded-xl border border-gray-200">
+                    <div class="w-10 h-10 bg-drift-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-drift-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-1">Any provider</h3>
+                        <p class="text-sm text-gray-600">Works with OpenAI, Anthropic, Google, Mistral, and any LiteLLM-supported provider.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 bg-white p-6 rounded-xl border border-gray-200">
+                    <div class="w-10 h-10 bg-drift-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-drift-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-1">HTML reports</h3>
+                        <p class="text-sm text-gray-600">Self-contained reports with drift scores, confidence intervals, and per-prompt diffs.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 bg-white p-6 rounded-xl border border-gray-200">
+                    <div class="w-10 h-10 bg-drift-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-drift-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-1">Your data stays local</h3>
+                        <p class="text-sm text-gray-600">No SaaS middleman. Prompts go directly to your model providers and results stay on your machine.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Signup -->
+    <section id="signup" class="py-20 px-6">
+        <div class="max-w-xl mx-auto text-center">
+            <h2 class="text-3xl font-bold mb-4">Get early access</h2>
+            <p class="text-lg text-gray-600 mb-8">Be the first to know when Driftcut launches. We'll send you a single email — no spam.</p>
+            <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST" class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="you@company.com"
+                    class="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-drift-500 focus:border-transparent text-sm"
+                >
+                <button type="submit" class="bg-drift-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-drift-700 transition-colors whitespace-nowrap text-sm">
+                    Notify me
+                </button>
+            </form>
+            <p class="text-xs text-gray-400 mt-4">Open source &middot; MIT licensed &middot; Free for individual use</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-10 px-6 border-t border-gray-100">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span class="text-sm text-gray-500">&copy; 2026 Driftcut. MIT License.</span>
+            <div class="flex items-center gap-6">
+                <a href="https://github.com/riccardomerenda/driftcut" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

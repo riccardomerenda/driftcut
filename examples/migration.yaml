@@ -1,0 +1,66 @@
+# ---------------------------------------------------------
+# Driftcut — Sample migration config
+# ---------------------------------------------------------
+# This config models an early-stop migration decision run
+# comparing GPT-4o (baseline) against Claude Haiku
+# (candidate) on support and extraction prompts.
+#
+# Intended usage:
+#   driftcut run --config driftcut-migration.yaml
+# ---------------------------------------------------------
+
+name: "GPT-4o to Claude Haiku migration gate"
+description: "Early-stop migration decision support — is Haiku good enough to replace GPT-4o for our support and extraction workloads?"
+
+# -- Models ------------------------------------------------
+models:
+  baseline:
+    provider: openai
+    model: gpt-4o
+    # api_key loaded from OPENAI_API_KEY env var
+  candidate:
+    provider: anthropic
+    model: claude-haiku
+    # api_key loaded from ANTHROPIC_API_KEY env var
+
+# -- Corpus ------------------------------------------------
+corpus:
+  file: prompts.csv
+  # Supported formats: .csv, .json
+  # Required fields: id, category, prompt, criticality, expected_output_type
+
+# -- Sampling ----------------------------------------------
+sampling:
+  batch_size_per_category: 3    # prompts per category per batch
+  max_batches: 5                # stop after this many batches regardless
+  min_batches: 2                # do not declare "proceed" before this
+
+# -- Risk thresholds ---------------------------------------
+# Conservative defaults: better to stop too early than to
+# approve a risky migration candidate.
+risk:
+  high_criticality_weight: 2.0
+  stop_on_schema_break_rate: 0.25
+  stop_on_high_criticality_failure_rate: 0.20
+  proceed_if_overall_risk_below: 0.08
+
+# -- Evaluation --------------------------------------------
+evaluation:
+  judge_strategy: tiered          # none | light | tiered | heavy
+  judge_model_light: openai/gpt-4.1-mini
+  judge_model_heavy: openai/gpt-4.1
+  detect_failure_archetypes: true
+
+# -- Latency -----------------------------------------------
+latency:
+  track: true
+  regression_threshold_p50: 1.5
+  regression_threshold_p95: 2.0
+
+# -- Output ------------------------------------------------
+output:
+  save_json: true
+  save_html: true
+  save_examples: true
+  show_thresholds: true
+  show_confidence: true

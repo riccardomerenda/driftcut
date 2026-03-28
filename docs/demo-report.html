@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driftcut Report — GPT-4o → Claude Haiku</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #7CFFB2;
+    --accent-dim: rgba(124,255,178,0.12);
+    --coal: #0C0C0E;
+    --mine: #111115;
+    --shaft: #1A1A20;
+    --rock: #26262F;
+    --dust: #7E7E94;
+    --ash: #B5B5C8;
+    --white: #EDEDF3;
+    --red: #F25C54;
+    --red-dim: rgba(242,92,84,0.12);
+    --green: #5CE592;
+    --green-dim: rgba(92,229,146,0.12);
+    --blue: #5CA8F2;
+    --blue-dim: rgba(92,168,242,0.12);
+    --yellow: #E8D44D;
+    --yellow-dim: rgba(232,212,77,0.12);
+    --purple: #C084FC;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--coal);
+    color: var(--ash);
+    padding: 32px 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .report { max-width: 860px; margin: 0 auto; }
+  .report-header, .card, .decision { border-radius: 10px; overflow: hidden; }
+  .report-header, .card { border: 1px solid var(--rock); margin-bottom: 20px; }
+  .report-bar, .card-header {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:16px 24px; background:var(--shaft); border-bottom:1px solid var(--rock);
+  }
+  .report-logo, .card-header, .report-title, .decision-value, .meta-value, .mono {
+    font-family:'JetBrains Mono', monospace;
+  }
+  .report-logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; color:var(--white); }
+  .report-ts { font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--dust); }
+  .report-hero { padding:32px 24px; }
+  .report-name {
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--accent);
+    letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;
+  }
+  .report-title { font-size:22px; font-weight:800; color:var(--white); margin-bottom:6px; }
+  .report-desc { font-size:14px; color:var(--dust); margin-bottom:24px; }
+  .meta-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:12px; }
+  .meta-card { background:var(--shaft); padding:16px; border-radius:8px; border:1px solid var(--rock); }
+  .meta-label {
+    font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--dust);
+    text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;
+  }
+  .meta-value { font-size:18px; font-weight:700; color:var(--white); }
+  .meta-sub { font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--dust); margin-top:2px; }
+
+  .decision {
+    border:2px solid var(--red);
+    padding:28px 24px;
+    margin-bottom:20px;
+    background:linear-gradient(135deg, rgba(242,92,84,0.06) 0%, transparent 60%);
+  }
+  .decision-label {
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--red);
+    letter-spacing:2px; text-transform:uppercase; margin-bottom:8px;
+  }
+  .decision-value { font-size:32px; font-weight:800; color:var(--red); letter-spacing:-1px; margin-bottom:16px; }
+  .decision-reasons { list-style:none; }
+  .decision-reasons li { font-size:14px; color:var(--ash); padding:6px 0; display:flex; gap:10px; }
+  .icon { font-family:'JetBrains Mono', monospace; width:20px; text-align:center; flex-shrink:0; }
+  .icon-red { color:var(--red); } .icon-green { color:var(--green); } .icon-yellow { color:var(--yellow); }
+
+  .card-body { padding:24px; }
+  .cost-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; }
+  .cost-card {
+    background:var(--shaft); padding:20px; border-radius:8px; border:1px solid var(--rock); text-align:center;
+  }
+  .cost-amount { font-family:'JetBrains Mono', monospace; font-size:24px; font-weight:800; margin-bottom:4px; }
+  .cost-label { font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--dust); text-transform:uppercase; }
+
+  .qual-table, .thresh-table { width:100%; border-collapse:collapse; }
+  .qual-table th, .thresh-table th {
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--dust); text-transform:uppercase;
+    text-align:left; padding:8px 12px; border-bottom:1px solid var(--rock);
+  }
+  .qual-table td, .thresh-table td {
+    font-family:'JetBrains Mono', monospace; font-size:13px; padding:12px;
+    border-bottom:1px solid rgba(38,38,47,0.5); color:var(--ash);
+  }
+  .qual-table tr:last-child td, .thresh-table tr:last-child td { border-bottom:none; }
+
+  .badge {
+    display:inline-block; font-family:'JetBrains Mono', monospace; font-size:10px; font-weight:700;
+    padding:3px 8px; border-radius:4px; letter-spacing:0.5px;
+  }
+  .badge-high { background:var(--red-dim); color:var(--red); }
+  .badge-medium { background:var(--yellow-dim); color:var(--yellow); }
+  .badge-low { background:var(--green-dim); color:var(--green); }
+  .badge-stable { background:var(--green-dim); color:var(--green); }
+  .badge-failing { background:var(--red-dim); color:var(--red); }
+  .badge-mixed { background:var(--yellow-dim); color:var(--yellow); }
+
+  .bar-container { display:flex; align-items:center; gap:8px; }
+  .bar-track { flex:1; height:8px; background:var(--rock); border-radius:4px; overflow:hidden; max-width:100px; }
+  .bar-fill { height:100%; border-radius:4px; }
+  .bar-label { font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600; min-width:36px; }
+
+  .latency-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .lat-card { background:var(--shaft); border-radius:8px; border:1px solid var(--rock); padding:20px; }
+  .lat-title {
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--dust);
+    text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;
+  }
+  .lat-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; }
+  .lat-metric { font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--dust); }
+  .lat-value { font-family:'JetBrains Mono', monospace; font-size:14px; font-weight:600; }
+
+  .arch-list { display:flex; flex-direction:column; gap:12px; }
+  .arch-item {
+    display:flex; align-items:center; gap:16px; padding:16px; background:var(--shaft);
+    border-radius:8px; border:1px solid var(--rock);
+  }
+  .arch-rank { font-family:'JetBrains Mono', monospace; font-size:20px; font-weight:800; min-width:32px; }
+  .arch-info { flex:1; }
+  .arch-name { font-family:'JetBrains Mono', monospace; font-size:14px; font-weight:700; color:var(--white); margin-bottom:2px; }
+  .arch-desc { font-size:12px; color:var(--dust); }
+  .arch-bar-wrap { width:160px; }
+  .arch-bar { height:10px; border-radius:5px; }
+  .arch-count { font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--dust); margin-top:4px; text-align:right; }
+
+  .example {
+    background:var(--shaft); border:1px solid var(--rock); border-radius:8px; margin-bottom:12px; overflow:hidden;
+  }
+  .example:last-child { margin-bottom:0; }
+  .example-header {
+    display:flex; justify-content:space-between; align-items:center; padding:12px 16px;
+    border-bottom:1px solid var(--rock); background:rgba(242,92,84,0.04);
+  }
+  .example-id { font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600; color:var(--white); }
+  .example-body { padding:16px; }
+  .example-label {
+    font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--dust); text-transform:uppercase;
+    letter-spacing:1px; margin-bottom:6px;
+  }
+  .example-text {
+    font-family:'JetBrains Mono', monospace; font-size:12px; line-height:1.6; color:var(--ash);
+    background:var(--mine); padding:12px; border-radius:6px; margin-bottom:16px; white-space:pre-wrap; word-break:break-word;
+  }
+  .example-text:last-child { margin-bottom:0; }
+
+  .triggered { color:var(--red); font-weight:700; }
+  .safe { color:var(--green); }
+
+  .report-footer {
+    text-align:center; padding:32px 0 16px; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--dust);
+  }
+
+  @media (max-width: 600px) {
+    .meta-grid { grid-template-columns:repeat(2, 1fr); }
+    .latency-grid, .cost-grid { grid-template-columns:1fr; }
+    .arch-bar-wrap { width:80px; }
+  }
+</style>
+</head>
+<body>
+<div class="report">
+  <div class="report-header">
+    <div class="report-bar">
+      <div class="report-logo">
+        <svg viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="6" fill="#7CFFB2"/>
+          <path d="M9 23L15 9h3l-3 7h8l-10 8 3-6H9z" fill="#0C0C0E"/>
+        </svg>
+        Driftcut Report
+      </div>
+      <div class="report-ts">2026-03-28 14:32 UTC</div>
+    </div>
+    <div class="report-hero">
+      <div class="report-name">Migration decision run</div>
+      <div class="report-title">GPT-4o → Claude Haiku</div>
+      <div class="report-desc">Early-stop migration decision support — is Haiku good enough to replace GPT-4o for support and extraction workloads?</div>
+      <div class="meta-grid">
+        <div class="meta-card">
+          <div class="meta-label">Corpus</div>
+          <div class="meta-value">120</div>
+          <div class="meta-sub">prompts, 4 categories</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Tested</div>
+          <div class="meta-value">24</div>
+          <div class="meta-sub">20% of corpus</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Batches</div>
+          <div class="meta-value">2 / 6</div>
+          <div class="meta-sub">stopped early</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Confidence</div>
+          <div class="meta-value" style="color:var(--yellow)">Medium</div>
+          <div class="meta-sub">stratified sampling</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <div class="decision-label">Decision</div>
+    <div class="decision-value">■ STOP NOW</div>
+    <ul class="decision-reasons">
+      <li><span class="icon icon-red">✗</span> Category "structured_extraction" shows repeated schema breaks (4/6 prompts)</li>
+      <li><span class="icon icon-red">✗</span> High-criticality prompts failed in 5 of 8 cases (62.5%)</li>
+      <li><span class="icon icon-green">✓</span> Category "customer_support" is stable — no critical failures</li>
+      <li><span class="icon icon-yellow">⚡</span> Latency improved 58% but quality regression is blocking</li>
+      <li><span class="icon icon-red">✗</span> Candidate is not suitable for full eval without prompt adaptation</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Cost summary</div>
+    <div class="card-body">
+      <div class="cost-grid">
+        <div class="cost-card">
+          <div class="cost-amount" style="color:var(--white)">$11.80</div>
+          <div class="cost-label">Spent (incl. $0.72 judge)</div>
+        </div>
+        <div class="cost-card">
+          <div class="cost-amount" style="color:var(--green)">$74.30</div>
+          <div class="cost-label">Estimated spend avoided</div>
+        </div>
+        <div class="cost-card">
+          <div class="cost-amount" style="color:var(--accent)">6.3×</div>
+          <div class="cost-label">Savings ratio</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      Quality by category
+      <span style="font-weight:400;color:var(--dust);font-size:12px">Overall compatibility: 0.61</span>
+    </div>
+    <div class="card-body">
+      <table class="qual-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Criticality</th>
+            <th>Tested</th>
+            <th>Compatibility</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--white)">customer_support</td>
+            <td><span class="badge badge-high">HIGH</span></td>
+            <td>8</td>
+            <td>
+              <div class="bar-container">
+                <div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--green)"></div></div>
+                <span class="bar-label" style="color:var(--green)">0.85</span>
+              </div>
+            </td>
+            <td><span class="badge badge-stable">STABLE</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--white)">structured_extraction</td>
+            <td><span class="badge badge-high">HIGH</span></td>
+            <td>6</td>
+            <td>
+              <div class="bar-container">
+                <div class="bar-track"><div class="bar-fill" style="width:28%;background:var(--red)"></div></div>
+                <span class="bar-label" style="color:var(--red)">0.28</span>
+              </div>
+            </td>
+            <td><span class="badge badge-failing">FAILING</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--white)">classification</td>
+            <td><span class="badge badge-medium">MEDIUM</span></td>
+            <td>6</td>
+            <td>
+              <div class="bar-container">
+                <div class="bar-track"><div class="bar-fill" style="width:72%;background:var(--yellow)"></div></div>
+                <span class="bar-label" style="color:var(--yellow)">0.72</span>
+              </div>
+            </td>
+            <td><span class="badge badge-mixed">MIXED</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--white)">summarization</td>
+            <td><span class="badge badge-low">LOW</span></td>
+            <td>4</td>
+            <td>
+              <div class="bar-container">
+                <div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--green)"></div></div>
+                <span class="bar-label" style="color:var(--green)">0.90</span>
+              </div>
+            </td>
+            <td><span class="badge badge-stable">STABLE</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      Latency comparison
+      <span style="font-weight:400;color:var(--green);font-size:12px">↓ 58% improvement (p50)</span>
+    </div>
+    <div class="card-body">
+      <div class="latency-grid">
+        <div class="lat-card">
+          <div class="lat-title">Baseline (GPT-4o)</div>
+          <div class="lat-row"><span class="lat-metric">p50</span><span class="lat-value" style="color:var(--white)">820ms</span></div>
+          <div class="lat-row"><span class="lat-metric">p95</span><span class="lat-value" style="color:var(--white)">2,100ms</span></div>
+          <div class="lat-row"><span class="lat-metric">variance</span><span class="lat-value" style="color:var(--white)">±340ms</span></div>
+        </div>
+        <div class="lat-card">
+          <div class="lat-title">Candidate (Claude Haiku)</div>
+          <div class="lat-row"><span class="lat-metric">p50</span><span class="lat-value" style="color:var(--green)">340ms <span style="font-size:11px;color:var(--dust)">(-58%)</span></span></div>
+          <div class="lat-row"><span class="lat-metric">p95</span><span class="lat-value" style="color:var(--green)">890ms <span style="font-size:11px;color:var(--dust)">(-57%)</span></span></div>
+          <div class="lat-row"><span class="lat-metric">variance</span><span class="lat-value" style="color:var(--green)">±180ms <span style="font-size:11px;color:var(--dust)">(-47%)</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Failure archetypes</div>
+    <div class="card-body">
+      <div class="arch-list">
+        <div class="arch-item">
+          <div class="arch-rank" style="color:var(--red)">1</div>
+          <div class="arch-info">
+            <div class="arch-name">Schema break</div>
+            <div class="arch-desc">JSON invalid, missing fields, incompatible structure</div>
+          </div>
+          <div class="arch-bar-wrap">
+            <div class="arch-bar" style="width:100%;background:var(--red)"></div>
+            <div class="arch-count">4 occurrences</div>
+          </div>
+        </div>
+        <div class="arch-item">
+          <div class="arch-rank" style="color:var(--yellow)">2</div>
+          <div class="arch-info">
+            <div class="arch-name">Coverage drop</div>
+            <div class="arch-desc">Response incomplete vs baseline output</div>
+          </div>
+          <div class="arch-bar-wrap">
+            <div class="arch-bar" style="width:75%;background:var(--yellow)"></div>
+            <div class="arch-count">3 occurrences</div>
+          </div>
+        </div>
+        <div class="arch-item">
+          <div class="arch-rank" style="color:var(--blue)">3</div>
+          <div class="arch-info">
+            <div class="arch-name">Refusal increase</div>
+            <div class="arch-desc">Candidate refused prompts the baseline handled</div>
+          </div>
+          <div class="arch-bar-wrap">
+            <div class="arch-bar" style="width:50%;background:var(--blue)"></div>
+            <div class="arch-count">2 occurrences</div>
+          </div>
+        </div>
+        <div class="arch-item">
+          <div class="arch-rank" style="color:var(--purple)">4</div>
+          <div class="arch-info">
+            <div class="arch-name">Format break</div>
+            <div class="arch-desc">Output does not match the expected format</div>
+          </div>
+          <div class="arch-bar-wrap">
+            <div class="arch-bar" style="width:25%;background:var(--purple)"></div>
+            <div class="arch-count">1 occurrence</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      Failure examples
+      <span style="font-weight:400;color:var(--dust);font-size:12px">Top 3 by severity</span>
+    </div>
+    <div class="card-body">
+      <div class="example">
+        <div class="example-header">
+          <span class="example-id">ex-003 · structured_extraction</span>
+          <span class="badge badge-failing">SCHEMA BREAK</span>
+        </div>
+        <div class="example-body">
+          <div class="example-label">Prompt</div>
+          <div class="example-text">Parse this invoice text and return structured JSON: 'Invoice #INV-2024-0847 dated March 15, 2024. Bill to: TechStart Ltd, 42 Innovation Drive, London. Items: 3x Widget A ($50 each), 1x Widget B ($120). Subtotal: $270. Tax (20%): $54. Total: $324.'</div>
+          <div class="example-label">Baseline output (GPT-4o) ✓</div>
+          <div class="example-text">{
+  "invoice_number": "INV-2024-0847",
+  "date": "2024-03-15",
+  "bill_to": {
+    "name": "TechStart Ltd",
+    "address": "42 Innovation Drive, London"
+  },
+  "items": [
+    {"name": "Widget A", "quantity": 3, "unit_price": 50, "total": 150},
+    {"name": "Widget B", "quantity": 1, "unit_price": 120, "total": 120}
+  ],
+  "subtotal": 270,
+  "tax_rate": 0.20,
+  "tax": 54,
+  "total": 324
+}</div>
+          <div class="example-label">Candidate output (Claude Haiku) ✗</div>
+          <div class="example-text">Here's the parsed invoice data:
+
+Invoice Number: INV-2024-0847
+Date: March 15, 2024
+Bill to: TechStart Ltd, 42 Innovation Drive, London
+
+Items:
+- Widget A × 3 = $150
+- Widget B × 1 = $120
+
+Subtotal: $270
+Tax (20%): $54
+Total: $324
+
+<span style="color:var(--red)">Returned markdown instead of JSON. Schema break: no valid JSON object.</span></div>
+        </div>
+      </div>
+
+      <div class="example">
+        <div class="example-header">
+          <span class="example-id">ex-006 · structured_extraction</span>
+          <span class="badge badge-failing">SCHEMA BREAK</span>
+        </div>
+        <div class="example-body">
+          <div class="example-label">Prompt</div>
+          <div class="example-text">Parse meeting notes and extract action items with assignees...</div>
+          <div class="example-label">Issue</div>
+          <div class="example-text"><span style="color:var(--red)">Candidate returned flat list instead of nested {action_items: [], decisions: []} structure. Missing "decisions" key entirely. Downstream parser would fail.</span></div>
+        </div>
+      </div>
+
+      <div class="example">
+        <div class="example-header">
+          <span class="example-id">cl-002 · classification</span>
+          <span class="badge badge-failing" style="background:var(--blue-dim);color:var(--blue)">REFUSAL</span>
+        </div>
+        <div class="example-body">
+          <div class="example-label">Prompt</div>
+          <div class="example-text">Classify this support ticket by priority: 'Our entire production database is returning connection timeouts. All customer-facing services are down.'</div>
+          <div class="example-label">Issue</div>
+          <div class="example-text"><span style="color:var(--blue)">Candidate added a disclaimer instead of returning the requested priority label. Baseline correctly returned "p1" with no hedging.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Thresholds used</div>
+    <div class="card-body">
+      <table class="thresh-table">
+        <thead>
+          <tr>
+            <th>Threshold</th>
+            <th>Config</th>
+            <th>Actual</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>High-criticality failure rate</td>
+            <td>≤ 0.20</td>
+            <td class="triggered">0.625</td>
+            <td class="triggered">■ TRIGGERED</td>
+          </tr>
+          <tr>
+            <td>Schema break rate</td>
+            <td>≤ 0.25</td>
+            <td class="triggered">0.667</td>
+            <td class="triggered">■ TRIGGERED</td>
+          </tr>
+          <tr>
+            <td>Overall risk score</td>
+            <td>≤ 0.08</td>
+            <td class="triggered">0.390</td>
+            <td class="triggered">■ TRIGGERED</td>
+          </tr>
+          <tr>
+            <td>Latency regression (p50)</td>
+            <td>≤ 1.5×</td>
+            <td class="safe">0.41×</td>
+            <td class="safe">✓ PASS</td>
+          </tr>
+          <tr>
+            <td>Latency regression (p95)</td>
+            <td>≤ 2.0×</td>
+            <td class="safe">0.42×</td>
+            <td class="safe">✓ PASS</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="report-footer">
+    Generated by Driftcut demo report · v0.1 concept stage
+  </div>
+</div>
+</body>
+</html>
