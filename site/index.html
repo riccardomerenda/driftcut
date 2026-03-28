@@ -1,276 +1,293 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driftcut — Stop bad LLM migrations early</title>
-    <meta name="description" content="Driftcut is an early-stop canary for LLM model migrations. Know in minutes — not hours — whether a migration candidate is worth a full evaluation.">
-    <meta property="og:title" content="Driftcut — Stop bad LLM migrations early">
-    <meta property="og:description" content="Early-stop canary testing for LLM model migrations. Know in minutes — not hours — whether a migration is worth pursuing.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://driftcut.dev">
-    <link rel="canonical" href="https://driftcut.dev">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✂️</text></svg>">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        drift: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            200: '#bbf7d0',
-                            400: '#4ade80',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                            800: '#166534',
-                            900: '#14532d',
-                            950: '#0a2e18',
-                        },
-                    },
-                },
-            },
-        }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .gradient-text {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #0d9488 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .hero-gradient {
-            background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(22, 163, 74, 0.15), transparent);
-        }
-        .card-hover {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .card-hover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-        }
-        .terminal {
-            background: #0f172a;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-        }
-        .terminal-bar {
-            background: #1e293b;
-            border-radius: 8px 8px 0 0;
-            padding: 12px 16px;
-            display: flex;
-            gap: 8px;
-        }
-        .terminal-dot {
-            width: 12px; height: 12px; border-radius: 50%;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Driftcut — Cut model drift before it costs you</title>
+<meta name="description" content="Driftcut is an early-stop filter for LLM model migrations. Know in minutes — not hours — whether a migration candidate is worth a full evaluation.">
+<meta property="og:title" content="Driftcut — Cut model drift before it costs you">
+<meta property="og:description" content="Early-stop migration testing for LLM systems. Stop bad candidates before they burn your evaluation budget.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://driftcut.dev">
+<link rel="canonical" href="https://driftcut.dev">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23FF4747'/><line x1='22' y1='4' x2='10' y2='28' stroke='%230B0E11' stroke-width='3.5' stroke-linecap='round'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--cut:#FF4747;--cut-dim:#D93636;--cut-glow:rgba(255,71,71,0.12);--teal:#2DD4A8;--teal-dim:rgba(45,212,168,0.12);--amber:#FBBF24;--slate-900:#0B0E11;--slate-800:#111519;--slate-700:#181D23;--slate-600:#1F252D;--slate-500:#2A323D;--muted:#6B7A8D;--silver:#9EAAB8;--light:#CBD5E1;--white:#F1F5F9}
+  *{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
+  body{font-family:'Outfit',sans-serif;background:var(--slate-900);color:var(--silver);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:0.025;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .container{max-width:1100px;margin:0 auto;padding:0 28px}
+  nav{position:fixed;inset:0 0 auto 0;z-index:100;padding:16px 28px;display:flex;justify-content:space-between;align-items:center;background:rgba(11,14,17,0.88);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,71,71,0.06)}
+  .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+  .logo-mark{width:32px;height:32px;position:relative}
+  .logo-mark::before{content:'';position:absolute;top:4px;left:4px;width:24px;height:24px;border:2.5px solid var(--cut);border-radius:5px;transform:rotate(3deg)}
+  .logo-mark::after{content:'';position:absolute;top:2px;right:6px;width:2.5px;height:28px;background:var(--cut);transform:rotate(-32deg);border-radius:2px}
+  .nav-logo span{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:17px;color:var(--white);letter-spacing:-0.3px}
+  .nav-links{display:flex;align-items:center;gap:24px}
+  .nav-links a{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);text-decoration:none;letter-spacing:0.3px;transition:color 0.2s}
+  .nav-links a:hover{color:var(--white)}
+  .nav-cta{color:var(--white)!important;background:var(--cut);padding:9px 18px;border-radius:6px;font-weight:600!important;transition:background 0.2s,transform 0.15s!important}
+  .nav-cta:hover{background:var(--cut-dim)!important;transform:translateY(-1px)}
+  .hero{min-height:100vh;display:flex;align-items:flex-start;padding-top:clamp(130px,20vh,210px);padding-bottom:60px;position:relative;overflow:hidden}
+  .hero-lines{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+  .hero-lines::before{content:'';position:absolute;top:-20%;right:-10%;width:120%;height:140%;background:repeating-linear-gradient(-32deg,transparent,transparent 80px,rgba(255,71,71,0.015) 80px,rgba(255,71,71,0.015) 81px)}
+  .hero-lines::after{content:'';position:absolute;top:5%;right:15%;width:400px;height:400px;background:radial-gradient(circle,rgba(255,71,71,0.05) 0%,transparent 65%)}
+  .hero-content{position:relative;z-index:2}
+  .hero-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(380px,1fr);gap:48px;align-items:start}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--cut);letter-spacing:1.5px;text-transform:uppercase;padding:7px 14px;border-radius:4px;border:1px solid rgba(255,71,71,0.18);background:rgba(255,71,71,0.04);margin-bottom:28px;animation:fadeUp 0.6s ease both}
+  .hero-badge::before{content:'';width:6px;height:2px;background:var(--cut);border-radius:1px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  h1{font-family:'Outfit',sans-serif;font-size:clamp(36px,4.8vw,58px);font-weight:800;line-height:1.05;letter-spacing:-2.5px;color:var(--white);margin-bottom:24px;animation:fadeUp 0.6s 0.06s ease both}
+  h1 .accent{color:var(--cut)}
+  .hero-sub{font-size:17px;line-height:1.7;color:var(--silver);max-width:500px;margin-bottom:32px;font-weight:400;animation:fadeUp 0.6s 0.12s ease both}
+  .hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px;animation:fadeUp 0.6s 0.18s ease both}
+  .btn-primary,.btn-ghost{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:12px 22px;border-radius:7px;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;transition:all 0.2s}
+  .btn-primary{background:var(--cut);color:var(--white)}
+  .btn-primary:hover{background:var(--cut-dim);transform:translateY(-2px);box-shadow:0 8px 28px rgba(255,71,71,0.18)}
+  .btn-ghost{color:var(--silver);border:1px solid var(--slate-500);background:transparent}
+  .btn-ghost:hover{color:var(--white);border-color:var(--muted);transform:translateY(-2px)}
+  .hero-pills{display:flex;flex-wrap:wrap;gap:8px;animation:fadeUp 0.6s 0.24s ease both}
+  .pill{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);padding:6px 10px;border-radius:4px;border:1px solid var(--slate-600);background:var(--slate-800)}
+  .terminal{background:var(--slate-800);border:1px solid var(--slate-600);border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.45);animation:fadeUp 0.7s 0.15s ease both}
+  .term-bar{display:flex;align-items:center;gap:8px;padding:13px 16px;background:var(--slate-700);border-bottom:1px solid var(--slate-600)}
+  .term-dot{width:10px;height:10px;border-radius:50%}
+  .term-dot.r{background:var(--cut)}.term-dot.y{background:var(--amber)}.term-dot.g{background:var(--teal)}
+  .term-title{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-left:6px}
+  .term-body{padding:20px 18px 22px;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.85}
+  .t{display:block}.t-prompt{color:var(--muted)}.t-cmd{color:var(--teal);font-weight:600}.t-flag{color:var(--silver)}.t-dim{color:var(--muted)}.t-white{color:var(--light)}.t-warn{color:var(--amber)}.t-fail{color:var(--cut);font-weight:700}.t-ok{color:var(--teal)}.t-spacer{display:block;height:6px}
+  section{padding:96px 0}
+  .sec-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--cut);margin-bottom:14px}
+  .sec-title{font-family:'Outfit',sans-serif;font-size:clamp(26px,3.5vw,40px);font-weight:800;line-height:1.12;letter-spacing:-1.5px;color:var(--white);margin-bottom:14px}
+  .sec-desc{font-size:16px;line-height:1.7;color:var(--muted);max-width:620px;margin-bottom:48px}
+  .problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .problem-card{background:var(--slate-800);border:1px solid var(--slate-600);border-radius:10px;padding:28px 22px;transition:border-color 0.3s;position:relative;overflow:hidden}
+  .problem-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--cut);opacity:0;transition:opacity 0.3s}
+  .problem-card:hover{border-color:rgba(255,71,71,0.15)}.problem-card:hover::before{opacity:1}
+  .problem-card .tag{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--cut);letter-spacing:0.5px;margin-bottom:14px;display:block}
+  .problem-card h3{font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:10px;line-height:1.3}
+  .problem-card p{font-size:14px;line-height:1.6;color:var(--muted)}
+  .steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .step{background:var(--slate-800);border:1px solid var(--slate-600);border-radius:10px;padding:24px 20px;transition:border-color 0.3s,background 0.3s}
+  .step:hover{border-color:rgba(255,71,71,0.12);background:var(--slate-700)}
+  .step-num{font-family:'IBM Plex Mono',monospace;font-size:36px;font-weight:700;color:rgba(255,71,71,0.08);line-height:1;margin-bottom:16px}
+  .step h3{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:8px}
+  .step p{font-size:13px;line-height:1.6;color:var(--muted)}
+  .who-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .who-card{background:var(--slate-700);border:1px solid var(--slate-600);border-radius:10px;padding:28px 22px;transition:border-color 0.3s}
+  .who-card:hover{border-color:rgba(255,71,71,0.12)}
+  .who-card h3{font-size:16px;font-weight:700;color:var(--white);margin-bottom:10px}
+  .who-card p{font-size:14px;line-height:1.6;color:var(--muted);margin-bottom:14px}
+  .who-card .fit{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal)}
+  .arch-section{background:var(--slate-800);border-top:1px solid var(--slate-600);border-bottom:1px solid var(--slate-600)}
+  .arch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .arch-card{padding:20px;border:1px solid var(--slate-600);border-radius:10px;background:var(--slate-700);transition:border-color 0.3s,transform 0.2s}
+  .arch-card:hover{border-color:rgba(255,71,71,0.15);transform:translateY(-2px)}
+  .arch-tag{display:inline-block;margin-bottom:10px;padding:3px 8px;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.5px}
+  .arch-tag.t1{background:var(--cut-glow);color:var(--cut)}.arch-tag.t2{background:rgba(255,165,0,0.12);color:#FFA500}.arch-tag.t3{background:rgba(59,130,246,0.12);color:#3B82F6}.arch-tag.t4{background:var(--teal-dim);color:var(--teal)}.arch-tag.t5{background:rgba(168,85,247,0.12);color:#A855F7}.arch-tag.t6{background:rgba(251,191,36,0.12);color:#FBbf24}
+  .arch-card h4{font-size:14px;font-weight:700;color:var(--white);margin-bottom:6px}
+  .arch-card p{font-size:12px;line-height:1.55;color:var(--muted)}
+  .compare-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--slate-600);border-radius:10px;overflow:hidden}
+  .compare-table th{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);background:var(--slate-700);padding:14px 18px;text-align:left;border-bottom:1px solid var(--slate-600)}
+  .compare-table th:last-child{color:var(--cut)}
+  .compare-table td{font-size:14px;padding:13px 18px;border-bottom:1px solid rgba(42,50,61,0.5);color:var(--silver)}
+  .compare-table tr:last-child td{border-bottom:none}
+  .compare-table td:first-child{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:var(--light)}
+  .ck{color:var(--cut);font-weight:600}.dm{color:var(--muted)}
+  .faq-grid{display:grid;gap:12px}
+  .faq-item{background:var(--slate-800);border:1px solid var(--slate-600);border-radius:10px;padding:22px;transition:border-color 0.3s}
+  .faq-item:hover{border-color:rgba(255,71,71,0.1)}
+  .faq-item h3{font-size:15px;font-weight:700;color:var(--white);margin-bottom:8px}
+  .faq-item p{font-size:14px;line-height:1.65;color:var(--muted)}
+  .cta-section{text-align:center;padding:120px 0}
+  .cta-box{background:linear-gradient(180deg,var(--slate-700),var(--slate-800));border:1px solid var(--slate-600);border-radius:16px;padding:52px 28px;position:relative;overflow:hidden}
+  .cta-box::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:200px;height:1px;background:linear-gradient(90deg,transparent,var(--cut),transparent)}
+  .cta-box .sec-title,.cta-box .sec-desc{margin-left:auto;margin-right:auto}
+  .cta-form{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;max-width:440px;margin:0 auto}
+  .cta-form input[type="email"]{flex:1;min-width:220px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--white);background:var(--slate-800);border:1px solid var(--slate-500);border-radius:7px;padding:12px 16px;outline:none;transition:border-color 0.2s}
+  .cta-form input[type="email"]::placeholder{color:var(--muted)}
+  .cta-form input[type="email"]:focus{border-color:var(--cut)}
+  .cta-form button{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--white);background:var(--cut);border:none;border-radius:7px;padding:12px 24px;cursor:pointer;transition:background 0.2s,transform 0.15s}
+  .cta-form button:hover{background:var(--cut-dim);transform:translateY(-1px)}
+  .cta-note{margin-top:20px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)}
+  footer{border-top:1px solid var(--slate-600);padding:32px 0 44px}
+  .footer-wrap{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+  footer p,footer a{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);text-decoration:none}
+  footer a:hover{color:var(--cut)}
+  @media(max-width:980px){.hero-top,.problem-grid,.steps-grid,.who-grid{grid-template-columns:1fr}.nav-links a:not(.nav-cta){display:none}}
+  @media(max-width:640px){nav{padding:14px 18px}.container{padding:0 18px}.hero-actions,.cta-form{flex-direction:column}.btn-primary,.btn-ghost{width:100%}.cta-form input[type="email"]{min-width:0;width:100%}.cta-form button{width:100%}}
+</style>
 </head>
-<body class="bg-white text-gray-900 antialiased">
+<body>
+  <nav>
+    <a href="#" class="nav-logo"><div class="logo-mark"></div><span>driftcut</span></a>
+    <div class="nav-links">
+      <a href="#why">Why</a>
+      <a href="#how">How it works</a>
+      <a href="#who">For whom</a>
+      <a href="#compare">Compare</a>
+      <a href="#cta" class="nav-cta">Join waitlist</a>
+    </div>
+  </nav>
 
-    <!-- Nav -->
-    <nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <span class="text-xl font-bold tracking-tight">drift<span class="text-drift-600">cut</span></span>
-            </div>
-            <div class="flex items-center gap-6">
-                <a href="https://github.com/riccardomerenda/driftcut" class="text-sm text-gray-600 hover:text-gray-900 transition-colors">GitHub</a>
-                <a href="#signup" class="text-sm font-medium bg-drift-600 text-white px-4 py-2 rounded-lg hover:bg-drift-700 transition-colors">Get Early Access</a>
-            </div>
+  <section class="hero">
+    <div class="hero-lines"></div>
+    <div class="container hero-content">
+      <div class="hero-top">
+        <div>
+          <div class="hero-badge">Early-stop migration testing for LLM systems</div>
+          <h1>Cut model drift<br>before it <span class="accent">costs you.</span></h1>
+          <p class="hero-sub">Driftcut compares your current model against a candidate on a small, stratified slice of production prompts — and tells you early whether to stop, continue, or proceed to full evaluation.</p>
+          <div class="hero-actions">
+            <a href="#cta" class="btn-primary">Request early access</a>
+            <a href="https://github.com/riccardomerenda/driftcut" class="btn-ghost">View on GitHub</a>
+          </div>
+          <div class="hero-pills">
+            <span class="pill">CLI-first</span>
+            <span class="pill">Open core</span>
+            <span class="pill">CSV / JSON corpus</span>
+            <span class="pill">Quality · Latency · Cost</span>
+          </div>
         </div>
-    </nav>
-
-    <!-- Hero -->
-    <section class="hero-gradient pt-32 pb-20 px-6">
-        <div class="max-w-4xl mx-auto text-center">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-drift-50 border border-drift-200 text-drift-700 text-sm font-medium mb-8">
-                <span class="w-2 h-2 bg-drift-500 rounded-full animate-pulse"></span>
-                Coming soon — Open source CLI tool
-            </div>
-            <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-6">
-                Stop bad LLM migrations<br>
-                <span class="gradient-text">before they cost you.</span>
-            </h1>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-                Driftcut is an early-stop canary for model migrations. Know in <strong>minutes</strong> — not hours — whether a migration candidate is worth a full evaluation.
-            </p>
-
-            <!-- Terminal preview -->
-            <div class="terminal max-w-2xl mx-auto text-left shadow-2xl mb-10">
-                <div class="terminal-bar">
-                    <div class="terminal-dot bg-red-500"></div>
-                    <div class="terminal-dot bg-yellow-500"></div>
-                    <div class="terminal-dot bg-green-500"></div>
-                </div>
-                <div class="p-6 text-sm leading-relaxed">
-                    <p><span class="text-gray-500">$</span> <span class="text-green-400">driftcut run</span> <span class="text-gray-400">--config migration.yaml</span></p>
-                    <p class="mt-3 text-gray-400">Loading corpus… 847 prompts</p>
-                    <p class="text-gray-400">Baseline: gpt-4o  →  Candidate: gpt-4o-mini</p>
-                    <p class="mt-3 text-gray-400">Phase 1 — Quick scan <span class="text-green-400">████████████████████</span> 50/50</p>
-                    <p class="text-yellow-400">⚠  Semantic drift: 0.23 (threshold: 0.15)</p>
-                    <p class="text-gray-400">Phase 2 — Focused probe <span class="text-green-400">████████████</span> 30/100</p>
-                    <p class="text-red-400 mt-3 font-bold">✗ EARLY STOP — drift exceeds tolerance at 95% confidence</p>
-                    <p class="text-gray-500 mt-1">  Saved ~780 API calls ($12.40 estimated)</p>
-                    <p class="text-gray-500">  Full report: ./driftcut-results/report.html</p>
-                </div>
-            </div>
-
-            <a href="#signup" class="inline-flex items-center gap-2 bg-drift-600 text-white px-8 py-3.5 rounded-xl font-semibold text-lg hover:bg-drift-700 transition-colors shadow-lg shadow-drift-600/25">
-                Get notified at launch
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-            </a>
+        <div class="terminal">
+          <div class="term-bar">
+            <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+            <span class="term-title">~</span>
+          </div>
+          <div class="term-body">
+            <span class="t"><span class="t-prompt">$</span> <span class="t-cmd">driftcut run</span> <span class="t-flag">--config migration.yaml</span></span>
+            <span class="t-spacer"></span>
+            <span class="t t-dim">Loading corpus… 847 prompts, 4 categories</span>
+            <span class="t t-white">Baseline: gpt-4o  →  Candidate: gpt-4o-mini</span>
+            <span class="t-spacer"></span>
+            <span class="t t-dim">Batch 1 — stratified sample <span class="t-ok">████████████████████</span> 50/50</span>
+            <span class="t"><span class="t-warn">⚠ </span><span class="t-dim">Schema break rate:</span> <span class="t-warn">0.24</span> <span class="t-dim">(threshold: 0.25)</span></span>
+            <span class="t t-dim">Batch 2 — focused probe  <span class="t-ok">████████████</span> 30/100</span>
+            <span class="t"><span class="t-fail">✗ </span><span class="t-dim">High-crit failure rate:</span> <span class="t-fail">0.625</span> <span class="t-dim">(threshold: 0.20)</span></span>
+            <span class="t-spacer"></span>
+            <span class="t t-fail">/ EARLY STOP — drift exceeds tolerance</span>
+            <span class="t-spacer"></span>
+            <span class="t t-dim">  Prompts tested: <span class="t-white">80/847 (9.4%)</span></span>
+            <span class="t t-dim">  Spend so far:   <span class="t-white">$8.60</span> <span class="t-dim">(incl. $0.52 judge)</span></span>
+            <span class="t t-dim">  Spend avoided:  <span class="t-ok">$74.30</span></span>
+            <span class="t t-dim">  Top failures:   <span class="t-white">schema_break (4)</span>, <span class="t-white">coverage_drop (3)</span></span>
+            <span class="t-spacer"></span>
+            <span class="t t-dim">  Report: <span class="t-white">./driftcut-results/report.html</span></span>
+          </div>
         </div>
-    </section>
+      </div>
+    </div>
+  </section>
 
-    <!-- Problem / Solution -->
-    <section class="py-20 px-6 bg-gray-50">
-        <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl font-bold mb-4">The model migration tax</h2>
-                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Every time a provider ships a new model, you face the same question: <em>should we switch?</em> Answering it shouldn't cost more than the migration itself.</p>
-            </div>
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-white p-8 rounded-2xl border border-gray-200 card-hover">
-                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-5">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </div>
-                    <h3 class="font-bold text-lg mb-2">Blind full-corpus runs</h3>
-                    <p class="text-gray-600">Teams run the entire test suite against every candidate, burning thousands of API calls before discovering obvious failures.</p>
-                </div>
-                <div class="bg-white p-8 rounded-2xl border border-gray-200 card-hover">
-                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-5">
-                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </div>
-                    <h3 class="font-bold text-lg mb-2">Wasted budget</h3>
-                    <p class="text-gray-600">A migration that fails on 5% of prompts still costs 100% of the evaluation budget. Most of that spend is wasted.</p>
-                </div>
-                <div class="bg-white p-8 rounded-2xl border border-gray-200 card-hover">
-                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-5">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    </div>
-                    <h3 class="font-bold text-lg mb-2">Slow decisions</h3>
-                    <p class="text-gray-600">Full evaluations take hours or days. By the time you have results, the next model version is already out.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+  <section id="why">
+    <div class="container">
+      <div class="sec-label">The real problem</div>
+      <h2 class="sec-title">Most migration tests fail too late.</h2>
+      <p class="sec-desc">Teams run a candidate model across the entire prompt corpus before discovering that critical categories break. Wasted spend, slow feedback, and less willingness to test alternatives.</p>
+      <div class="problem-grid">
+        <div class="problem-card"><span class="tag">WASTE</span><h3>Budget burns before the signal is clear</h3><p>Hundreds of API calls before learning the candidate was never viable for the cases that matter most.</p></div>
+        <div class="problem-card"><span class="tag">RISK</span><h3>Average scores hide critical failures</h3><p>A candidate can look acceptable overall while breaking structured outputs, high-criticality prompts, or latency-sensitive paths.</p></div>
+        <div class="problem-card"><span class="tag">FRICTION</span><h3>Full eval is the wrong first step</h3><p>Before a full evaluation, teams need a fast filter: is this migration promising enough to keep testing?</p></div>
+      </div>
+    </div>
+  </section>
 
-    <!-- How it works -->
-    <section class="py-20 px-6">
-        <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl font-bold mb-4">How Driftcut works</h2>
-                <p class="text-lg text-gray-600 max-w-2xl mx-auto">Sequential testing with statistical early stopping. Get a go/no-go decision using a fraction of your test corpus.</p>
-            </div>
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-drift-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                        <span class="text-2xl font-bold text-drift-700">1</span>
-                    </div>
-                    <h3 class="font-bold text-lg mb-2">Quick scan</h3>
-                    <p class="text-gray-600">Run a small random sample through both models. Detect obvious regressions immediately and stop early if the candidate clearly fails.</p>
-                </div>
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-drift-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                        <span class="text-2xl font-bold text-drift-700">2</span>
-                    </div>
-                    <h3 class="font-bold text-lg mb-2">Focused probing</h3>
-                    <p class="text-gray-600">Target edge cases and high-risk prompt categories. Adaptive sampling concentrates effort where drift is most likely.</p>
-                </div>
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-drift-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                        <span class="text-2xl font-bold text-drift-700">3</span>
-                    </div>
-                    <h3 class="font-bold text-lg mb-2">Decision gate</h3>
-                    <p class="text-gray-600">Statistical confidence bounds give you a clear go/no-go. Stop early with confidence — no guessing, no wasted budget.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+  <section id="how">
+    <div class="container">
+      <div class="sec-label">How it works</div>
+      <h2 class="sec-title">A migration filter, not another eval dashboard.</h2>
+      <p class="sec-desc">Driftcut samples representative batches, compares baseline versus candidate across quality, latency and cost, and makes a decision with evidence.</p>
+      <div class="steps-grid">
+        <div class="step"><div class="step-num">01</div><h3>Load your corpus</h3><p>Real prompts with category, criticality, and expected output type. CSV or JSON.</p></div>
+        <div class="step"><div class="step-num">02</div><h3>Sample strategically</h3><p>Stratified batches cover the categories that matter. Test 10–20%, not 100%.</p></div>
+        <div class="step"><div class="step-num">03</div><h3>Compare progressively</h3><p>Deterministic checks first, judge models only when the signal is ambiguous.</p></div>
+        <div class="step"><div class="step-num">04</div><h3>Get a decision</h3><p>Stop now, continue, proceed to full eval, or proceed only for low-risk categories.</p></div>
+      </div>
+    </div>
+  </section>
 
-    <!-- Key features -->
-    <section class="py-20 px-6 bg-gray-50">
-        <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl font-bold mb-4">Built for real workflows</h2>
-            </div>
-            <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                <div class="flex gap-4 bg-white p-6 rounded-xl border border-gray-200">
-                    <div class="w-10 h-10 bg-drift-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-drift-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold mb-1">CLI-first</h3>
-                        <p class="text-sm text-gray-600">Single command to run. Fits into CI/CD pipelines and automation workflows.</p>
-                    </div>
-                </div>
-                <div class="flex gap-4 bg-white p-6 rounded-xl border border-gray-200">
-                    <div class="w-10 h-10 bg-drift-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-drift-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold mb-1">Any provider</h3>
-                        <p class="text-sm text-gray-600">Works with OpenAI, Anthropic, Google, Mistral, and any LiteLLM-supported provider.</p>
-                    </div>
-                </div>
-                <div class="flex gap-4 bg-white p-6 rounded-xl border border-gray-200">
-                    <div class="w-10 h-10 bg-drift-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-drift-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold mb-1">HTML reports</h3>
-                        <p class="text-sm text-gray-600">Self-contained reports with drift scores, confidence intervals, and per-prompt diffs.</p>
-                    </div>
-                </div>
-                <div class="flex gap-4 bg-white p-6 rounded-xl border border-gray-200">
-                    <div class="w-10 h-10 bg-drift-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-drift-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold mb-1">Your data stays local</h3>
-                        <p class="text-sm text-gray-600">No SaaS middleman. Prompts go directly to your model providers and results stay on your machine.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+  <section id="who">
+    <div class="container">
+      <div class="sec-label">Best-fit users</div>
+      <h2 class="sec-title">Who this is actually for</h2>
+      <p class="sec-desc">Not for everyone building with LLMs. For teams that already feel the cost of migration testing, quality risk, and slow evaluation loops.</p>
+      <div class="who-grid">
+        <div class="who-card"><h3>AI engineers</h3><p>Faster pre-eval loop before running expensive comparisons across providers or model versions.</p><div class="fit">→ provider swaps, prompt corpus already exists</div></div>
+        <div class="who-card"><h3>Platform teams</h3><p>A repeatable gate before rolling a new model into shared infrastructure or customer-facing flows.</p><div class="fit">→ centralized governance, recurring checks</div></div>
+        <div class="who-card"><h3>Engineering managers</h3><p>Reduce evaluation waste and catch migration risk before it reaches the full review cycle.</p><div class="fit">→ cost pressure, quality accountability</div></div>
+      </div>
+    </div>
+  </section>
 
-    <!-- Signup -->
-    <section id="signup" class="py-20 px-6">
-        <div class="max-w-xl mx-auto text-center">
-            <h2 class="text-3xl font-bold mb-4">Get early access</h2>
-            <p class="text-lg text-gray-600 mb-8">Be the first to know when Driftcut launches. We'll send you a single email — no spam.</p>
-            <form action="https://formspree.io/f/xjgpybnb" method="POST" class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-                <input
-                    type="email"
-                    name="email"
-                    required
-                    placeholder="you@company.com"
-                    class="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-drift-500 focus:border-transparent text-sm"
-                >
-                <button type="submit" class="bg-drift-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-drift-700 transition-colors whitespace-nowrap text-sm">
-                    Notify me
-                </button>
-            </form>
-            <p class="text-xs text-gray-400 mt-4">Open source &middot; MIT licensed &middot; Free for individual use</p>
-        </div>
-    </section>
+  <section class="arch-section">
+    <div class="container">
+      <div class="sec-label">Failure classification</div>
+      <h2 class="sec-title">Not a score. An explanation.</h2>
+      <p class="sec-desc">Driftcut classifies what went wrong so you decide the next action: adapt prompts, reject the candidate, or isolate safe categories.</p>
+      <div class="arch-grid">
+        <div class="arch-card"><span class="arch-tag t1">SCHEMA</span><h4>Schema break</h4><p>Invalid JSON, missing fields, structure that breaks downstream systems.</p></div>
+        <div class="arch-card"><span class="arch-tag t2">FORMAT</span><h4>Format break</h4><p>Output exists but not in the format or contract your product expects.</p></div>
+        <div class="arch-card"><span class="arch-tag t3">COVERAGE</span><h4>Coverage drop</h4><p>Partial response — candidate misses info the baseline captured.</p></div>
+        <div class="arch-card"><span class="arch-tag t4">REASONING</span><h4>Reasoning degradation</h4><p>Weaker judgments, missed edge cases, wrong conclusions on complex prompts.</p></div>
+        <div class="arch-card"><span class="arch-tag t5">REFUSAL</span><h4>Refusal increase</h4><p>Candidate refuses or hedges more than baseline for the same use case.</p></div>
+        <div class="arch-card"><span class="arch-tag t6">LATENCY</span><h4>Latency regression</h4><p>Slower where it matters, even when average quality seems fine.</p></div>
+      </div>
+    </div>
+  </section>
 
-    <!-- Footer -->
-    <footer class="py-10 px-6 border-t border-gray-100">
-        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span class="text-sm text-gray-500">&copy; 2026 Driftcut. MIT License.</span>
-            <div class="flex items-center gap-6">
-                <a href="https://github.com/riccardomerenda/driftcut" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">GitHub</a>
-            </div>
-        </div>
-    </footer>
+  <section id="compare">
+    <div class="container">
+      <div class="sec-label">Positioning</div>
+      <h2 class="sec-title">What eval frameworks don't do.</h2>
+      <p class="sec-desc">Eval tools measure quality. Driftcut makes a migration decision. If you already use an eval framework, Driftcut is the step before it.</p>
+      <table class="compare-table">
+        <thead><tr><th></th><th>Eval frameworks</th><th>Driftcut /</th></tr></thead>
+        <tbody>
+          <tr><td>Core question</td><td class="dm">How good is this model?</td><td class="ck">Should I keep testing this candidate?</td></tr>
+          <tr><td>Early stopping</td><td class="dm">—</td><td class="ck">Decision engine with configurable thresholds</td></tr>
+          <tr><td>Coverage</td><td class="dm">100% corpus</td><td class="ck">10–20% stratified sampling</td></tr>
+          <tr><td>Failure detail</td><td class="dm">Score or pass/fail</td><td class="ck">8 failure archetypes with examples</td></tr>
+          <tr><td>Budget awareness</td><td class="dm">—</td><td class="ck">Cost tracking + spend avoided</td></tr>
+          <tr><td>Output</td><td class="dm">Metrics to interpret</td><td class="ck">Stop · Continue · Proceed — with evidence</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
+  <section id="faq">
+    <div class="container">
+      <div class="sec-label">FAQ</div>
+      <h2 class="sec-title">Common questions</h2>
+      <div class="faq-grid">
+        <div class="faq-item"><h3>Is this a replacement for full evaluation?</h3><p>No. It's a pre-evaluation filter. Driftcut tells you early whether a candidate is worth a full run — or whether you should stop and save the budget.</p></div>
+        <div class="faq-item"><h3>Do I need a labeled benchmark?</h3><p>No. You need a structured prompt corpus with categories and criticality. No ground-truth labels required — value comes from testing the prompts that already matter in your product.</p></div>
+        <div class="faq-item"><h3>What does the first version include?</h3><p>CLI tool, CSV/JSON corpus, baseline vs candidate comparison, early-stop decision logic, failure archetypes, latency and cost tracking, terminal report, JSON and HTML export.</p></div>
+        <div class="faq-item"><h3>Why not just use an eval framework?</h3><p>Eval frameworks answer "how good is this model?". Driftcut answers "should I continue this migration, or stop now?" Use both. Driftcut runs first.</p></div>
+        <div class="faq-item"><h3>How much does a run cost?</h3><p>A typical run (120 prompts, 20% tested) costs $0.50–$2.00 in judge calls, plus whatever the candidate model charges. Total spend and spend avoided are tracked in every report.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section" id="cta">
+    <div class="container">
+      <div class="cta-box">
+        <div class="sec-label">Early access</div>
+        <h2 class="sec-title">Want to try Driftcut on your migration prompts?</h2>
+        <p class="sec-desc" style="max-width:560px;margin-left:auto;margin-right:auto;">CLI-first, open source, built for teams already evaluating migrations between LLM providers or model versions. One email at launch — no spam.</p>
+        <form class="cta-form" action="https://formspree.io/f/xjgpybnb" method="POST">
+          <input type="email" name="email" required placeholder="you@company.com" autocomplete="email">
+          <button type="submit">Join waitlist</button>
+        </form>
+        <div class="cta-note">Open source · MIT licensed · Your data stays local.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container footer-wrap">
+      <p>driftcut — early-stop decision support for LLM migrations</p>
+      <a href="https://github.com/riccardomerenda/driftcut">GitHub</a>
+    </div>
+  </footer>
 </body>
 </html>
