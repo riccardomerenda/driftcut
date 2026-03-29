@@ -84,37 +84,37 @@ The goal is to get a reliable decision in minutes, not a complete benchmark in h
 ## How it works
 
 ```text
-                    Your prompt corpus
-                            │
-                 ┌──────────┴──────────┐
-                 │  Stratified sampling │
-                 │  by category and     │
-                 │  criticality         │
-                 └──────────┬──────────┘
-                            │
-                    Batch 1 (small slice)
-                            │
-               ┌────────────┴────────────┐
-               │                         │
-          Run baseline              Run candidate
-               │                         │
-               └────────────┬────────────┘
-                            │
-                 ┌──────────┴──────────┐
-                 │  Evaluate with:      │
-                 │  1. Deterministic    │
-                 │  2. Light judge      │
-                 │  3. Heavy judge      │
-                 └──────────┬──────────┘
-                            │
-                 ┌──────────┴──────────┐
-                 │  Decision engine     │
-                 │                      │
-                 │  ■ STOP NOW          │
-                 │  ■ CONTINUE          │
-                 │  ■ PROCEED           │
-                 │  ■ PARTIAL PROCEED   │
-                 └──────────────────────┘
+                  Your prompt corpus
+                          |
+               +----------+----------+
+               | Stratified sampling  |
+               | by category and      |
+               | criticality          |
+               +----------+----------+
+                          |
+                  Batch 1 (small slice)
+                          |
+              +-----------+-----------+
+              |                       |
+         Run baseline           Run candidate
+              |                       |
+              +-----------+-----------+
+                          |
+               +----------+----------+
+               | Evaluate with:      |
+               | 1. Deterministic    |
+               | 2. Light judge      |
+               | 3. Heavy judge      |
+               +----------+----------+
+                          |
+               +----------+----------+
+               | Decision engine     |
+               |                     |
+               | > STOP NOW          |
+               | > CONTINUE          |
+               | > PROCEED           |
+               | > PARTIAL PROCEED   |
+               +---------------------+
 ```
 
 ## The three dimensions
