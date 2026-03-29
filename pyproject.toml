@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "driftcut"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Early-stop decision gating for LLM model migrations"
 readme = "README.md"
 license = "MIT"
@@ -47,7 +47,11 @@ driftcut = "driftcut.cli:app"
 [project.urls]
 Homepage = "https://github.com/riccardomerenda/driftcut"
 Repository = "https://github.com/riccardomerenda/driftcut"
+Documentation = "https://docs.driftcut.dev"
 Issues = "https://github.com/riccardomerenda/driftcut/issues"
+
+[tool.hatch.version]
+path = "src/driftcut/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/driftcut"]

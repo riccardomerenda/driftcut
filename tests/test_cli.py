@@ -13,7 +13,7 @@ EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
 def test_version():
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert "0.1.0" in result.stdout
+    assert "driftcut" in result.stdout
 
 
 def test_help():

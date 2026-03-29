@@ -1,0 +1,36 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.2.0] - 2026-03-29
+
+### Added
+
+- Async model execution via LiteLLM (`executor.py`)
+- Latency tracker with p50/p95 per category (`trackers.py`)
+- Cost tracker with per-prompt and cumulative spend (`trackers.py`)
+- Migration runner with concurrent batch execution (`runner.py`)
+- `driftcut run --config` command — fully wired end-to-end
+- JSON results export to `driftcut-results/results.json`
+- Result data models: `ModelResponse`, `PromptResult`, `BatchResult` (`models.py`)
+- Rich progress bars during batch execution
+- 26 new tests (61 total)
+
+## [0.1.0] - 2026-03-28
+
+### Added
+
+- YAML config loading and validation with Pydantic models
+- Corpus loading from CSV and JSON with full validation
+- Stratified batch sampler (high-criticality prioritized in early batches)
+- `driftcut validate --config` command with Rich terminal output
+- CI pipeline (ruff lint + format + pytest on Python 3.12 & 3.13)
+- Pre-launch landing page at driftcut.dev
+- Documentation site at docs.driftcut.dev
+- 35 tests covering config, corpus, sampler, and CLI
+
+[0.2.0]: https://github.com/riccardomerenda/driftcut/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/riccardomerenda/driftcut/releases/tag/v0.1.0
