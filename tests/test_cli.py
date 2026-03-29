@@ -10,24 +10,24 @@ runner = CliRunner()
 EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
 
 
-def test_version():
+def test_version() -> None:
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert "driftcut" in result.stdout
 
 
-def test_help():
+def test_help() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "Early-stop" in result.stdout
 
 
-def test_run_missing_config():
+def test_run_missing_config() -> None:
     result = runner.invoke(app, ["run"])
     assert result.exit_code != 0
 
 
-def test_validate_example_config():
+def test_validate_example_config() -> None:
     config_path = str(EXAMPLES_DIR / "migration.yaml")
     result = runner.invoke(app, ["validate", "--config", config_path])
     assert result.exit_code == 0
@@ -35,14 +35,14 @@ def test_validate_example_config():
     assert "GPT-4o to Claude Haiku" in result.stdout
 
 
-def test_validate_shows_corpus_stats():
+def test_validate_shows_corpus_stats() -> None:
     config_path = str(EXAMPLES_DIR / "migration.yaml")
     result = runner.invoke(app, ["validate", "--config", config_path])
     assert "customer_support" in result.stdout
     assert "30" in result.stdout
 
 
-def test_validate_shows_sampling_plan():
+def test_validate_shows_sampling_plan() -> None:
     config_path = str(EXAMPLES_DIR / "migration.yaml")
     result = runner.invoke(app, ["validate", "--config", config_path])
     assert "Sampling Plan" in result.stdout

@@ -10,12 +10,12 @@ from driftcut.corpus import load_corpus
 EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
 
 
-def test_load_example_csv():
+def test_load_example_csv() -> None:
     corpus = load_corpus(EXAMPLES_DIR / "prompts.csv")
     assert corpus.size == 30
 
 
-def test_categories():
+def test_categories() -> None:
     corpus = load_corpus(EXAMPLES_DIR / "prompts.csv")
     assert set(corpus.categories) == {
         "customer_support",
@@ -25,7 +25,7 @@ def test_categories():
     }
 
 
-def test_category_counts():
+def test_category_counts() -> None:
     corpus = load_corpus(EXAMPLES_DIR / "prompts.csv")
     counts = corpus.category_counts()
     assert counts["customer_support"] == 8
@@ -34,7 +34,7 @@ def test_category_counts():
     assert counts["summarization"] == 6
 
 
-def test_criticality_counts():
+def test_criticality_counts() -> None:
     corpus = load_corpus(EXAMPLES_DIR / "prompts.csv")
     crit = corpus.criticality_counts()
     assert "high" in crit
@@ -43,21 +43,21 @@ def test_criticality_counts():
     assert sum(crit.values()) == 30
 
 
-def test_by_category():
+def test_by_category() -> None:
     corpus = load_corpus(EXAMPLES_DIR / "prompts.csv")
     support = corpus.by_category("customer_support")
     assert len(support) == 8
     assert all(r.category == "customer_support" for r in support)
 
 
-def test_by_criticality():
+def test_by_criticality() -> None:
     corpus = load_corpus(EXAMPLES_DIR / "prompts.csv")
     high = corpus.by_criticality("high")
     assert len(high) > 0
     assert all(r.criticality == "high" for r in high)
 
 
-def test_load_json_corpus(tmp_path):
+def test_load_json_corpus(tmp_path: Path) -> None:
     records = [
         {
             "id": "t-001",
@@ -80,14 +80,14 @@ def test_load_json_corpus(tmp_path):
     assert corpus.size == 2
 
 
-def test_empty_corpus_raises(tmp_path):
+def test_empty_corpus_raises(tmp_path: Path) -> None:
     csv_file = tmp_path / "empty.csv"
     csv_file.write_text("id,category,prompt,criticality,expected_output_type\n")
     with pytest.raises(ValueError, match="empty"):
         load_corpus(csv_file)
 
 
-def test_invalid_criticality(tmp_path):
+def test_invalid_criticality(tmp_path: Path) -> None:
     csv_file = tmp_path / "bad.csv"
     csv_file.write_text(
         "id,category,prompt,criticality,expected_output_type\nt-001,test,Hello,CRITICAL,free_text\n"
@@ -96,7 +96,7 @@ def test_invalid_criticality(tmp_path):
         load_corpus(csv_file)
 
 
-def test_unsupported_format(tmp_path):
+def test_unsupported_format(tmp_path: Path) -> None:
     xml_file = tmp_path / "corpus.xml"
     xml_file.write_text("<data/>")
     with pytest.raises(ValueError, match="Unsupported"):

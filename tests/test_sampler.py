@@ -24,14 +24,14 @@ def _make_sampler(
     return StratifiedSampler(corpus, config, seed=seed)
 
 
-def test_batch_has_correct_size():
+def test_batch_has_correct_size() -> None:
     sampler = _make_sampler(batch_size=2)
     batch = sampler.next_batch()
     # 4 categories × 2 per category = 8
     assert batch.size == 8
 
 
-def test_batch_covers_all_categories():
+def test_batch_covers_all_categories() -> None:
     corpus = load_corpus(EXAMPLES_DIR / "prompts.csv")
     sampler = _make_sampler(batch_size=2)
     batch = sampler.next_batch()
@@ -39,7 +39,7 @@ def test_batch_covers_all_categories():
     assert cats_in_batch == set(corpus.categories)
 
 
-def test_no_repeats_across_batches():
+def test_no_repeats_across_batches() -> None:
     sampler = _make_sampler(batch_size=2)
     all_ids: list[str] = []
     for batch in sampler:
@@ -47,20 +47,20 @@ def test_no_repeats_across_batches():
     assert len(all_ids) == len(set(all_ids))
 
 
-def test_total_batches_capped_by_max():
+def test_total_batches_capped_by_max() -> None:
     sampler = _make_sampler(batch_size=2, max_batches=3)
     assert sampler.total_batches_possible == 3
     batches = list(sampler)
     assert len(batches) == 3
 
 
-def test_total_batches_capped_by_corpus():
+def test_total_batches_capped_by_corpus() -> None:
     # Smallest category (summarization) has 6 prompts. batch_size=2 → max 3 batches from corpus.
     sampler = _make_sampler(batch_size=2, max_batches=10)
     assert sampler.total_batches_possible == 3
 
 
-def test_high_criticality_first_in_early_batches():
+def test_high_criticality_first_in_early_batches() -> None:
     sampler = _make_sampler(batch_size=2)
     batch1 = sampler.next_batch()
     high_count = sum(1 for p in batch1.prompts if p.criticality == "high")
@@ -69,19 +69,19 @@ def test_high_criticality_first_in_early_batches():
     assert high_count > 0
 
 
-def test_batch_numbering():
+def test_batch_numbering() -> None:
     sampler = _make_sampler(batch_size=2, max_batches=3)
     batches = list(sampler)
     assert [b.batch_number for b in batches] == [1, 2, 3]
 
 
-def test_total_prompts_planned():
+def test_total_prompts_planned() -> None:
     sampler = _make_sampler(batch_size=2, max_batches=3)
     # 3 batches × 2 per category × 4 categories = 24
     assert sampler.total_prompts_planned == 24
 
 
-def test_has_next_false_when_exhausted():
+def test_has_next_false_when_exhausted() -> None:
     sampler = _make_sampler(batch_size=2, max_batches=10)
     while sampler.has_next():
         sampler.next_batch()

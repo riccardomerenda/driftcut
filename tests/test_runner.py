@@ -1,10 +1,11 @@
 """Tests for the migration runner."""
 
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from driftcut.config import DriftcutConfig
+from driftcut.config import CorpusConfig, DriftcutConfig, ModelConfig, ModelsConfig, SamplingConfig
 from driftcut.corpus import Corpus, PromptRecord
 from driftcut.models import ModelResponse
 from driftcut.runner import RunResult, _run_prompt, run_migration
@@ -15,12 +16,12 @@ def _sample_config() -> DriftcutConfig:
     """Build a minimal config for testing."""
     return DriftcutConfig(
         name="Test migration",
-        models={
-            "baseline": {"provider": "openai", "model": "gpt-4o"},
-            "candidate": {"provider": "anthropic", "model": "claude-haiku"},
-        },
-        corpus={"file": "prompts.csv"},
-        sampling={"batch_size_per_category": 1, "max_batches": 1, "min_batches": 1},
+        models=ModelsConfig(
+            baseline=ModelConfig(provider="openai", model="gpt-4o"),
+            candidate=ModelConfig(provider="anthropic", model="claude-haiku"),
+        ),
+        corpus=CorpusConfig(file=Path("prompts.csv")),
+        sampling=SamplingConfig(batch_size_per_category=1, max_batches=1, min_batches=1),
     )
 
 
@@ -57,7 +58,7 @@ def _mock_response(output: str = "response") -> ModelResponse:
 
 
 @pytest.mark.asyncio
-async def test_run_prompt():
+async def test_run_prompt() -> None:
     config = _sample_config()
     prompt = _sample_corpus().records[0]
 
@@ -75,7 +76,7 @@ async def test_run_prompt():
 
 
 @pytest.mark.asyncio
-async def test_run_migration_end_to_end():
+async def test_run_migration_end_to_end() -> None:
     config = _sample_config()
     corpus = _sample_corpus()
     sampler = StratifiedSampler(corpus, config.sampling, seed=42)
@@ -100,7 +101,7 @@ async def test_run_migration_end_to_end():
 
 
 @pytest.mark.asyncio
-async def test_run_migration_handles_errors():
+async def test_run_migration_handles_errors() -> None:
     config = _sample_config()
     corpus = _sample_corpus()
     sampler = StratifiedSampler(corpus, config.sampling, seed=42)

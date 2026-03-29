@@ -8,22 +8,22 @@ from driftcut.config import ModelConfig
 from driftcut.executor import _litellm_model_name, execute_prompt
 
 
-def test_litellm_model_name():
+def test_litellm_model_name() -> None:
     cfg = ModelConfig(provider="openai", model="gpt-4o")
     assert _litellm_model_name(cfg) == "openai/gpt-4o"
 
 
-def test_litellm_model_name_anthropic():
+def test_litellm_model_name_anthropic() -> None:
     cfg = ModelConfig(provider="anthropic", model="claude-haiku")
     assert _litellm_model_name(cfg) == "anthropic/claude-haiku"
 
 
-def test_litellm_model_name_openrouter():
+def test_litellm_model_name_openrouter() -> None:
     cfg = ModelConfig(provider="openrouter", model="openai/gpt-4o")
     assert _litellm_model_name(cfg) == "openrouter/openai/gpt-4o"
 
 
-def test_model_config_api_base():
+def test_model_config_api_base() -> None:
     cfg = ModelConfig(
         provider="openai",
         model="gpt-4o",
@@ -32,14 +32,14 @@ def test_model_config_api_base():
     assert cfg.api_base == "https://my-proxy.example.com/v1"
 
 
-def test_model_config_defaults():
+def test_model_config_defaults() -> None:
     cfg = ModelConfig(provider="openai", model="gpt-4o")
     assert cfg.api_key is None
     assert cfg.api_base is None
 
 
 @pytest.mark.asyncio
-async def test_execute_prompt_success():
+async def test_execute_prompt_success() -> None:
     mock_usage = MagicMock()
     mock_usage.prompt_tokens = 10
     mock_usage.completion_tokens = 20
@@ -68,7 +68,7 @@ async def test_execute_prompt_success():
 
 
 @pytest.mark.asyncio
-async def test_execute_prompt_api_error():
+async def test_execute_prompt_api_error() -> None:
     with patch(
         "driftcut.executor.litellm.acompletion",
         new_callable=AsyncMock,
@@ -78,13 +78,14 @@ async def test_execute_prompt_api_error():
         result = await execute_prompt("Say hello", cfg)
 
     assert result.is_error is True
+    assert result.error is not None
     assert "Rate limit exceeded" in result.error
     assert result.output == ""
     assert result.latency_ms > 0
 
 
 @pytest.mark.asyncio
-async def test_execute_prompt_empty_content():
+async def test_execute_prompt_empty_content() -> None:
     mock_choice = MagicMock()
     mock_choice.message.content = None
 
@@ -107,7 +108,7 @@ async def test_execute_prompt_empty_content():
 
 
 @pytest.mark.asyncio
-async def test_execute_prompt_passes_api_base():
+async def test_execute_prompt_passes_api_base() -> None:
     mock_choice = MagicMock()
     mock_choice.message.content = "ok"
     mock_response = MagicMock()
@@ -131,7 +132,7 @@ async def test_execute_prompt_passes_api_base():
 
 
 @pytest.mark.asyncio
-async def test_execute_prompt_omits_api_base_when_none():
+async def test_execute_prompt_omits_api_base_when_none() -> None:
     mock_choice = MagicMock()
     mock_choice.message.content = "ok"
     mock_response = MagicMock()
@@ -148,3 +149,33 @@ async def test_execute_prompt_omits_api_base_when_none():
 
     call_kwargs = mock_ac.call_args[1]
     assert "api_base" not in call_kwargs
+
+
+@pytest.mark.asyncio
+async def test_execute_prompt_keeps_output_when_cost_lookup_fails() -> None:
+    mock_usage = MagicMock()
+    mock_usage.prompt_tokens = 5
+    mock_usage.completion_tokens = 7
+
+    mock_choice = MagicMock()
+    mock_choice.message.content = "still good"
+
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+    mock_response.usage = mock_usage
+
+    with (
+        patch("driftcut.executor.litellm.acompletion", new_callable=AsyncMock) as mock_ac,
+        patch(
+            "driftcut.executor.litellm.completion_cost",
+            side_effect=Exception("No pricing metadata"),
+        ),
+    ):
+        mock_ac.return_value = mock_response
+        cfg = ModelConfig(provider="openrouter", model="custom/model")
+        result = await execute_prompt("test", cfg)
+
+    assert result.is_error is False
+    assert result.output == "still good"
+    assert result.cost_usd == 0.0
+    assert result.cost_error == "No pricing metadata"

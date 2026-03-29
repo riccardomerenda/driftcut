@@ -10,7 +10,7 @@ from driftcut.config import load_config
 EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
 
 
-def test_load_example_config():
+def test_load_example_config() -> None:
     cfg = load_config(EXAMPLES_DIR / "migration.yaml")
     assert cfg.name == "GPT-4o to Claude Haiku migration gate"
     assert cfg.models.baseline.provider == "openai"
@@ -19,19 +19,19 @@ def test_load_example_config():
     assert cfg.models.candidate.model == "claude-haiku"
 
 
-def test_corpus_file_parsed():
+def test_corpus_file_parsed() -> None:
     cfg = load_config(EXAMPLES_DIR / "migration.yaml")
     assert cfg.corpus.file == Path("prompts.csv")
 
 
-def test_sampling_defaults():
+def test_sampling_defaults() -> None:
     cfg = load_config(EXAMPLES_DIR / "migration.yaml")
     assert cfg.sampling.batch_size_per_category == 3
     assert cfg.sampling.max_batches == 5
     assert cfg.sampling.min_batches == 2
 
 
-def test_risk_thresholds():
+def test_risk_thresholds() -> None:
     cfg = load_config(EXAMPLES_DIR / "migration.yaml")
     assert cfg.risk.stop_on_high_criticality_failure_rate == 0.20
     assert cfg.risk.stop_on_schema_break_rate == 0.25
@@ -39,26 +39,26 @@ def test_risk_thresholds():
     assert cfg.risk.high_criticality_weight == 2.0
 
 
-def test_evaluation_config():
+def test_evaluation_config() -> None:
     cfg = load_config(EXAMPLES_DIR / "migration.yaml")
     assert cfg.evaluation.judge_strategy == "tiered"
     assert cfg.evaluation.detect_failure_archetypes is True
 
 
-def test_latency_config():
+def test_latency_config() -> None:
     cfg = load_config(EXAMPLES_DIR / "migration.yaml")
     assert cfg.latency.track is True
     assert cfg.latency.regression_threshold_p50 == 1.5
     assert cfg.latency.regression_threshold_p95 == 2.0
 
 
-def test_output_config():
+def test_output_config() -> None:
     cfg = load_config(EXAMPLES_DIR / "migration.yaml")
     assert cfg.output.save_json is True
     assert cfg.output.save_html is True
 
 
-def test_defaults_applied_when_sections_missing(tmp_path):
+def test_defaults_applied_when_sections_missing(tmp_path: Path) -> None:
     minimal = {
         "name": "test run",
         "models": {
@@ -75,7 +75,7 @@ def test_defaults_applied_when_sections_missing(tmp_path):
     assert cfg.evaluation.judge_strategy == "tiered"
 
 
-def test_missing_required_field(tmp_path):
+def test_missing_required_field(tmp_path: Path) -> None:
     bad = {"description": "no name or models"}
     config_file = tmp_path / "bad.yaml"
     config_file.write_text(yaml.dump(bad))
@@ -83,7 +83,7 @@ def test_missing_required_field(tmp_path):
         load_config(config_file)
 
 
-def test_invalid_judge_strategy(tmp_path):
+def test_invalid_judge_strategy(tmp_path: Path) -> None:
     cfg_dict = {
         "name": "test",
         "models": {

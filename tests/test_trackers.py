@@ -35,30 +35,30 @@ def _make_result(
 
 
 class TestPercentile:
-    def test_single_value(self):
+    def test_single_value(self) -> None:
         assert _percentile([100.0], 95) == 100.0
 
-    def test_two_values(self):
+    def test_two_values(self) -> None:
         result = _percentile([10.0, 100.0], 50)
         assert result == 55.0
 
-    def test_empty(self):
+    def test_empty(self) -> None:
         assert _percentile([], 95) == 0.0
 
-    def test_known_p95(self):
-        values = list(range(1, 101))  # 1..100
+    def test_known_p95(self) -> None:
+        values = [float(v) for v in range(1, 101)]  # 1..100
         p95 = _percentile(values, 95)
         assert 95.0 <= p95 <= 96.0
 
 
 class TestLatencyTracker:
-    def test_empty_tracker(self):
+    def test_empty_tracker(self) -> None:
         lt = LatencyTracker()
         stats = lt.baseline_stats()
         assert stats.count == 0
         assert stats.p50_ms == 0
 
-    def test_records_latencies(self):
+    def test_records_latencies(self) -> None:
         lt = LatencyTracker()
         lt.record(_make_result(baseline_latency=100, candidate_latency=50))
         lt.record(_make_result(baseline_latency=200, candidate_latency=80))
@@ -74,7 +74,7 @@ class TestLatencyTracker:
         assert cd.count == 3
         assert cd.p50_ms == 80.0
 
-    def test_per_category(self):
+    def test_per_category(self) -> None:
         lt = LatencyTracker()
         lt.record(_make_result(category="a", baseline_latency=100, candidate_latency=50))
         lt.record(_make_result(category="b", baseline_latency=500, candidate_latency=300))
@@ -86,13 +86,13 @@ class TestLatencyTracker:
         overall = lt.baseline_stats()
         assert overall.count == 2
 
-    def test_categories_property(self):
+    def test_categories_property(self) -> None:
         lt = LatencyTracker()
         lt.record(_make_result(category="b"))
         lt.record(_make_result(category="a"))
         assert lt.categories == ["a", "b"]
 
-    def test_errors_excluded_from_latency(self):
+    def test_errors_excluded_from_latency(self) -> None:
         lt = LatencyTracker()
         lt.record(_make_result(candidate_error="timeout"))
         bl = lt.baseline_stats()
@@ -102,14 +102,14 @@ class TestLatencyTracker:
 
 
 class TestCostTracker:
-    def test_empty_tracker(self):
+    def test_empty_tracker(self) -> None:
         ct = CostTracker()
         s = ct.summary
         assert s.total_usd == 0.0
         assert s.baseline_usd == 0.0
         assert s.candidate_usd == 0.0
 
-    def test_accumulates_cost(self):
+    def test_accumulates_cost(self) -> None:
         ct = CostTracker()
         ct.record(_make_result(baseline_cost=0.01, candidate_cost=0.005))
         ct.record(_make_result(baseline_cost=0.02, candidate_cost=0.01))
@@ -119,7 +119,7 @@ class TestCostTracker:
         assert abs(s.candidate_usd - 0.015) < 1e-9
         assert abs(s.total_usd - 0.045) < 1e-9
 
-    def test_per_category_cost(self):
+    def test_per_category_cost(self) -> None:
         ct = CostTracker()
         ct.record(_make_result(category="a", baseline_cost=0.01, candidate_cost=0.005))
         ct.record(_make_result(category="b", baseline_cost=0.02, candidate_cost=0.01))

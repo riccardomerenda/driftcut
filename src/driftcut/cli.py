@@ -11,9 +11,12 @@ from rich.panel import Panel
 from rich.table import Table
 
 from driftcut import __version__
-from driftcut.config import load_config
-from driftcut.corpus import load_corpus
+from driftcut.config import DriftcutConfig, load_config
+from driftcut.corpus import Corpus, load_corpus
+from driftcut.runner import RunResult
 from driftcut.sampler import StratifiedSampler
+
+type JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
 
 app = typer.Typer(
     name="driftcut",
@@ -52,8 +55,8 @@ def _resolve_corpus_path(config_path: Path, corpus_file: Path) -> Path:
 
 def _print_validation_summary(
     config_path: Path,
-    cfg,
-    corpus,
+    cfg: DriftcutConfig,
+    corpus: Corpus,
     sampler: StratifiedSampler,
 ) -> None:
     """Print a Rich summary of the validated config and corpus."""
@@ -163,7 +166,7 @@ def run(
         _save_json_results(config, result)
 
 
-def _save_json_results(config_path: Path, result) -> None:
+def _save_json_results(config_path: Path, result: RunResult) -> None:
     """Save run results as JSON next to the config file."""
     import json
 
@@ -173,7 +176,7 @@ def _save_json_results(config_path: Path, result) -> None:
     output_dir.mkdir(exist_ok=True)
     output_file = output_dir / "results.json"
 
-    def _prompt_result_dict(pr: PromptResult) -> dict:
+    def _prompt_result_dict(pr: PromptResult) -> dict[str, JSONValue]:
         return {
             "prompt_id": pr.prompt_id,
             "category": pr.category,
@@ -182,17 +185,19 @@ def _save_json_results(config_path: Path, result) -> None:
                 "output": pr.baseline.output[:500],
                 "latency_ms": round(pr.baseline.latency_ms, 1),
                 "cost_usd": pr.baseline.cost_usd,
+                "cost_error": pr.baseline.cost_error,
                 "error": pr.baseline.error,
             },
             "candidate": {
                 "output": pr.candidate.output[:500],
                 "latency_ms": round(pr.candidate.latency_ms, 1),
                 "cost_usd": pr.candidate.cost_usd,
+                "cost_error": pr.candidate.cost_error,
                 "error": pr.candidate.error,
             },
         }
 
-    def _batch_dict(br: BatchResult) -> dict:
+    def _batch_dict(br: BatchResult) -> dict[str, JSONValue]:
         return {
             "batch_number": br.batch_number,
             "size": br.size,
@@ -200,7 +205,7 @@ def _save_json_results(config_path: Path, result) -> None:
             "results": [_prompt_result_dict(r) for r in br.results],
         }
 
-    data = {
+    data: dict[str, JSONValue] = {
         "name": result.config_name,
         "total_prompts": result.total_prompts,
         "total_batches": result.total_batches,

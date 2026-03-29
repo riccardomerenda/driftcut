@@ -6,7 +6,7 @@ import asyncio
 from dataclasses import dataclass, field
 
 from rich.console import Console
-from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID, TextColumn
 
 from driftcut.config import DriftcutConfig
 from driftcut.corpus import PromptRecord
@@ -59,15 +59,20 @@ async def _run_batch(
     batch: Batch,
     config: DriftcutConfig,
     progress: Progress,
-    task_id: int,
+    task_id: TaskID,
 ) -> BatchResult:
-    """Run all prompts in a batch concurrently."""
-    tasks = [_run_prompt(p, config) for p in batch.prompts]
-    results: list[PromptResult] = []
+    """Run all prompts in a batch concurrently while preserving input order."""
+
+    async def _run_indexed_prompt(index: int, prompt: PromptRecord) -> tuple[int, PromptResult]:
+        return index, await _run_prompt(prompt, config)
+
+    tasks = [_run_indexed_prompt(i, prompt) for i, prompt in enumerate(batch.prompts)]
+    indexed_results: list[tuple[int, PromptResult]] = []
     for coro in asyncio.as_completed(tasks):
-        result = await coro
-        results.append(result)
+        indexed_results.append(await coro)
         progress.advance(task_id)
+    indexed_results.sort(key=lambda item: item[0])
+    results = [result for _, result in indexed_results]
     return BatchResult(batch_number=batch.batch_number, results=results)
 
 

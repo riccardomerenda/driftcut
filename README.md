@@ -6,13 +6,13 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  Cut bad migration candidates before they burn budget on full-scale evaluations.
+  Alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
+  <a href="#current-status">Current status</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#example-output">Example output</a> ·
   <a href="#configuration">Configuration</a> ·
   <a href="#roadmap">Roadmap</a>
 </p>
@@ -21,15 +21,15 @@
 
 ## The problem
 
-You want to migrate from one LLM to another — cheaper, faster, better, self-hosted, or more private.
+You want to migrate from one LLM to another - cheaper, faster, better, self-hosted, or more private.
 
 So you run your full prompt corpus against the candidate model. Hundreds or thousands of API calls. Hours of waiting. And only at the end do you discover the candidate breaks the categories that matter most.
 
-You just burned budget to learn something you could have known in the first 10–20%.
+You just burned budget to learn something you could have known in the first 10-20%.
 
-**Driftcut is the test you run before the full evaluation.** It samples strategically, evaluates progressively, and tells you early: stop now, keep sampling, or proceed to full eval.
+**Driftcut is the test you run before the full evaluation.** The current alpha samples strategically, runs baseline and candidate models on a representative slice, and gives you latency/cost signals early. Deterministic quality checks, judge-based scoring, and early-stop decisions are the next milestone.
 
-## What it is (and what it isn't)
+## What it is (and what it is not)
 
 Driftcut is **not** a generic eval framework. It does not replace Promptfoo, DeepEval, or your internal eval suite. It sits one step earlier in the workflow: the filter that decides whether a full evaluation is worth the money.
 
@@ -37,20 +37,33 @@ Driftcut is **not** a generic eval framework. It does not replace Promptfoo, Dee
 |---|---|
 | A pre-evaluation filter | A generic eval framework |
 | A migration decision layer | An experiment tracker |
-| A budget-saving gate | A prompt optimization tool |
+| A budget-aware canary | A prompt optimization tool |
 | CLI-first and single-purpose | A dashboard-first platform |
 
-## Why the name
+## Current status
 
-A migration can fail not because the new model is unusable everywhere, but because it introduces unacceptable drift in the wrong places.
+Today, Driftcut can:
 
-**Driftcut** is designed to catch and cut that drift early, before you commit to a full run.
+- Validate a structured corpus and migration config
+- Build stratified batches that prioritize high-criticality prompts
+- Run baseline and candidate models concurrently via LiteLLM
+- Track latency and cost across the sampled run
+- Export JSON results for later analysis
+
+Planned next:
+
+- Deterministic quality checks
+- Judge-based quality comparison
+- Failure archetype classification
+- Early-stop decision output
+- HTML reporting
 
 ## Quickstart
 
 ```bash
 git clone https://github.com/riccardomerenda/driftcut.git
-cd driftcut && pip install -e .
+cd driftcut
+pip install -e .
 ```
 
 Create a config file:
@@ -83,55 +96,55 @@ driftcut validate --config migration.yaml
 driftcut run --config migration.yaml
 ```
 
+Today, `driftcut run` executes the planned sample and exports JSON results. It does not yet stop early or produce judge-based quality decisions.
+
 Works with any [LiteLLM-supported provider](https://docs.litellm.ai/): OpenAI, Anthropic, OpenRouter, Azure, self-hosted, and more. See the [docs](https://docs.driftcut.dev/getting-started/) for config examples.
 
 ## How it works
 
+### Current alpha
+
 ```text
-                  Your prompt corpus
-                          |
-               +----------+----------+
-               | Stratified sampling |
-               | by category and     |
-               | criticality         |
-               +----------+----------+
-                          |
-                  Batch 1 (small slice)
-                          |
-              +-----------+-----------+
-              |                       |
-         Run baseline           Run candidate
-              |                       |
-              +-----------+-----------+
-                          |
-               +----------+----------+
-               | Evaluate with:      |
-               | 1. Deterministic    |
-               | 2. Light judge      |
-               | 3. Heavy judge      |
-               +----------+----------+
-                          |
-               +----------+----------+
-               | Decision engine     |
-               |                     |
-               | > STOP NOW          |
-               | > CONTINUE          |
-               | > PROCEED           |
-               | > PARTIAL PROCEED   |
-               +---------------------+
+Your prompt corpus
+        |
+        v
+Stratified sampling by category and criticality
+        |
+        v
+Run baseline and candidate on sampled batches
+        |
+        v
+Track latency and cost
+        |
+        v
+Export JSON results for review
+```
+
+### Planned next
+
+```text
+Deterministic checks
+        +
+Tiered judge strategy
+        +
+Failure archetype detection
+        +
+Decision engine
+        ->
+STOP / CONTINUE / PROCEED
 ```
 
 ## The three dimensions
 
-Driftcut compares baseline and candidate across three decision dimensions:
+Driftcut is designed around three migration dimensions. In the current alpha, latency and cost are implemented; quality decisioning is on the roadmap.
 
-- **Quality** — Format adherence, completeness, correctness, hallucination risk, and failure archetypes.
-- **Latency** — p50, p95, and variance per category. It flags regressions even when quality appears stable.
-- **Cost** — Spend so far, projected full-run cost, and estimated spend avoided by stopping early.
+- **Quality** - Planned next: deterministic checks, judge comparison, and failure archetypes.
+- **Latency** - p50, p95, and variance per category.
+- **Cost** - spend so far, per-category cost, and cumulative cost across the sampled run.
 
 ## Failure archetypes
 
-The report should not just say “quality dropped”. It should classify how the candidate is failing.
+This is a planned feature, not something the runtime classifies today. The target categories are:
 
 | Archetype | What it means |
 |---|---|
@@ -144,10 +157,12 @@ The report should not just say “quality dropped”. It should classify how the
 | `hallucination_increase` | Candidate fabricates more content |
 | `latency_regression` | Candidate is significantly slower than baseline |
 
-## Example output
+## Target output (planned)
+
+This is the intended end-state report once the decision engine and quality layer land. The current alpha CLI output is simpler and focuses on batch execution, latency, cost, and JSON export.
 
 ```text
-Run: GPT-4o → Claude Haiku
+Run: GPT-4o -> Claude Haiku
 Corpus: 120 prompts, 4 categories
 Batches executed: 2/6
 Prompts tested: 24/120 (20%)
@@ -166,12 +181,6 @@ Cost:
   Estimated spend avoided: $74.30
 
 Decision: STOP NOW
-
-Reason:
-- Category "structured_extraction" shows repeated schema breaks
-- High-criticality prompts failed above threshold
-- Latency improved significantly but quality regression is blocking
-- Candidate not suitable for full eval without prompt adaptation
 ```
 
 ## Corpus format
@@ -189,13 +198,15 @@ su-001,summarization,"Summarize this document: {doc}",low,markdown,
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `id` | string | yes | Unique identifier |
-| `category` | string | yes | e.g. `customer_support`, `structured_extraction` |
+| `category` | string | yes | Example: `customer_support`, `structured_extraction` |
 | `prompt` | string | yes | Prompt to execute |
 | `criticality` | enum | yes | `low` / `medium` / `high` |
 | `expected_output_type` | enum | yes | `free_text` / `json` / `labels` / `markdown` |
 | `notes` | string | no | Optional context |
 
 ## Configuration
+
+The config schema already includes `risk`, `evaluation`, and richer `output` settings. In the current alpha, some of these fields are parsed and displayed by `validate` before they become active runtime behavior.
 
 ```yaml
 name: "OpenAI to Anthropic migration gate"
@@ -242,11 +253,7 @@ output:
   show_confidence: true
 ```
 
-### Threshold philosophy
-
-Defaults are conservative. The engine should rather stop a questionable migration too early than approve a bad candidate that later fails in production.
-
-## Tiered judge strategy
+## Planned judge strategy
 
 Driftcut aims to save budget, so the judge cannot consume all of it.
 
@@ -281,15 +288,21 @@ Full roadmap: [docs.driftcut.dev/roadmap](https://docs.driftcut.dev/roadmap/)
 
 ## Tech stack
 
-Python 3.12 · Typer · LiteLLM · SQLite · httpx + asyncio · Rich · Pydantic · YAML
+Python 3.12 · Typer · LiteLLM · Rich · Pydantic · YAML
 
 ## Positioning
 
 Driftcut answers a narrower question than generic eval tooling:
 
-> “Should we continue this migration, or are we already seeing enough risk to stop?”
+> "Should we continue this migration, or are we already seeing enough risk to stop?"
 
 That narrow scope is the product wedge.
+
+## Links
+
+- GitHub: [riccardomerenda/driftcut](https://github.com/riccardomerenda/driftcut)
+- Docs: [docs.driftcut.dev](https://docs.driftcut.dev/getting-started/)
+- Landing page: [driftcut.dev](https://driftcut.dev)
 
 ## License
 

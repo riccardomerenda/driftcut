@@ -38,6 +38,7 @@ dev = [
     "pytest-asyncio>=0.23",
     "ruff>=0.5",
     "mypy>=1.10",
+    "types-PyYAML>=6.0",
     "pre-commit>=3.7",
 ]
 
@@ -74,3 +75,8 @@ asyncio_mode = "auto"
 [tool.mypy]
 python_version = "3.12"
 strict = true
+
+[[tool.mypy.overrides]]
+module = ["yaml", "yaml.*"]
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]

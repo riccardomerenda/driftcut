@@ -87,7 +87,7 @@ class StratifiedSampler:
             prompts.extend(selected)
         return Batch(batch_number=self._batch_number, prompts=prompts)
 
-    def __iter__(self):
+    def __iter__(self) -> StratifiedSampler:
         return self
 
     def __next__(self) -> Batch:

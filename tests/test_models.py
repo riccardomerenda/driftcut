@@ -8,11 +8,12 @@ def _make_response(
     latency_ms: float = 100.0,
     cost_usd: float = 0.01,
     error: str | None = None,
-) -> ModelResponse:
+    ) -> ModelResponse:
     return ModelResponse(
         output=output,
         latency_ms=latency_ms,
         cost_usd=cost_usd,
+        cost_error=None,
         error=error,
     )
 
@@ -38,38 +39,39 @@ def _make_prompt_result(
 
 
 class TestModelResponse:
-    def test_is_error_false_by_default(self):
+    def test_is_error_false_by_default(self) -> None:
         r = _make_response()
         assert r.is_error is False
 
-    def test_is_error_true_when_error_set(self):
+    def test_is_error_true_when_error_set(self) -> None:
         r = _make_response(error="timeout")
         assert r.is_error is True
 
-    def test_defaults(self):
+    def test_defaults(self) -> None:
         r = ModelResponse(output="hello", latency_ms=50.0)
         assert r.input_tokens == 0
         assert r.output_tokens == 0
         assert r.cost_usd == 0.0
+        assert r.cost_error is None
         assert r.error is None
 
 
 class TestBatchResult:
-    def test_empty_batch(self):
+    def test_empty_batch(self) -> None:
         b = BatchResult(batch_number=1)
         assert b.size == 0
         assert b.baseline_errors == 0
         assert b.candidate_errors == 0
         assert b.total_cost_usd == 0.0
 
-    def test_batch_with_results(self):
+    def test_batch_with_results(self) -> None:
         r1 = _make_prompt_result(baseline_cost=0.01, candidate_cost=0.005)
         r2 = _make_prompt_result(baseline_cost=0.02, candidate_cost=0.01)
         b = BatchResult(batch_number=1, results=[r1, r2])
         assert b.size == 2
         assert b.total_cost_usd == 0.045
 
-    def test_batch_counts_errors(self):
+    def test_batch_counts_errors(self) -> None:
         r_ok = _make_prompt_result()
         r_err = PromptResult(
             prompt_id="p2",

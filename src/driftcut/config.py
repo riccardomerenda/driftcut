@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field
@@ -64,17 +64,17 @@ class DriftcutConfig(BaseModel):
     description: str = ""
     models: ModelsConfig
     corpus: CorpusConfig
-    sampling: SamplingConfig = SamplingConfig()
-    risk: RiskConfig = RiskConfig()
-    evaluation: EvaluationConfig = EvaluationConfig()
-    latency: LatencyConfig = LatencyConfig()
-    output: OutputConfig = OutputConfig()
+    sampling: SamplingConfig = Field(default_factory=SamplingConfig)
+    risk: RiskConfig = Field(default_factory=RiskConfig)
+    evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
+    latency: LatencyConfig = Field(default_factory=LatencyConfig)
+    output: OutputConfig = Field(default_factory=OutputConfig)
 
 
 def load_config(path: Path) -> DriftcutConfig:
     """Load and validate a Driftcut config from a YAML file."""
-    with open(path) as f:
-        raw = yaml.safe_load(f)
+    with open(path, encoding="utf-8") as f:
+        raw: Any = yaml.safe_load(f)
     if not isinstance(raw, dict):
         msg = f"Config file must contain a YAML mapping, got {type(raw).__name__}"
         raise ValueError(msg)

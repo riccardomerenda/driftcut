@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
 import litellm
 
@@ -28,7 +29,7 @@ async def execute_prompt(
 
     start = time.perf_counter()
     try:
-        kwargs: dict = {
+        kwargs: dict[str, Any] = {
             "model": model_name,
             "messages": [{"role": "user", "content": prompt}],
         }
@@ -44,7 +45,14 @@ async def execute_prompt(
         input_tokens = usage.prompt_tokens if usage else 0
         output_tokens = usage.completion_tokens if usage else 0
 
-        cost = litellm.completion_cost(completion_response=response)
+        cost = 0.0
+        cost_error: str | None = None
+        try:
+            cost = litellm.completion_cost(completion_response=response)
+        except Exception as e:
+            # Pricing metadata is not available for every LiteLLM provider/model.
+            # Keep the successful completion instead of converting it into a hard error.
+            cost_error = str(e)
 
         return ModelResponse(
             output=output,
@@ -52,6 +60,7 @@ async def execute_prompt(
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             cost_usd=cost,
+            cost_error=cost_error,
         )
     except Exception as e:
         elapsed_ms = (time.perf_counter() - start) * 1000

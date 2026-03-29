@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import statistics
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from driftcut.models import PromptResult
@@ -98,7 +99,7 @@ class CostTracker:
         )
 
 
-def _percentile(sorted_values: list[float], pct: int) -> float:
+def _percentile(sorted_values: Sequence[float], pct: int) -> float:
     """Compute the pct-th percentile using nearest-rank method."""
     if not sorted_values:
         return 0.0
