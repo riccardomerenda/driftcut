@@ -4,6 +4,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
+from driftcut import __version__
 from driftcut.cli import app
 
 runner = CliRunner()
@@ -13,7 +14,7 @@ EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
 def test_version() -> None:
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert "driftcut" in result.stdout
+    assert result.stdout.strip() == f"driftcut {__version__}"
 
 
 def test_help() -> None:
