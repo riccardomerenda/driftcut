@@ -28,11 +28,15 @@ async def execute_prompt(
 
     start = time.perf_counter()
     try:
-        response = await litellm.acompletion(
-            model=model_name,
-            messages=[{"role": "user", "content": prompt}],
-            api_key=model_config.api_key,
-        )
+        kwargs: dict = {
+            "model": model_name,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if model_config.api_key is not None:
+            kwargs["api_key"] = model_config.api_key
+        if model_config.api_base is not None:
+            kwargs["api_base"] = model_config.api_base
+        response = await litellm.acompletion(**kwargs)
         elapsed_ms = (time.perf_counter() - start) * 1000
 
         output = response.choices[0].message.content or ""

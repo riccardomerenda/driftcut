@@ -48,12 +48,15 @@ A migration can fail not because the new model is unusable everywhere, but becau
 
 ## Quickstart
 
-> Current status: concept + pre-MVP scaffold. The commands below describe the intended CLI workflow.
+```bash
+git clone https://github.com/riccardomerenda/driftcut.git
+cd driftcut && pip install -e .
+```
 
 Create a config file:
 
 ```yaml
-# driftcut-migration.yaml
+# migration.yaml
 name: "GPT-4o to Claude Haiku migration gate"
 
 models:
@@ -73,13 +76,14 @@ sampling:
   min_batches: 2
 ```
 
-Run it:
+Validate first (no API calls), then run:
 
 ```bash
-driftcut run --config driftcut-migration.yaml
+driftcut validate --config migration.yaml
+driftcut run --config migration.yaml
 ```
 
-The goal is to get a reliable decision in minutes, not a complete benchmark in hours.
+Works with any [LiteLLM-supported provider](https://docs.litellm.ai/): OpenAI, Anthropic, OpenRouter, Azure, self-hosted, and more. See the [docs](https://docs.driftcut.dev/getting-started/) for config examples.
 
 ## How it works
 
@@ -256,19 +260,24 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 
 - [x] Concept document
 - [x] Demo config and corpus
-- [x] Shareable demo report
-- [ ] Core CLI (`driftcut run`)
-- [ ] Corpus loader (CSV, JSON)
-- [ ] Stratified batch sampler
-- [ ] Model adapters
-- [ ] Deterministic checker
+- [x] Config loader + corpus loader (CSV, JSON)
+- [x] Stratified batch sampler
+- [x] `driftcut validate` command
+- [x] Async model execution via LiteLLM
+- [x] `driftcut run` command with concurrent execution
+- [x] Latency tracker (p50, p95 per category)
+- [x] Cost tracker (per-prompt and cumulative)
+- [x] JSON export
+- [x] Multi-provider support (OpenRouter, Azure, custom endpoints)
+- [ ] Deterministic checker (schema, format, refusal detection)
 - [ ] Tiered judge integration
 - [ ] Failure archetype classifier
-- [ ] Latency and cost tracker
 - [ ] Decision engine with configurable thresholds
-- [ ] Terminal report
-- [ ] JSON export
+- [ ] Terminal report with Rich
+- [ ] HTML report
 - [ ] Public benchmark demo
+
+Full roadmap: [docs.driftcut.dev/roadmap](https://docs.driftcut.dev/roadmap/)
 
 ## Tech stack
 

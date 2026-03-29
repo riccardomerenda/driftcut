@@ -13,6 +13,7 @@ class ModelConfig(BaseModel):
     provider: str
     model: str
     api_key: str | None = None
+    api_base: str | None = None
 
 
 class ModelsConfig(BaseModel):

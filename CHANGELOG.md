@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-03-29
+
+### Added
+
+- `api_base` field on model config for custom endpoints (Azure, proxies, self-hosted)
+- OpenRouter support documented and tested
+- Multi-provider config examples (same-provider, OpenRouter, custom endpoint)
+- 5 new tests (66 total)
+
 ## [0.2.0] - 2026-03-29
 
 ### Added
@@ -32,5 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.2.1]: https://github.com/riccardomerenda/driftcut/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/riccardomerenda/driftcut/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/riccardomerenda/driftcut/releases/tag/v0.1.0
