@@ -47,6 +47,56 @@ def _sample_corpus() -> Corpus:
     )
 
 
+def _multi_batch_corpus() -> Corpus:
+    """Build a corpus large enough to exercise early decisions."""
+    return Corpus(
+        [
+            PromptRecord(
+                id="s1",
+                category="support",
+                prompt="Support prompt 1",
+                criticality="high",
+                expected_output_type="free_text",
+            ),
+            PromptRecord(
+                id="s2",
+                category="support",
+                prompt="Support prompt 2",
+                criticality="medium",
+                expected_output_type="free_text",
+            ),
+            PromptRecord(
+                id="s3",
+                category="support",
+                prompt="Support prompt 3",
+                criticality="medium",
+                expected_output_type="free_text",
+            ),
+            PromptRecord(
+                id="e1",
+                category="extraction",
+                prompt="Extraction prompt 1",
+                criticality="high",
+                expected_output_type="json",
+            ),
+            PromptRecord(
+                id="e2",
+                category="extraction",
+                prompt="Extraction prompt 2",
+                criticality="medium",
+                expected_output_type="json",
+            ),
+            PromptRecord(
+                id="e3",
+                category="extraction",
+                prompt="Extraction prompt 3",
+                criticality="medium",
+                expected_output_type="json",
+            ),
+        ]
+    )
+
+
 def _mock_response(output: str = "response") -> ModelResponse:
     return ModelResponse(
         output=output,
@@ -123,3 +173,60 @@ async def test_run_migration_handles_errors() -> None:
     batch = result.batches[0]
     assert batch.baseline_errors == 2
     assert batch.candidate_errors == 2
+
+
+@pytest.mark.asyncio
+async def test_run_migration_proceeds_after_min_batches() -> None:
+    config = DriftcutConfig(
+        name="Proceed migration",
+        models=ModelsConfig(
+            baseline=ModelConfig(provider="openai", model="gpt-4o"),
+            candidate=ModelConfig(provider="anthropic", model="claude-haiku"),
+        ),
+        corpus=CorpusConfig(file=Path("prompts.csv")),
+        sampling=SamplingConfig(batch_size_per_category=1, max_batches=3, min_batches=2),
+    )
+    sampler = StratifiedSampler(_multi_batch_corpus(), config.sampling, seed=42)
+
+    with patch(
+        "driftcut.runner.execute_prompt",
+        new_callable=AsyncMock,
+        return_value=_mock_response(output='{"ok": true}'),
+    ):
+        result = await run_migration(config, sampler)
+
+    assert result.total_batches == 2
+    assert result.stopped_early is True
+    assert result.final_decision is not None
+    assert result.final_decision.outcome == "PROCEED"
+
+
+@pytest.mark.asyncio
+async def test_run_migration_stops_on_schema_break() -> None:
+    config = DriftcutConfig(
+        name="Stop migration",
+        models=ModelsConfig(
+            baseline=ModelConfig(provider="openai", model="gpt-4o"),
+            candidate=ModelConfig(provider="anthropic", model="claude-haiku"),
+        ),
+        corpus=CorpusConfig(file=Path("prompts.csv")),
+        sampling=SamplingConfig(batch_size_per_category=1, max_batches=3, min_batches=2),
+    )
+    sampler = StratifiedSampler(_multi_batch_corpus(), config.sampling, seed=42)
+
+    async def side_effect(_: str, model: ModelConfig) -> ModelResponse:
+        if model.provider == "openai":
+            return _mock_response(output='{"ok": true}')
+        return _mock_response(output="not json")
+
+    with patch(
+        "driftcut.runner.execute_prompt",
+        new_callable=AsyncMock,
+        side_effect=side_effect,
+    ):
+        result = await run_migration(config, sampler)
+
+    assert result.total_batches == 1
+    assert result.final_decision is not None
+    assert result.final_decision.outcome == "STOP"
+    assert "schema break threshold" in result.final_decision.reason

@@ -1,4 +1,4 @@
-"""Migration runner — orchestrates batch execution."""
+"""Migration runner - orchestrates batch execution and decisions."""
 
 from __future__ import annotations
 
@@ -10,8 +10,10 @@ from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID, TextColumn
 
 from driftcut.config import DriftcutConfig
 from driftcut.corpus import PromptRecord
+from driftcut.decision import decide_run
 from driftcut.executor import execute_prompt
-from driftcut.models import BatchResult, PromptResult
+from driftcut.models import BatchResult, PromptResult, RunDecision
+from driftcut.quality import evaluate_prompt_result
 from driftcut.sampler import Batch, StratifiedSampler
 from driftcut.trackers import CostTracker, LatencyTracker
 
@@ -26,10 +28,13 @@ class RunResult:
     batches: list[BatchResult] = field(default_factory=list)
     latency: LatencyTracker = field(default_factory=LatencyTracker)
     cost: CostTracker = field(default_factory=CostTracker)
+    decision_history: list[RunDecision] = field(default_factory=list)
+    final_decision: RunDecision | None = None
+    stopped_early: bool = False
 
     @property
     def total_prompts(self) -> int:
-        return sum(b.size for b in self.batches)
+        return sum(batch.size for batch in self.batches)
 
     @property
     def total_batches(self) -> int:
@@ -44,7 +49,8 @@ async def _run_prompt(
     baseline_task = execute_prompt(prompt.prompt, config.models.baseline)
     candidate_task = execute_prompt(prompt.prompt, config.models.candidate)
     baseline_resp, candidate_resp = await asyncio.gather(baseline_task, candidate_task)
-    return PromptResult(
+
+    result = PromptResult(
         prompt_id=prompt.id,
         category=prompt.category,
         criticality=prompt.criticality,
@@ -52,7 +58,14 @@ async def _run_prompt(
         expected_output_type=prompt.expected_output_type,
         baseline=baseline_resp,
         candidate=candidate_resp,
+        notes=prompt.notes,
+        required_substrings=list(prompt.required_substrings),
+        forbidden_substrings=list(prompt.forbidden_substrings),
+        json_required_keys=list(prompt.json_required_keys),
+        max_output_chars=prompt.max_output_chars,
     )
+    result.evaluation = evaluate_prompt_result(result)
+    return result
 
 
 async def _run_batch(
@@ -80,15 +93,10 @@ async def run_migration(
     config: DriftcutConfig,
     sampler: StratifiedSampler,
 ) -> RunResult:
-    """Execute the full migration canary run.
-
-    For each batch:
-      1. Run all prompts against baseline and candidate concurrently.
-      2. Record latency and cost.
-      3. Print batch summary.
-    """
+    """Execute the full migration canary run."""
     run_result = RunResult(config_name=config.name)
     total_prompts = sampler.total_prompts_planned
+    total_batches = sampler.total_batches_possible
     baseline_name = f"{config.models.baseline.provider}/{config.models.baseline.model}"
     candidate_name = f"{config.models.candidate.provider}/{config.models.candidate.model}"
 
@@ -113,42 +121,98 @@ async def run_migration(
             batch_result = await _run_batch(batch, config, progress, task_id)
             run_result.batches.append(batch_result)
 
-            for pr in batch_result.results:
-                run_result.latency.record(pr)
-                run_result.cost.record(pr)
+            for prompt_result in batch_result.results:
+                run_result.latency.record(prompt_result)
+                run_result.cost.record(prompt_result)
 
-            _print_batch_summary(batch_result, run_result)
+            decision = decide_run(
+                config,
+                run_result.batches,
+                run_result.latency,
+                total_prompts_planned=total_prompts,
+                total_batches_planned=total_batches,
+                has_remaining_batches=sampler.has_next(),
+            )
+            run_result.decision_history.append(decision)
+            run_result.final_decision = decision
 
-    _print_run_summary(run_result, total_prompts)
+            _print_batch_summary(batch_result, run_result, config)
+
+            if decision.outcome in {"STOP", "PROCEED"}:
+                run_result.stopped_early = sampler.has_next()
+                break
+
+    if run_result.final_decision is None:
+        run_result.final_decision = decide_run(
+            config,
+            run_result.batches,
+            run_result.latency,
+            total_prompts_planned=total_prompts,
+            total_batches_planned=total_batches,
+            has_remaining_batches=False,
+        )
+
+    _print_run_summary(run_result, total_prompts, config)
     return run_result
 
 
-def _print_batch_summary(batch: BatchResult, run: RunResult) -> None:
+def _print_batch_summary(batch: BatchResult, run: RunResult, config: DriftcutConfig) -> None:
     """Print a short summary after each batch."""
     cost = run.cost.summary
+    decision = run.final_decision
+
     console.print(
         f"  [dim]Batch {batch.batch_number}:[/dim] "
         f"{batch.size} prompts, "
-        f"{batch.candidate_errors} errors, "
+        f"{batch.candidate_errors} API errors, "
         f"${cost.total_usd:.4f} cumulative"
     )
+    if decision is not None:
+        confidence = (
+            f" [dim]({decision.confidence:.0%} confidence)[/dim]"
+            if config.output.show_confidence
+            else ""
+        )
+        console.print(f"    Decision: [bold]{decision.outcome}[/bold]{confidence}")
+        console.print(f"    [dim]{decision.reason}[/dim]")
 
 
-def _print_run_summary(run: RunResult, corpus_total: int) -> None:
+def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig) -> None:
     """Print the final run summary."""
     cost = run.cost.summary
-    bl = run.latency.baseline_stats()
-    cd = run.latency.candidate_stats()
+    baseline_latency = run.latency.baseline_stats()
+    candidate_latency = run.latency.candidate_stats()
+    decision = run.final_decision
 
     console.print()
     console.print("[bold]Run complete[/bold]")
     console.print(f"  Prompts tested: {run.total_prompts}/{corpus_total}")
+    console.print(f"  Batches tested: {run.total_batches}")
     console.print(f"  Total cost:     ${cost.total_usd:.4f}")
-    if bl.count > 0 and cd.count > 0:
+    if baseline_latency.count > 0 and candidate_latency.count > 0:
         console.print(
-            f"  Latency p50:    {bl.p50_ms:.0f}ms (baseline) → {cd.p50_ms:.0f}ms (candidate)"
+            "  Latency p50:    "
+            f"{baseline_latency.p50_ms:.0f}ms (baseline) -> "
+            f"{candidate_latency.p50_ms:.0f}ms (candidate)"
         )
         console.print(
-            f"  Latency p95:    {bl.p95_ms:.0f}ms (baseline) → {cd.p95_ms:.0f}ms (candidate)"
+            "  Latency p95:    "
+            f"{baseline_latency.p95_ms:.0f}ms (baseline) -> "
+            f"{candidate_latency.p95_ms:.0f}ms (candidate)"
         )
+    if decision is not None:
+        confidence = (
+            f" ({decision.confidence:.0%} confidence)"
+            if config.output.show_confidence
+            else ""
+        )
+        console.print(f"  Decision:       [bold]{decision.outcome}[/bold]{confidence}")
+        console.print(f"  Reason:         {decision.reason}")
+        if config.output.show_thresholds:
+            console.print(
+                "  Risk summary:   "
+                f"overall={decision.metrics.overall_risk:.1%}, "
+                f"high-crit={decision.metrics.high_criticality_failure_rate:.1%}, "
+                f"schema={decision.metrics.schema_break_rate:.1%}"
+            )
     console.print()

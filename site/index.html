@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Driftcut - Alpha CLI for LLM migration canaries</title>
-<meta name="description" content="Driftcut is an alpha CLI for sampling LLM migration candidates before you commit to a full evaluation.">
-<meta property="og:title" content="Driftcut - Alpha CLI for LLM migration canaries">
-<meta property="og:description" content="Validate a structured corpus, sample representative batches, run baseline and candidate models, and review latency and cost before a full migration eval.">
+<title>Driftcut - v0.3.0 alpha migration decision CLI</title>
+<meta name="description" content="Driftcut is a v0.3.0 alpha CLI for LLM migration canaries with deterministic checks, risk scoring, and STOP/CONTINUE/PROCEED decisions.">
+<meta property="og:title" content="Driftcut - v0.3.0 alpha migration decision CLI">
+<meta property="og:description" content="Validate a prompt corpus, sample representative batches, compare baseline and candidate models, and decide whether to stop, continue, or proceed.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://driftcut.dev">
 <link rel="canonical" href="https://driftcut.dev">
@@ -58,7 +58,7 @@
     width:34px;height:34px;border-radius:10px;background:var(--cut);position:relative;flex:0 0 auto;
   }
   .brand-mark::after{
-    content:"";position:absolute;inset:7px 14px 7px 14px;background:var(--slate-900);
+    content:"";position:absolute;inset:7px 14px;background:var(--slate-900);
     transform:skewX(-28deg);border-radius:2px;
   }
   .nav-links{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
@@ -105,7 +105,7 @@
     background:rgba(17,21,25,0.92);border:1px solid rgba(255,255,255,0.07);border-radius:18px;
     box-shadow:0 18px 60px rgba(0,0,0,0.25);
   }
-  .terminal-head,.panel-head{
+  .terminal-head{
     display:flex;align-items:center;gap:8px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);
     font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
   }
@@ -132,10 +132,10 @@
   .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
   .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
   .card{padding:22px}
-  .card h3{
+  .card h3,.faq h3{
     color:var(--white);font-size:18px;font-weight:700;margin-bottom:10px;
   }
-  .card p,.card li{font-size:15px;line-height:1.7;color:var(--silver)}
+  .card p,.card li,.faq p{font-size:15px;line-height:1.7;color:var(--silver)}
   .list{display:grid;gap:10px;list-style:none;margin-top:12px}
   .list li::before{content:"/ ";color:var(--cut);font-family:'IBM Plex Mono',monospace}
   .status-chip{
@@ -158,9 +158,6 @@
   }
   tr:last-child td{border-bottom:none}
   td:first-child{color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:13px}
-  .faq{padding:22px}
-  .faq h3{color:var(--white);font-size:18px;margin-bottom:8px}
-  .faq p{font-size:15px;line-height:1.7;color:var(--silver)}
   footer{
     padding:26px 0 36px;border-top:1px solid rgba(255,255,255,0.06);
   }
@@ -204,10 +201,10 @@
   <section class="hero">
     <div class="container hero-grid">
       <div>
-        <div class="badge">v0.2.2 alpha</div>
+        <div class="badge">v0.3.0 alpha</div>
         <h1>Sample migrations<br>before full eval.</h1>
-        <p><strong>Driftcut</strong> is an alpha CLI for LLM migration canaries. It validates a structured prompt corpus, samples representative batches, runs baseline and candidate models, and gives you latency and cost signals before you spend on a full evaluation.</p>
-        <p>The decision engine, deterministic checks, and judge-based quality layer are planned next. The goal is narrow on purpose: help teams decide whether a migration candidate is promising enough to keep testing.</p>
+        <p><strong>Driftcut</strong> is an alpha CLI for LLM migration canaries. It validates a structured prompt corpus, samples representative batches, runs baseline and candidate models, checks deterministic quality signals, and tells you whether to stop, continue, or proceed.</p>
+        <p>The scope is narrow on purpose: help teams decide whether a migration candidate is promising enough to keep testing before spending on a full evaluation.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://github.com/riccardomerenda/driftcut">View on GitHub</a>
           <a class="btn btn-ghost" href="https://docs.driftcut.dev/getting-started/">Read the docs</a>
@@ -215,8 +212,8 @@
         <div class="pill-row">
           <span class="pill">CLI-first</span>
           <span class="pill">CSV / JSON corpus</span>
-          <span class="pill">Latency + cost tracking</span>
-          <span class="pill">JSON export</span>
+          <span class="pill">Deterministic checks</span>
+          <span class="pill">Decision + HTML report</span>
         </div>
       </div>
 
@@ -237,14 +234,16 @@
           <div>Candidate: <span class="good">anthropic/claude-haiku</span></div>
           <div style="height:8px"></div>
           <div class="dim">Batch 1 <span class="good">######</span> 12/24</div>
+          <div class="dim">Decision: CONTINUE (50% confidence)</div>
           <div class="dim">Batch 2 <span class="good">######</span> 24/24</div>
           <div style="height:8px"></div>
           <div>Run complete</div>
           <div class="dim">Prompts tested: <span>24/30 (80%)</span></div>
           <div class="dim">Total cost: <span>$1.84</span></div>
           <div class="dim">Latency p50: <span>820ms -> 340ms</span></div>
-          <div class="dim">Output: <span>./driftcut-results/results.json</span></div>
-          <div class="warn">Next milestone: quality checks + decision engine</div>
+          <div class="dim">Decision: <span class="good">PROCEED</span></div>
+          <div class="dim">Output: <span>./driftcut-results/results.json + report.html</span></div>
+          <div class="warn">Next milestone: judge-based comparison for ambiguous cases</div>
         </div>
       </div>
     </div>
@@ -253,8 +252,8 @@
   <section id="status">
     <div class="container">
       <div class="section-label">Current Status</div>
-      <h2 class="section-title">A credible alpha, not a hand-wavy demo.</h2>
-      <p class="section-desc">The current repository is intentionally narrower than the full product vision. What ships today is the execution and tracking foundation. What comes next is the quality layer that turns it into a real migration gate.</p>
+      <h2 class="section-title">A real alpha migration gate.</h2>
+      <p class="section-desc">The repository now includes a deterministic quality layer and a real decision engine. The next step is higher-confidence judging for the prompts where deterministic checks are not enough.</p>
       <div class="grid-2">
         <div class="card">
           <span class="status-chip status-now">Shipping now</span>
@@ -263,19 +262,18 @@
             <li>Config and corpus validation</li>
             <li>Stratified batch sampling by category and criticality</li>
             <li>Concurrent baseline/candidate execution via LiteLLM</li>
-            <li>Latency and cost tracking</li>
-            <li>Rich CLI output and JSON export</li>
+            <li>Deterministic quality checks and failure archetypes</li>
+            <li>Latency, cost, decision output, and HTML reporting</li>
           </ul>
         </div>
         <div class="card">
           <span class="status-chip status-next">Planned next</span>
-          <h3>What makes the wedge real</h3>
+          <h3>What sharpens the wedge further</h3>
           <ul class="list">
-            <li>Deterministic quality checks</li>
             <li>Judge-based comparison for ambiguous cases</li>
-            <li>Failure archetype classification</li>
-            <li>Decision output: stop / continue / proceed</li>
-            <li>HTML reporting with evidence and thresholds</li>
+            <li>Richer failure archetypes beyond deterministic checks</li>
+            <li>Better benchmark demos and report polish</li>
+            <li>More confidence on borderline migration candidates</li>
           </ul>
         </div>
       </div>
@@ -291,7 +289,7 @@
         <div class="card">
           <div class="step-num">01</div>
           <h3>Bring your corpus</h3>
-          <p>Each prompt carries a category, a criticality level, and an expected output type. Driftcut does not invent the benchmark for you.</p>
+          <p>Each prompt carries a category, a criticality level, an expected output type, and optional deterministic expectations such as required strings or JSON keys.</p>
         </div>
         <div class="card">
           <div class="step-num">02</div>
@@ -300,8 +298,8 @@
         </div>
         <div class="card">
           <div class="step-num">03</div>
-          <h3>Run both models</h3>
-          <p>Baseline and candidate run concurrently for each prompt. The current alpha records latency and cost while preserving enough structure for later quality layers.</p>
+          <h3>Run and decide</h3>
+          <p>Baseline and candidate run concurrently for each prompt. The runtime records latency and cost, evaluates deterministic checks, and updates the migration decision after each batch.</p>
         </div>
       </div>
     </div>
@@ -329,17 +327,17 @@
           <tr>
             <td>Current alpha</td>
             <td>Quality measurement</td>
-            <td>Sampling + execution + latency/cost signals</td>
+            <td>Sampling + deterministic checks + migration decisions</td>
           </tr>
           <tr>
             <td>Next milestone</td>
             <td>More benchmarks and scoring</td>
-            <td>Decision engine with evidence and thresholds</td>
+            <td>Judge-based review for ambiguous evidence</td>
           </tr>
           <tr>
             <td>Output shape</td>
             <td>Metrics to interpret</td>
-            <td>Eventually: stop / continue / proceed</td>
+            <td>STOP / CONTINUE / PROCEED + HTML report</td>
           </tr>
         </tbody>
       </table>
@@ -353,7 +351,7 @@
       <div class="grid-2">
         <div class="faq">
           <h3>Is this a replacement for full evaluation?</h3>
-          <p>No. It is the step before a full evaluation. The current alpha helps you run a cheaper first pass on real prompts before you invest in the larger comparison.</p>
+          <p>No. It is the step before a full evaluation. Driftcut helps you run a cheaper first pass on real prompts before you invest in the larger comparison.</p>
         </div>
         <div class="faq">
           <h3>Do I need labeled benchmarks?</h3>
@@ -361,11 +359,11 @@
         </div>
         <div class="faq">
           <h3>What is implemented right now?</h3>
-          <p>Validation, sampling, paired model execution, latency tracking, cost tracking, and JSON export. Decision logic, failure archetypes, and HTML reporting are still roadmap items.</p>
+          <p>Validation, sampling, paired model execution, deterministic checks, latency tracking, cost tracking, decision output, JSON export, and HTML reporting. Judge-based quality comparison is still the main roadmap item.</p>
         </div>
         <div class="faq">
           <h3>What does a run cost?</h3>
-          <p>Today the cost is just the sampled baseline and candidate model calls, plus whatever those providers charge. Judge cost enters later when the quality layer lands.</p>
+          <p>Today the cost is the sampled baseline and candidate model calls. Judge cost enters later when the next quality layer lands.</p>
         </div>
       </div>
     </div>
@@ -373,10 +371,10 @@
 
   <footer>
     <div class="container footer-wrap">
-      <span>driftcut · alpha CLI for LLM migration canaries</span>
+      <span>driftcut - v0.3.0 alpha CLI for LLM migration canaries</span>
       <span>
-        <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> ·
-        <a href="https://docs.driftcut.dev/getting-started/">Docs</a> ·
+        <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> -
+        <a href="https://docs.driftcut.dev/getting-started/">Docs</a> -
         <a href="https://driftcut.dev">driftcut.dev</a>
       </span>
     </div>

@@ -6,14 +6,14 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  Alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.3.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
   <a href="#current-status">Current status</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#configuration">Configuration</a> ·
+  <a href="#corpus-format">Corpus format</a> ·
   <a href="#roadmap">Roadmap</a>
 </p>
 
@@ -21,13 +21,13 @@
 
 ## The problem
 
-You want to migrate from one LLM to another - cheaper, faster, better, self-hosted, or more private.
+You want to migrate from one LLM to another: cheaper, faster, better, self-hosted, or more private.
 
 So you run your full prompt corpus against the candidate model. Hundreds or thousands of API calls. Hours of waiting. And only at the end do you discover the candidate breaks the categories that matter most.
 
 You just burned budget to learn something you could have known in the first 10-20%.
 
-**Driftcut is the test you run before the full evaluation.** The current alpha samples strategically, runs baseline and candidate models on a representative slice, and gives you latency/cost signals early. Deterministic quality checks, judge-based scoring, and early-stop decisions are the next milestone.
+**Driftcut is the test you run before the full evaluation.** It samples strategically, compares baseline and candidate on a representative slice, runs deterministic checks on the outputs, and tells you whether to `STOP`, `CONTINUE`, or `PROCEED`.
 
 ## What it is (and what it is not)
 
@@ -48,15 +48,16 @@ Today, Driftcut can:
 - Build stratified batches that prioritize high-criticality prompts
 - Run baseline and candidate models concurrently via LiteLLM
 - Track latency and cost across the sampled run
-- Export JSON results for later analysis
+- Run deterministic checks for format, JSON validity, required content, and optional output limits
+- Produce `STOP`, `CONTINUE`, or `PROCEED` decisions during the run
+- Export both JSON results and an HTML report
+- Summarize failure archetypes such as `api_error`, `json_invalid`, `missing_json_keys`, and `missing_required_content`
 
-Planned next:
+Still planned next:
 
-- Deterministic quality checks
-- Judge-based quality comparison
-- Failure archetype classification
-- Early-stop decision output
-- HTML reporting
+- Judge-based quality comparison for ambiguous cases
+- Richer failure archetypes beyond deterministic checks
+- Better report polish and benchmark demos
 
 ## Quickstart
 
@@ -89,20 +90,26 @@ sampling:
   min_batches: 2
 ```
 
-Validate first (no API calls), then run:
+Validate first, then run:
 
 ```bash
 driftcut validate --config migration.yaml
 driftcut run --config migration.yaml
 ```
 
-Today, `driftcut run` executes the planned sample and exports JSON results. It does not yet stop early or produce judge-based quality decisions.
+`driftcut run` now:
 
-Works with any [LiteLLM-supported provider](https://docs.litellm.ai/): OpenAI, Anthropic, OpenRouter, Azure, self-hosted, and more. See the [docs](https://docs.driftcut.dev/getting-started/) for config examples.
+- executes sampled batches,
+- evaluates deterministic quality checks,
+- decides whether to stop, continue, or proceed,
+- writes `driftcut-results/results.json`,
+- writes `driftcut-results/report.html`.
+
+Works with any [LiteLLM-supported provider](https://docs.litellm.ai/): OpenAI, Anthropic, OpenRouter, Azure, self-hosted, and more.
 
 ## How it works
 
-### Current alpha
+### Current runtime
 
 ```text
 Your prompt corpus
@@ -114,10 +121,23 @@ Stratified sampling by category and criticality
 Run baseline and candidate on sampled batches
         |
         v
+Deterministic checks:
+- expected format
+- JSON validity / required keys
+- required / forbidden content
+- max output length
+        |
+        v
 Track latency and cost
         |
         v
-Export JSON results for review
+Decision engine
+        |
+        v
+STOP / CONTINUE / PROCEED
+        |
+        v
+JSON + HTML report
 ```
 
 ### Planned next
@@ -127,72 +147,44 @@ Deterministic checks
         +
 Tiered judge strategy
         +
-Failure archetype detection
-        +
-Decision engine
+Richer failure archetypes
         ->
-STOP / CONTINUE / PROCEED
+Higher-confidence migration decisions
 ```
 
 ## The three dimensions
 
-Driftcut is designed around three migration dimensions. In the current alpha, latency and cost are implemented; quality decisioning is on the roadmap.
+Driftcut is designed around three migration dimensions:
 
-- **Quality** - Planned next: deterministic checks, judge comparison, and failure archetypes.
-- **Latency** - p50, p95, and variance per category.
-- **Cost** - spend so far, per-category cost, and cumulative cost across the sampled run.
+- **Quality** - deterministic checks are live; judge comparison is still planned.
+- **Latency** - p50 and p95 are tracked and fed into the decision engine.
+- **Cost** - spend is tracked per run and included in the final report.
 
 ## Failure archetypes
 
-This is a planned feature, not something the runtime classifies today. The target categories are:
+The current deterministic layer can classify failures such as:
 
 | Archetype | What it means |
 |---|---|
-| `schema_break` | JSON invalid, missing fields, incompatible structure |
-| `format_break` | Output does not match the expected format |
-| `coverage_drop` | Response is incomplete vs baseline |
-| `reasoning_degradation` | Candidate is less reliable on complex prompts |
-| `refusal_increase` | Candidate refuses more often than baseline |
-| `tone_mismatch` | Style is worse for the use case |
-| `hallucination_increase` | Candidate fabricates more content |
-| `latency_regression` | Candidate is significantly slower than baseline |
-
-## Target output (planned)
-
-This is the intended end-state report once the decision engine and quality layer land. The current alpha CLI output is simpler and focuses on batch execution, latency, cost, and JSON export.
-
-```text
-Run: GPT-4o -> Claude Haiku
-Corpus: 120 prompts, 4 categories
-Batches executed: 2/6
-Prompts tested: 24/120 (20%)
-Confidence: medium
-
-Quality:
-  Overall compatibility: 0.61
-  High-criticality failure rate: 62.5% (5/8)
-
-Latency:
-  Baseline p50: 820ms | Candidate p50: 340ms (-58%)
-  Baseline p95: 2100ms | Candidate p95: 890ms (-57%)
-
-Cost:
-  Spend so far: $11.80 (incl. $0.72 judge)
-  Estimated spend avoided: $74.30
-
-Decision: STOP NOW
-```
+| `api_error` | Model call failed |
+| `empty_output` | Response is empty |
+| `json_invalid` | Output is not valid JSON |
+| `missing_json_keys` | Required JSON keys are missing |
+| `invalid_labels` | Label output could not be parsed |
+| `missing_required_content` | Required substring was not found |
+| `forbidden_content` | Forbidden substring was found |
+| `overlong_output` | Output exceeded `max_output_chars` |
 
 ## Corpus format
 
 Driftcut requires a structured corpus.
 
 ```csv
-id,category,prompt,criticality,expected_output_type,notes
-cx-001,customer_support,"Given this ticket: {ticket}, draft a response.",high,free_text,
-ex-001,structured_extraction,"Extract entities from: {text}. Return JSON.",high,json,Must match schema
-cl-001,classification,"Classify this review: {review}",medium,labels,
-su-001,summarization,"Summarize this document: {doc}",low,markdown,
+id,category,prompt,criticality,expected_output_type,notes,required_substrings,forbidden_substrings,json_required_keys,max_output_chars
+cx-001,customer_support,"Given this ticket: {ticket}, draft a response.",high,free_text,,refund|replacement,,,
+ex-001,structured_extraction,"Extract entities from: {text}. Return JSON.",high,json,,,,"persons|organizations|locations",
+cl-001,classification,"Classify this review: {review}",medium,labels,,,,,
+su-001,summarization,"Summarize this document: {doc}",low,markdown,,,,1200
 ```
 
 | Field | Type | Required | Notes |
@@ -202,11 +194,15 @@ su-001,summarization,"Summarize this document: {doc}",low,markdown,
 | `prompt` | string | yes | Prompt to execute |
 | `criticality` | enum | yes | `low` / `medium` / `high` |
 | `expected_output_type` | enum | yes | `free_text` / `json` / `labels` / `markdown` |
-| `notes` | string | no | Optional context |
+| `notes` | string | no | Optional human context |
+| `required_substrings` | list-like string | no | `|` or `;` separated required phrases |
+| `forbidden_substrings` | list-like string | no | `|` or `;` separated forbidden phrases |
+| `json_required_keys` | list-like string | no | Keys that must exist in parsed JSON |
+| `max_output_chars` | int | no | Hard upper bound for deterministic length checks |
 
 ## Configuration
 
-The config schema already includes `risk`, `evaluation`, and richer `output` settings. In the current alpha, some of these fields are parsed and displayed by `validate` before they become active runtime behavior.
+The runtime actively uses `sampling`, `risk`, `latency`, and `output` settings. `evaluation.judge_strategy` is still future-facing and currently documents the intended next layer.
 
 ```yaml
 name: "OpenAI to Anthropic migration gate"
@@ -259,7 +255,7 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 
 | Stage | Method | Cost | Catches |
 |---|---|---|---|
-| Early batches | Deterministic checks | $0 | Schema breaks, format errors, refusals |
+| Early batches | Deterministic checks | $0 | Format, schema, content, and output-limit failures |
 | Mid batches | Light judge | Low | General quality comparison |
 | Later ambiguous cases | Heavy judge | Higher | Nuanced quality differences |
 
@@ -276,12 +272,12 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] Cost tracker (per-prompt and cumulative)
 - [x] JSON export
 - [x] Multi-provider support (OpenRouter, Azure, custom endpoints)
-- [ ] Deterministic checker (schema, format, refusal detection)
+- [x] Deterministic checker
+- [x] Failure archetype summary
+- [x] Decision engine with configurable thresholds
+- [x] HTML report
 - [ ] Tiered judge integration
-- [ ] Failure archetype classifier
-- [ ] Decision engine with configurable thresholds
-- [ ] Terminal report with Rich
-- [ ] HTML report
+- [ ] Richer failure archetypes
 - [ ] Public benchmark demo
 
 Full roadmap: [docs.driftcut.dev/roadmap](https://docs.driftcut.dev/roadmap/)

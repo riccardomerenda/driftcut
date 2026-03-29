@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-29
+
+### Added
+
+- Deterministic quality checks for expected output formats, required content, JSON keys, and length limits
+- Early-stop decision engine with `STOP`, `CONTINUE`, and `PROCEED` outcomes
+- HTML report generation alongside richer JSON output
+- Run-level risk metrics, confidence, and failure archetype summaries
+- 6 new tests for quality checks, reporting, and decision behavior
+
+### Changed
+
+- `min_batches` now actively gates early `PROCEED` decisions
+- `risk` and most `output` settings are now active runtime behavior instead of validation-only config
+- Public repo messaging and examples now reflect the real runtime feature set
+
 ## [0.2.2] - 2026-03-29
 
 ### Changed
@@ -53,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.3.0]: https://github.com/riccardomerenda/driftcut/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/riccardomerenda/driftcut/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/riccardomerenda/driftcut/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/riccardomerenda/driftcut/compare/v0.1.0...v0.2.0

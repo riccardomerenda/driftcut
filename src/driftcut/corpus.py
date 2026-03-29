@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class PromptRecord(BaseModel):
@@ -17,6 +17,46 @@ class PromptRecord(BaseModel):
     criticality: Literal["low", "medium", "high"]
     expected_output_type: Literal["free_text", "json", "labels", "markdown"]
     notes: str = ""
+    required_substrings: list[str] = Field(default_factory=list)
+    forbidden_substrings: list[str] = Field(default_factory=list)
+    json_required_keys: list[str] = Field(default_factory=list)
+    max_output_chars: int | None = None
+
+    @field_validator(
+        "required_substrings",
+        "forbidden_substrings",
+        "json_required_keys",
+        mode="before",
+    )
+    @classmethod
+    def _parse_expectation_list(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return []
+            if text.startswith("["):
+                parsed = json.loads(text)
+                if not isinstance(parsed, list):
+                    msg = "expected a JSON list"
+                    raise TypeError(msg)
+                return [str(item).strip() for item in parsed if str(item).strip()]
+            separator = "|" if "|" in text else ";" if ";" in text else None
+            if separator is None:
+                return [text]
+            return [item.strip() for item in text.split(separator) if item.strip()]
+        msg = f"unsupported list value: {type(value).__name__}"
+        raise TypeError(msg)
+
+    @field_validator("max_output_chars", mode="before")
+    @classmethod
+    def _parse_max_output_chars(cls, value: Any) -> int | None:
+        if value is None or value == "":
+            return None
+        return int(value)
 
 
 class Corpus:

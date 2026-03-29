@@ -28,6 +28,8 @@ corpus:
   file: prompts.csv
   # Supported formats: .csv, .json
   # Required fields: id, category, prompt, criticality, expected_output_type
+  # Optional deterministic fields: required_substrings, forbidden_substrings,
+  # json_required_keys, max_output_chars
 
 # -- Sampling ----------------------------------------------
 sampling:
@@ -46,7 +48,7 @@ risk:
 
 # -- Evaluation --------------------------------------------
 evaluation:
-  judge_strategy: tiered          # none | light | tiered | heavy
+  judge_strategy: tiered          # planned next: none | light | tiered | heavy
   judge_model_light: openai/gpt-4.1-mini
   judge_model_heavy: openai/gpt-4.1
   detect_failure_archetypes: true
