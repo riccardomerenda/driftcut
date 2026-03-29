@@ -104,9 +104,7 @@ def _print_validation_summary(
         f"Total prompts to test: {total_prompts}/{corpus.size} ({coverage:.0f}%)",
         f"Judge strategy: {cfg.evaluation.judge_strategy}",
     ]
-    console.print(
-        Panel("\n".join(plan_lines), title="Sampling Plan", border_style="blue")
-    )
+    console.print(Panel("\n".join(plan_lines), title="Sampling Plan", border_style="blue"))
 
     # Risk thresholds
     thresh_table = Table(show_header=True, box=None, padding=(0, 2))

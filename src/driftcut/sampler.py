@@ -58,9 +58,7 @@ class StratifiedSampler:
         if not self._categories:
             return 0
         per_cat = self._config.batch_size_per_category
-        max_from_corpus = min(
-            len(pool) // per_cat for pool in self._pools.values()
-        )
+        max_from_corpus = min(len(pool) // per_cat for pool in self._pools.values())
         return min(max_from_corpus, self._config.max_batches)
 
     @property

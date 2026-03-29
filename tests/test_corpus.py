@@ -90,8 +90,7 @@ def test_empty_corpus_raises(tmp_path):
 def test_invalid_criticality(tmp_path):
     csv_file = tmp_path / "bad.csv"
     csv_file.write_text(
-        "id,category,prompt,criticality,expected_output_type\n"
-        't-001,test,Hello,CRITICAL,free_text\n'
+        "id,category,prompt,criticality,expected_output_type\nt-001,test,Hello,CRITICAL,free_text\n"
     )
     with pytest.raises(ValueError, match="Row 2"):
         load_corpus(csv_file)
