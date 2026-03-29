@@ -179,6 +179,7 @@ def _parse_judge_response(
     rationale = str(payload.get("rationale") or payload.get("reason") or "").strip()
     return verdict, confidence, rationale
 
+
 def _extract_judge_payload(content: str) -> dict[str, Any] | None:
     content = content.strip()
     if not content:

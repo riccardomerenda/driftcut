@@ -264,21 +264,24 @@ async def test_run_prompt_uses_judge_for_ambiguous_outputs() -> None:
             return _mock_response(output="We can issue a refund today.")
         return _mock_response(output="Contact support tomorrow.")
 
-    with patch(
-        "driftcut.runner.execute_prompt",
-        new_callable=AsyncMock,
-        side_effect=side_effect,
-    ), patch(
-        "driftcut.runner.judge_prompt_result",
-        new_callable=AsyncMock,
-        return_value=JudgeResult(
-            model="openai/gpt-4.1-mini",
-            verdict="candidate_worse",
-            confidence=0.9,
-            rationale="Candidate misses the direct resolution path.",
-            cost_usd=0.002,
+    with (
+        patch(
+            "driftcut.runner.execute_prompt",
+            new_callable=AsyncMock,
+            side_effect=side_effect,
         ),
-    ) as judge_mock:
+        patch(
+            "driftcut.runner.judge_prompt_result",
+            new_callable=AsyncMock,
+            return_value=JudgeResult(
+                model="openai/gpt-4.1-mini",
+                verdict="candidate_worse",
+                confidence=0.9,
+                rationale="Candidate misses the direct resolution path.",
+                cost_usd=0.002,
+            ),
+        ) as judge_mock,
+    ):
         result = await _run_prompt(prompt, config)
 
     assert result.evaluation is not None

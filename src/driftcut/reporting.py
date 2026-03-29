@@ -393,8 +393,7 @@ def _render_archetypes(metrics: DecisionMetrics) -> str:
     if not metrics.archetypes:
         return "<li>No deterministic failures observed.</li>"
     return "".join(
-        f"<li>{html.escape(name)}: {count}</li>"
-        for name, count in metrics.archetypes.items()
+        f"<li>{html.escape(name)}: {count}</li>" for name, count in metrics.archetypes.items()
     )
 
 

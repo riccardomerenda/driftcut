@@ -15,7 +15,7 @@ def _make_response(
     latency_ms: float = 100.0,
     cost_usd: float = 0.01,
     error: str | None = None,
-    ) -> ModelResponse:
+) -> ModelResponse:
     return ModelResponse(
         output=output,
         latency_ms=latency_ms,

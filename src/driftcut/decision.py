@@ -29,12 +29,8 @@ def decide_run(
         metrics.structured_prompts > 0
         and metrics.schema_break_rate >= config.risk.stop_on_schema_break_rate
     )
-    stop_on_high_criticality = (
-        metrics.high_criticality_prompts > 0
-        and (
-            metrics.high_criticality_failure_rate
-            >= config.risk.stop_on_high_criticality_failure_rate
-        )
+    stop_on_high_criticality = metrics.high_criticality_prompts > 0 and (
+        metrics.high_criticality_failure_rate >= config.risk.stop_on_high_criticality_failure_rate
     )
     latency_within_bounds = (
         metrics.latency_p50_ratio <= config.latency.regression_threshold_p50

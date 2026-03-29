@@ -220,9 +220,7 @@ def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig
         )
     if decision is not None:
         confidence = (
-            f" ({decision.confidence:.0%} confidence)"
-            if config.output.show_confidence
-            else ""
+            f" ({decision.confidence:.0%} confidence)" if config.output.show_confidence else ""
         )
         console.print(f"  Decision:       [bold]{decision.outcome}[/bold]{confidence}")
         console.print(f"  Reason:         {decision.reason}")
