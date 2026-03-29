@@ -87,9 +87,9 @@ The goal is to get a reliable decision in minutes, not a complete benchmark in h
                   Your prompt corpus
                           |
                +----------+----------+
-               | Stratified sampling  |
-               | by category and      |
-               | criticality          |
+               | Stratified sampling |
+               | by category and     |
+               | criticality         |
                +----------+----------+
                           |
                   Batch 1 (small slice)
