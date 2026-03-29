@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-29
+
+### Added
+
+- Judge layer for ambiguous prompts with semantic verdicts, confidence, and rationale
+- Judge-aware decision metrics, confidence scoring, and cost tracking
+- Judge details in JSON output and HTML reports
+- 6 new tests for judge helpers and runtime integration
+
+### Changed
+
+- `judge_strategy: light` is now the active default for the alpha runtime
+- Ambiguous prompts now lower confidence until they are judged or the strategy is disabled
+- `tiered` remains a compatibility alias for light judging until heavy escalation lands
+
 ## [0.3.0] - 2026-03-29
 
 ### Added
@@ -69,6 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.4.0]: https://github.com/riccardomerenda/driftcut/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/riccardomerenda/driftcut/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/riccardomerenda/driftcut/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/riccardomerenda/driftcut/compare/v0.2.0...v0.2.1

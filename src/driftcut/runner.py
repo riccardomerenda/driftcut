@@ -12,6 +12,12 @@ from driftcut.config import DriftcutConfig
 from driftcut.corpus import PromptRecord
 from driftcut.decision import decide_run
 from driftcut.executor import execute_prompt
+from driftcut.judge import (
+    apply_judge_result,
+    judge_prompt_result,
+    judge_strategy_enabled,
+    prompt_needs_judge,
+)
 from driftcut.models import BatchResult, PromptResult, RunDecision
 from driftcut.quality import evaluate_prompt_result
 from driftcut.sampler import Batch, StratifiedSampler
@@ -65,6 +71,10 @@ async def _run_prompt(
         max_output_chars=prompt.max_output_chars,
     )
     result.evaluation = evaluate_prompt_result(result)
+    result.evaluation.needs_judge = prompt_needs_judge(result)
+    if result.evaluation.needs_judge and judge_strategy_enabled(config.evaluation):
+        judge = await judge_prompt_result(result, config.evaluation)
+        result.evaluation = apply_judge_result(result.evaluation, judge)
     return result
 
 
@@ -174,6 +184,12 @@ def _print_batch_summary(batch: BatchResult, run: RunResult, config: DriftcutCon
             else ""
         )
         console.print(f"    Decision: [bold]{decision.outcome}[/bold]{confidence}")
+        if decision.metrics.judged_prompts > 0:
+            console.print(
+                "    [dim]"
+                f"Judge coverage: {decision.metrics.judged_prompts}/"
+                f"{decision.metrics.ambiguous_prompts} ambiguous prompts[/dim]"
+            )
         console.print(f"    [dim]{decision.reason}[/dim]")
 
 
@@ -189,6 +205,8 @@ def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig
     console.print(f"  Prompts tested: {run.total_prompts}/{corpus_total}")
     console.print(f"  Batches tested: {run.total_batches}")
     console.print(f"  Total cost:     ${cost.total_usd:.4f}")
+    if cost.judge_usd > 0:
+        console.print(f"  Judge cost:     ${cost.judge_usd:.4f}")
     if baseline_latency.count > 0 and candidate_latency.count > 0:
         console.print(
             "  Latency p50:    "
@@ -214,5 +232,12 @@ def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig
                 f"overall={decision.metrics.overall_risk:.1%}, "
                 f"high-crit={decision.metrics.high_criticality_failure_rate:.1%}, "
                 f"schema={decision.metrics.schema_break_rate:.1%}"
+            )
+        if decision.metrics.ambiguous_prompts > 0:
+            console.print(
+                "  Judge summary:  "
+                f"{decision.metrics.judged_prompts}/{decision.metrics.ambiguous_prompts} judged, "
+                f"worse={decision.metrics.judge_worse_rate:.1%}, "
+                f"avg_conf={decision.metrics.judge_average_confidence:.0%}"
             )
     console.print()

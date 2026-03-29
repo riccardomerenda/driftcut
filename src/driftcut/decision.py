@@ -47,6 +47,9 @@ def decide_run(
         total_prompts_evaluated=metrics.prompts_evaluated,
         total_prompts_planned=total_prompts_planned,
         has_remaining_batches=has_remaining_batches,
+        ambiguous_prompts=metrics.ambiguous_prompts,
+        judged_prompts=metrics.judged_prompts,
+        judge_average_confidence=metrics.judge_average_confidence,
     )
 
     if stop_on_schema:
@@ -141,6 +144,12 @@ def _collect_metrics(
     structured_prompts = 0
     high_criticality_prompts = 0
     high_criticality_failures = 0
+    ambiguous_prompts = 0
+    judged_prompts = 0
+    judge_worse = 0
+    judge_equivalent = 0
+    judge_better = 0
+    judge_confidence_sum = 0.0
     archetypes: dict[str, int] = {}
 
     for prompt in prompts:
@@ -149,14 +158,34 @@ def _collect_metrics(
             msg = f"Prompt {prompt.prompt_id} is missing quality evaluation"
             raise ValueError(msg)
 
+        if evaluation.needs_judge:
+            ambiguous_prompts += 1
         if evaluation.candidate_failed:
             candidate_failures += 1
             if evaluation.candidate.archetype is not None:
                 archetypes[evaluation.candidate.archetype] = (
                     archetypes.get(evaluation.candidate.archetype, 0) + 1
                 )
+            elif (
+                evaluation.judge is not None
+                and not evaluation.judge.is_error
+                and evaluation.judge.verdict == "candidate_worse"
+            ):
+                archetypes["judge_worse"] = archetypes.get("judge_worse", 0) + 1
         if evaluation.candidate_regressed:
             candidate_regressions += 1
+        if evaluation.judge is not None:
+            if evaluation.judge.is_error:
+                archetypes["judge_unavailable"] = archetypes.get("judge_unavailable", 0) + 1
+            elif evaluation.judge.verdict != "unavailable":
+                judged_prompts += 1
+                judge_confidence_sum += evaluation.judge.confidence
+                if evaluation.judge.verdict == "candidate_worse":
+                    judge_worse += 1
+                elif evaluation.judge.verdict == "candidate_better":
+                    judge_better += 1
+                else:
+                    judge_equivalent += 1
         if prompt.criticality == "high":
             high_criticality_prompts += 1
             if evaluation.candidate_failed:
@@ -178,6 +207,10 @@ def _collect_metrics(
     high_criticality_failure_rate = (
         high_criticality_failures / high_criticality_prompts if high_criticality_prompts else 0.0
     )
+    judge_worse_rate = judge_worse / judged_prompts if judged_prompts else 0.0
+    judge_equivalent_rate = judge_equivalent / judged_prompts if judged_prompts else 0.0
+    judge_better_rate = judge_better / judged_prompts if judged_prompts else 0.0
+    judge_average_confidence = judge_confidence_sum / judged_prompts if judged_prompts else 0.0
 
     weighted_total = 4.0 + high_criticality_weight
     overall_risk = (
@@ -192,10 +225,16 @@ def _collect_metrics(
         prompts_evaluated=prompts_evaluated,
         structured_prompts=structured_prompts,
         high_criticality_prompts=high_criticality_prompts,
+        ambiguous_prompts=ambiguous_prompts,
+        judged_prompts=judged_prompts,
         candidate_failure_rate=candidate_failure_rate,
         candidate_regression_rate=candidate_regression_rate,
         schema_break_rate=schema_break_rate,
         high_criticality_failure_rate=high_criticality_failure_rate,
+        judge_worse_rate=judge_worse_rate,
+        judge_equivalent_rate=judge_equivalent_rate,
+        judge_better_rate=judge_better_rate,
+        judge_average_confidence=judge_average_confidence,
         overall_risk=overall_risk,
         latency_p50_ratio=latency_p50_ratio,
         latency_p95_ratio=latency_p95_ratio,
@@ -224,10 +263,20 @@ def _decision_confidence(
     total_prompts_evaluated: int,
     total_prompts_planned: int,
     has_remaining_batches: bool,
+    ambiguous_prompts: int,
+    judged_prompts: int,
+    judge_average_confidence: float,
 ) -> float:
     if not has_remaining_batches:
         return 1.0
 
     batch_ratio = batches_evaluated / total_batches_planned if total_batches_planned else 1.0
     prompt_ratio = total_prompts_evaluated / total_prompts_planned if total_prompts_planned else 1.0
-    return min(0.95, max(0.2, (batch_ratio + prompt_ratio) / 2.0))
+    base_confidence = min(0.95, max(0.2, (batch_ratio + prompt_ratio) / 2.0))
+    if ambiguous_prompts == 0:
+        return base_confidence
+
+    judge_coverage = judged_prompts / ambiguous_prompts if ambiguous_prompts else 1.0
+    adjusted = base_confidence * (0.65 + 0.35 * judge_coverage)
+    adjusted += 0.10 * judge_coverage * judge_average_confidence
+    return min(0.97, max(0.2, adjusted))

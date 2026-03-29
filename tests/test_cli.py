@@ -47,4 +47,4 @@ def test_validate_shows_sampling_plan() -> None:
     config_path = str(EXAMPLES_DIR / "migration.yaml")
     result = runner.invoke(app, ["validate", "--config", config_path])
     assert "Sampling Plan" in result.stdout
-    assert "tiered" in result.stdout
+    assert "light" in result.stdout

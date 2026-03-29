@@ -37,6 +37,7 @@ def _write_json(path: Path, config: DriftcutConfig, result: RunResult) -> None:
         "cost": {
             "baseline_usd": result.cost.summary.baseline_usd,
             "candidate_usd": result.cost.summary.candidate_usd,
+            "judge_usd": result.cost.summary.judge_usd,
             "total_usd": result.cost.summary.total_usd,
         },
         "decision": _decision_dict(result.final_decision, config.output.show_confidence),
@@ -73,10 +74,16 @@ def _metrics_dict(metrics: DecisionMetrics) -> dict[str, object]:
         "batches_evaluated": metrics.batches_evaluated,
         "structured_prompts": metrics.structured_prompts,
         "high_criticality_prompts": metrics.high_criticality_prompts,
+        "ambiguous_prompts": metrics.ambiguous_prompts,
+        "judged_prompts": metrics.judged_prompts,
         "candidate_failure_rate": round(metrics.candidate_failure_rate, 4),
         "candidate_regression_rate": round(metrics.candidate_regression_rate, 4),
         "schema_break_rate": round(metrics.schema_break_rate, 4),
         "high_criticality_failure_rate": round(metrics.high_criticality_failure_rate, 4),
+        "judge_worse_rate": round(metrics.judge_worse_rate, 4),
+        "judge_equivalent_rate": round(metrics.judge_equivalent_rate, 4),
+        "judge_better_rate": round(metrics.judge_better_rate, 4),
+        "judge_average_confidence": round(metrics.judge_average_confidence, 4),
         "overall_risk": round(metrics.overall_risk, 4),
         "latency_p50_ratio": round(metrics.latency_p50_ratio, 4),
         "latency_p95_ratio": round(metrics.latency_p95_ratio, 4),
@@ -117,17 +124,30 @@ def _prompt_result_dict(prompt: PromptResult, *, save_examples: bool) -> dict[st
         "candidate": candidate_data,
     }
     if prompt.evaluation is not None:
-        data["evaluation"] = {
+        evaluation_data: dict[str, object] = {
             "candidate_failed": prompt.evaluation.candidate_failed,
             "candidate_regressed": prompt.evaluation.candidate_regressed,
             "candidate_improved": prompt.evaluation.candidate_improved,
             "schema_break": prompt.evaluation.schema_break,
+            "needs_judge": prompt.evaluation.needs_judge,
             "baseline_passed": prompt.evaluation.baseline.passed,
             "candidate_passed": prompt.evaluation.candidate.passed,
             "baseline_reasons": list(prompt.evaluation.baseline.reasons),
             "candidate_reasons": list(prompt.evaluation.candidate.reasons),
             "failure_archetype": prompt.evaluation.candidate.archetype,
         }
+        if prompt.evaluation.judge is not None:
+            evaluation_data["judge"] = {
+                "model": prompt.evaluation.judge.model,
+                "verdict": prompt.evaluation.judge.verdict,
+                "confidence": round(prompt.evaluation.judge.confidence, 4),
+                "rationale": prompt.evaluation.judge.rationale,
+                "latency_ms": round(prompt.evaluation.judge.latency_ms, 1),
+                "cost_usd": prompt.evaluation.judge.cost_usd,
+                "cost_error": prompt.evaluation.judge.cost_error,
+                "error": prompt.evaluation.judge.error,
+            }
+        data["evaluation"] = evaluation_data
     if save_examples:
         data["prompt_text"] = prompt.prompt_text
         baseline_data["output"] = prompt.baseline.output
@@ -261,6 +281,7 @@ def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
           <div class="label">Coverage</div>
           <div>{result.total_prompts} prompts across {result.total_batches} batches</div>
           <div>Total cost: ${cost.total_usd:.4f}</div>
+          <div>Judge cost: ${cost.judge_usd:.4f}</div>
           <div>Stopped early: {"yes" if result.stopped_early else "no"}</div>
         </div>
         <div class="card">
@@ -286,6 +307,12 @@ def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
             <td>{metrics.high_criticality_failure_rate:.1%}</td>
           </tr>
           <tr><th>Schema break rate</th><td>{metrics.schema_break_rate:.1%}</td></tr>
+          <tr>
+            <th>Judged prompts</th>
+            <td>{metrics.judged_prompts}/{metrics.ambiguous_prompts}</td>
+          </tr>
+          <tr><th>Judge worse rate</th><td>{metrics.judge_worse_rate:.1%}</td></tr>
+          <tr><th>Judge average confidence</th><td>{metrics.judge_average_confidence:.0%}</td></tr>
           <tr><th>Latency p50 ratio</th><td>{metrics.latency_p50_ratio:.2f}x</td></tr>
           <tr><th>Latency p95 ratio</th><td>{metrics.latency_p95_ratio:.2f}x</td></tr>
         </tbody>
@@ -315,7 +342,14 @@ def _render_examples(config: DriftcutConfig, result: RunResult) -> str:
         candidate_reasons = []
         if prompt.evaluation is not None:
             candidate_reasons = prompt.evaluation.candidate.reasons
+        judge_text = ""
+        if prompt.evaluation is not None and prompt.evaluation.judge is not None:
+            judge = prompt.evaluation.judge
+            judge_text = f" Judge: {judge.verdict} ({judge.confidence:.0%})"
+            if judge.rationale:
+                judge_text += f" - {judge.rationale}"
         issues_text = ", ".join(candidate_reasons) or "No deterministic failures"
+        issues_text += judge_text
         rows.append(
             "<tr>"
             f"<td>{html.escape(prompt.prompt_id)}</td>"

@@ -13,6 +13,7 @@ from driftcut.config import (
 from driftcut.models import (
     BatchResult,
     DecisionMetrics,
+    JudgeResult,
     ModelResponse,
     PromptEvaluation,
     PromptResult,
@@ -54,6 +55,14 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
             candidate_regressed=False,
             candidate_improved=False,
             schema_break=False,
+            needs_judge=True,
+            judge=JudgeResult(
+                model="openai/gpt-4.1-mini",
+                verdict="equivalent",
+                confidence=0.9,
+                rationale="Both answers solve the same task.",
+                cost_usd=0.002,
+            ),
         ),
     )
     result.batches.append(BatchResult(batch_number=1, results=[prompt]))
@@ -63,7 +72,13 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
         outcome="PROCEED",
         reason="Risk is low.",
         confidence=0.8,
-        metrics=DecisionMetrics(prompts_evaluated=1, batches_evaluated=1),
+        metrics=DecisionMetrics(
+            prompts_evaluated=1,
+            batches_evaluated=1,
+            ambiguous_prompts=1,
+            judged_prompts=1,
+            judge_average_confidence=0.9,
+        ),
     )
     result.decision_history.append(result.final_decision)
 
@@ -76,4 +91,7 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
     json_text = (tmp_path / "driftcut-results" / "results.json").read_text(encoding="utf-8")
     html_text = (tmp_path / "driftcut-results" / "report.html").read_text(encoding="utf-8")
     assert '"outcome": "PROCEED"' in json_text
+    assert '"judge_usd": 0.002' in json_text
+    assert '"verdict": "equivalent"' in json_text
     assert "Report run - Driftcut report" in html_text
+    assert "Judge cost: $0.0020" in html_text

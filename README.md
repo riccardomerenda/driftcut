@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.3.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.4.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -27,7 +27,7 @@ So you run your full prompt corpus against the candidate model. Hundreds or thou
 
 You just burned budget to learn something you could have known in the first 10-20%.
 
-**Driftcut is the test you run before the full evaluation.** It samples strategically, compares baseline and candidate on a representative slice, runs deterministic checks on the outputs, and tells you whether to `STOP`, `CONTINUE`, or `PROCEED`.
+**Driftcut is the test you run before the full evaluation.** It samples strategically, compares baseline and candidate on a representative slice, runs deterministic checks first, sends only ambiguous prompts to a judge model, and tells you whether to `STOP`, `CONTINUE`, or `PROCEED`.
 
 ## What it is (and what it is not)
 
@@ -47,16 +47,17 @@ Today, Driftcut can:
 - Validate a structured corpus and migration config
 - Build stratified batches that prioritize high-criticality prompts
 - Run baseline and candidate models concurrently via LiteLLM
-- Track latency and cost across the sampled run
-- Run deterministic checks for format, JSON validity, required content, and optional output limits
+- Run deterministic checks for format, JSON validity, required content, and output limits
+- Send ambiguous prompts to a judge model for semantic comparison
+- Track latency, baseline/candidate cost, and judge cost
 - Produce `STOP`, `CONTINUE`, or `PROCEED` decisions during the run
 - Export both JSON results and an HTML report
-- Summarize failure archetypes such as `api_error`, `json_invalid`, `missing_json_keys`, and `missing_required_content`
+- Summarize deterministic and judge-driven failure archetypes such as `json_invalid`, `missing_json_keys`, and `judge_worse`
 
 Still planned next:
 
-- Judge-based quality comparison for ambiguous cases
-- Richer failure archetypes beyond deterministic checks
+- Real tiered escalation from light judge to heavy judge
+- Richer failure archetypes beyond deterministic checks and `judge_worse`
 - Better report polish and benchmark demos
 
 ## Quickstart
@@ -88,6 +89,9 @@ sampling:
   batch_size_per_category: 3
   max_batches: 5
   min_batches: 2
+
+evaluation:
+  judge_strategy: light
 ```
 
 Validate first, then run:
@@ -100,7 +104,8 @@ driftcut run --config migration.yaml
 `driftcut run` now:
 
 - executes sampled batches,
-- evaluates deterministic quality checks,
+- applies deterministic checks,
+- judges ambiguous prompts,
 - decides whether to stop, continue, or proceed,
 - writes `driftcut-results/results.json`,
 - writes `driftcut-results/report.html`.
@@ -128,6 +133,9 @@ Deterministic checks:
 - max output length
         |
         v
+Judge ambiguous prompts only
+        |
+        v
 Track latency and cost
         |
         v
@@ -145,9 +153,9 @@ JSON + HTML report
 ```text
 Deterministic checks
         +
-Tiered judge strategy
+Light judge on ambiguous prompts
         +
-Richer failure archetypes
+Heavy escalation when evidence stays unclear
         ->
 Higher-confidence migration decisions
 ```
@@ -156,13 +164,13 @@ Higher-confidence migration decisions
 
 Driftcut is designed around three migration dimensions:
 
-- **Quality** - deterministic checks are live; judge comparison is still planned.
+- **Quality** - deterministic checks are live, and a light judge now handles ambiguous prompts.
 - **Latency** - p50 and p95 are tracked and fed into the decision engine.
-- **Cost** - spend is tracked per run and included in the final report.
+- **Cost** - spend is tracked per run, including judge cost.
 
 ## Failure archetypes
 
-The current deterministic layer can classify failures such as:
+The current alpha can classify failures such as:
 
 | Archetype | What it means |
 |---|---|
@@ -174,6 +182,7 @@ The current deterministic layer can classify failures such as:
 | `missing_required_content` | Required substring was not found |
 | `forbidden_content` | Forbidden substring was found |
 | `overlong_output` | Output exceeded `max_output_chars` |
+| `judge_worse` | Judge found the candidate materially worse than baseline |
 
 ## Corpus format
 
@@ -202,7 +211,7 @@ su-001,summarization,"Summarize this document: {doc}",low,markdown,,,,1200
 
 ## Configuration
 
-The runtime actively uses `sampling`, `risk`, `latency`, and `output` settings. `evaluation.judge_strategy` is still future-facing and currently documents the intended next layer.
+The runtime actively uses `sampling`, `risk`, `latency`, `output`, and `evaluation.judge_strategy`. The current active strategies are `none`, `light`, and `heavy`. `tiered` currently behaves like `light` until heavy escalation lands.
 
 ```yaml
 name: "OpenAI to Anthropic migration gate"
@@ -231,7 +240,7 @@ risk:
   proceed_if_overall_risk_below: 0.08
 
 evaluation:
-  judge_strategy: tiered
+  judge_strategy: light
   judge_model_light: openai/gpt-4.1-mini
   judge_model_heavy: openai/gpt-4.1
   detect_failure_archetypes: true
@@ -249,15 +258,15 @@ output:
   show_confidence: true
 ```
 
-## Planned judge strategy
+## Judge strategy
 
 Driftcut aims to save budget, so the judge cannot consume all of it.
 
 | Stage | Method | Cost | Catches |
 |---|---|---|---|
-| Early batches | Deterministic checks | $0 | Format, schema, content, and output-limit failures |
-| Mid batches | Light judge | Low | General quality comparison |
-| Later ambiguous cases | Heavy judge | Higher | Nuanced quality differences |
+| First pass | Deterministic checks | $0 | Format, schema, content, and output-limit failures |
+| Ambiguous prompts | Light judge | Low | Semantic quality differences where both outputs still pass deterministic checks |
+| Future follow-up | Heavy escalation | Higher | Cases that remain unclear after the light judge |
 
 ## Roadmap
 
@@ -276,7 +285,8 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] Failure archetype summary
 - [x] Decision engine with configurable thresholds
 - [x] HTML report
-- [ ] Tiered judge integration
+- [x] Light judge integration for ambiguous prompts
+- [ ] Heavy escalation and real tiered judging
 - [ ] Richer failure archetypes
 - [ ] Public benchmark demo
 

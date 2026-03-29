@@ -39,7 +39,7 @@ class RiskConfig(BaseModel):
 
 
 class EvaluationConfig(BaseModel):
-    judge_strategy: Literal["none", "light", "tiered", "heavy"] = "tiered"
+    judge_strategy: Literal["none", "light", "tiered", "heavy"] = "light"
     judge_model_light: str = "openai/gpt-4.1-mini"
     judge_model_heavy: str = "openai/gpt-4.1"
     detect_failure_archetypes: bool = True

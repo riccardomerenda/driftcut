@@ -5,9 +5,16 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from driftcut.config import CorpusConfig, DriftcutConfig, ModelConfig, ModelsConfig, SamplingConfig
+from driftcut.config import (
+    CorpusConfig,
+    DriftcutConfig,
+    EvaluationConfig,
+    ModelConfig,
+    ModelsConfig,
+    SamplingConfig,
+)
 from driftcut.corpus import Corpus, PromptRecord
-from driftcut.models import ModelResponse
+from driftcut.models import JudgeResult, ModelResponse
 from driftcut.runner import RunResult, _run_prompt, run_migration
 from driftcut.sampler import StratifiedSampler
 
@@ -230,3 +237,53 @@ async def test_run_migration_stops_on_schema_break() -> None:
     assert result.final_decision is not None
     assert result.final_decision.outcome == "STOP"
     assert "schema break threshold" in result.final_decision.reason
+
+
+@pytest.mark.asyncio
+async def test_run_prompt_uses_judge_for_ambiguous_outputs() -> None:
+    config = DriftcutConfig(
+        name="Judge migration",
+        models=ModelsConfig(
+            baseline=ModelConfig(provider="openai", model="gpt-4o"),
+            candidate=ModelConfig(provider="anthropic", model="claude-haiku"),
+        ),
+        corpus=CorpusConfig(file=Path("prompts.csv")),
+        sampling=SamplingConfig(batch_size_per_category=1, max_batches=1, min_batches=1),
+        evaluation=EvaluationConfig(judge_strategy="light"),
+    )
+    prompt = PromptRecord(
+        id="p3",
+        category="support",
+        prompt="Draft a reply",
+        criticality="high",
+        expected_output_type="free_text",
+    )
+
+    async def side_effect(_: str, model: ModelConfig) -> ModelResponse:
+        if model.provider == "openai":
+            return _mock_response(output="We can issue a refund today.")
+        return _mock_response(output="Contact support tomorrow.")
+
+    with patch(
+        "driftcut.runner.execute_prompt",
+        new_callable=AsyncMock,
+        side_effect=side_effect,
+    ), patch(
+        "driftcut.runner.judge_prompt_result",
+        new_callable=AsyncMock,
+        return_value=JudgeResult(
+            model="openai/gpt-4.1-mini",
+            verdict="candidate_worse",
+            confidence=0.9,
+            rationale="Candidate misses the direct resolution path.",
+            cost_usd=0.002,
+        ),
+    ) as judge_mock:
+        result = await _run_prompt(prompt, config)
+
+    assert result.evaluation is not None
+    assert result.evaluation.needs_judge is True
+    assert result.evaluation.judge is not None
+    assert result.evaluation.candidate_regressed is True
+    assert result.evaluation.candidate_failed is True
+    judge_mock.assert_awaited_once()

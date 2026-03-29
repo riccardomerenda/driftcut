@@ -35,7 +35,7 @@ class ResponseEvaluation:
 
 @dataclass
 class PromptEvaluation:
-    """Deterministic quality comparison for one prompt."""
+    """Quality comparison for one prompt, including optional judge evidence."""
 
     baseline: ResponseEvaluation
     candidate: ResponseEvaluation
@@ -43,6 +43,26 @@ class PromptEvaluation:
     candidate_regressed: bool
     candidate_improved: bool
     schema_break: bool
+    needs_judge: bool = False
+    judge: JudgeResult | None = None
+
+
+@dataclass
+class JudgeResult:
+    """Semantic comparison result from a judge model."""
+
+    model: str
+    verdict: Literal["candidate_worse", "equivalent", "candidate_better", "unavailable"]
+    confidence: float = 0.0
+    rationale: str = ""
+    latency_ms: float = 0.0
+    cost_usd: float = 0.0
+    cost_error: str | None = None
+    error: str | None = None
+
+    @property
+    def is_error(self) -> bool:
+        return self.error is not None
 
 
 @dataclass
@@ -53,10 +73,16 @@ class DecisionMetrics:
     batches_evaluated: int = 0
     structured_prompts: int = 0
     high_criticality_prompts: int = 0
+    ambiguous_prompts: int = 0
+    judged_prompts: int = 0
     candidate_failure_rate: float = 0.0
     candidate_regression_rate: float = 0.0
     schema_break_rate: float = 0.0
     high_criticality_failure_rate: float = 0.0
+    judge_worse_rate: float = 0.0
+    judge_equivalent_rate: float = 0.0
+    judge_better_rate: float = 0.0
+    judge_average_confidence: float = 0.0
     overall_risk: float = 0.0
     latency_p50_ratio: float = 1.0
     latency_p95_ratio: float = 1.0
@@ -113,7 +139,16 @@ class BatchResult:
 
     @property
     def total_cost_usd(self) -> float:
-        return sum(r.baseline.cost_usd + r.candidate.cost_usd for r in self.results)
+        return sum(
+            r.baseline.cost_usd
+            + r.candidate.cost_usd
+            + (
+                r.evaluation.judge.cost_usd
+                if r.evaluation is not None and r.evaluation.judge is not None
+                else 0.0
+            )
+            for r in self.results
+        )
 
     @property
     def total_latency_ms(self) -> float:

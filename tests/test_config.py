@@ -41,7 +41,7 @@ def test_risk_thresholds() -> None:
 
 def test_evaluation_config() -> None:
     cfg = load_config(EXAMPLES_DIR / "migration.yaml")
-    assert cfg.evaluation.judge_strategy == "tiered"
+    assert cfg.evaluation.judge_strategy == "light"
     assert cfg.evaluation.detect_failure_archetypes is True
 
 
@@ -72,7 +72,7 @@ def test_defaults_applied_when_sections_missing(tmp_path: Path) -> None:
     cfg = load_config(config_file)
     assert cfg.sampling.batch_size_per_category == 3
     assert cfg.risk.stop_on_high_criticality_failure_rate == 0.20
-    assert cfg.evaluation.judge_strategy == "tiered"
+    assert cfg.evaluation.judge_strategy == "light"
 
 
 def test_missing_required_field(tmp_path: Path) -> None:

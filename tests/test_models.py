@@ -1,6 +1,13 @@
 """Tests for result models."""
 
-from driftcut.models import BatchResult, ModelResponse, PromptResult
+from driftcut.models import (
+    BatchResult,
+    JudgeResult,
+    ModelResponse,
+    PromptEvaluation,
+    PromptResult,
+    ResponseEvaluation,
+)
 
 
 def _make_response(
@@ -56,6 +63,20 @@ class TestModelResponse:
         assert r.error is None
 
 
+class TestJudgeResult:
+    def test_is_error_false_by_default(self) -> None:
+        judge = JudgeResult(model="openai/gpt-4.1-mini", verdict="equivalent")
+        assert judge.is_error is False
+
+    def test_is_error_true_when_error_set(self) -> None:
+        judge = JudgeResult(
+            model="openai/gpt-4.1-mini",
+            verdict="unavailable",
+            error="Missing API key",
+        )
+        assert judge.is_error is True
+
+
 class TestBatchResult:
     def test_empty_batch(self) -> None:
         b = BatchResult(batch_number=1)
@@ -67,9 +88,22 @@ class TestBatchResult:
     def test_batch_with_results(self) -> None:
         r1 = _make_prompt_result(baseline_cost=0.01, candidate_cost=0.005)
         r2 = _make_prompt_result(baseline_cost=0.02, candidate_cost=0.01)
+        r2.evaluation = PromptEvaluation(
+            baseline=ResponseEvaluation(passed=True, structure_valid=True),
+            candidate=ResponseEvaluation(passed=True, structure_valid=True),
+            candidate_failed=False,
+            candidate_regressed=False,
+            candidate_improved=False,
+            schema_break=False,
+            judge=JudgeResult(
+                model="openai/gpt-4.1-mini",
+                verdict="equivalent",
+                cost_usd=0.002,
+            ),
+        )
         b = BatchResult(batch_number=1, results=[r1, r2])
         assert b.size == 2
-        assert b.total_cost_usd == 0.045
+        assert b.total_cost_usd == 0.047
 
     def test_batch_counts_errors(self) -> None:
         r_ok = _make_prompt_result()

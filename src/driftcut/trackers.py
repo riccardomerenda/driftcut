@@ -70,6 +70,7 @@ class CostSummary:
 
     baseline_usd: float = 0.0
     candidate_usd: float = 0.0
+    judge_usd: float = 0.0
     total_usd: float = 0.0
     per_category: dict[str, float] = field(default_factory=dict)
 
@@ -80,12 +81,17 @@ class CostTracker:
     def __init__(self) -> None:
         self._baseline_total: float = 0.0
         self._candidate_total: float = 0.0
+        self._judge_total: float = 0.0
         self._per_category: dict[str, float] = {}
 
     def record(self, result: PromptResult) -> None:
         self._baseline_total += result.baseline.cost_usd
         self._candidate_total += result.candidate.cost_usd
-        total = result.baseline.cost_usd + result.candidate.cost_usd
+        judge_cost = 0.0
+        if result.evaluation is not None and result.evaluation.judge is not None:
+            judge_cost = result.evaluation.judge.cost_usd
+        self._judge_total += judge_cost
+        total = result.baseline.cost_usd + result.candidate.cost_usd + judge_cost
         cat = result.category
         self._per_category[cat] = self._per_category.get(cat, 0.0) + total
 
@@ -94,7 +100,8 @@ class CostTracker:
         return CostSummary(
             baseline_usd=self._baseline_total,
             candidate_usd=self._candidate_total,
-            total_usd=self._baseline_total + self._candidate_total,
+            judge_usd=self._judge_total,
+            total_usd=self._baseline_total + self._candidate_total + self._judge_total,
             per_category=dict(sorted(self._per_category.items())),
         )
 

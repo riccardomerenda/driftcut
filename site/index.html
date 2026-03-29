@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Driftcut - v0.3.0 alpha migration decision CLI</title>
-<meta name="description" content="Driftcut is a v0.3.0 alpha CLI for LLM migration canaries with deterministic checks, risk scoring, and STOP/CONTINUE/PROCEED decisions.">
-<meta property="og:title" content="Driftcut - v0.3.0 alpha migration decision CLI">
-<meta property="og:description" content="Validate a prompt corpus, sample representative batches, compare baseline and candidate models, and decide whether to stop, continue, or proceed.">
+<title>Driftcut - v0.4.0 alpha migration decision CLI</title>
+<meta name="description" content="Driftcut is a v0.4.0 alpha CLI for LLM migration canaries with deterministic checks, light judging for ambiguous prompts, and STOP/CONTINUE/PROCEED decisions.">
+<meta property="og:title" content="Driftcut - v0.4.0 alpha migration decision CLI">
+<meta property="og:description" content="Validate a prompt corpus, sample representative batches, compare baseline and candidate models, judge ambiguous prompts, and decide whether to stop, continue, or proceed.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://driftcut.dev">
 <link rel="canonical" href="https://driftcut.dev">
@@ -201,9 +201,9 @@
   <section class="hero">
     <div class="container hero-grid">
       <div>
-        <div class="badge">v0.3.0 alpha</div>
+        <div class="badge">v0.4.0 alpha</div>
         <h1>Sample migrations<br>before full eval.</h1>
-        <p><strong>Driftcut</strong> is an alpha CLI for LLM migration canaries. It validates a structured prompt corpus, samples representative batches, runs baseline and candidate models, checks deterministic quality signals, and tells you whether to stop, continue, or proceed.</p>
+        <p><strong>Driftcut</strong> is an alpha CLI for LLM migration canaries. It validates a structured prompt corpus, samples representative batches, runs baseline and candidate models, checks deterministic quality signals, judges only the ambiguous prompts, and tells you whether to stop, continue, or proceed.</p>
         <p>The scope is narrow on purpose: help teams decide whether a migration candidate is promising enough to keep testing before spending on a full evaluation.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://github.com/riccardomerenda/driftcut">View on GitHub</a>
@@ -212,7 +212,7 @@
         <div class="pill-row">
           <span class="pill">CLI-first</span>
           <span class="pill">CSV / JSON corpus</span>
-          <span class="pill">Deterministic checks</span>
+          <span class="pill">Light judge on ambiguity</span>
           <span class="pill">Decision + HTML report</span>
         </div>
       </div>
@@ -225,25 +225,23 @@
           <span>alpha run</span>
         </div>
         <div class="terminal-body">
-          <div><span class="dim">$</span> driftcut validate --config migration.yaml</div>
-          <div class="dim">Config is valid. Ready to run.</div>
-          <div style="height:8px"></div>
           <div><span class="dim">$</span> driftcut run --config migration.yaml</div>
           <div class="dim">Loading corpus... 30 prompts, 4 categories</div>
           <div>Baseline: <span class="good">openai/gpt-4o</span></div>
           <div>Candidate: <span class="good">anthropic/claude-haiku</span></div>
           <div style="height:8px"></div>
           <div class="dim">Batch 1 <span class="good">######</span> 12/24</div>
-          <div class="dim">Decision: CONTINUE (50% confidence)</div>
+          <div class="dim">Judge coverage: 3/3 ambiguous prompts</div>
+          <div class="dim">Decision: CONTINUE (58% confidence)</div>
           <div class="dim">Batch 2 <span class="good">######</span> 24/24</div>
           <div style="height:8px"></div>
           <div>Run complete</div>
           <div class="dim">Prompts tested: <span>24/30 (80%)</span></div>
-          <div class="dim">Total cost: <span>$1.84</span></div>
-          <div class="dim">Latency p50: <span>820ms -> 340ms</span></div>
+          <div class="dim">Total cost: <span>$1.96</span></div>
+          <div class="dim">Judge cost: <span>$0.12</span></div>
           <div class="dim">Decision: <span class="good">PROCEED</span></div>
           <div class="dim">Output: <span>./driftcut-results/results.json + report.html</span></div>
-          <div class="warn">Next milestone: judge-based comparison for ambiguous cases</div>
+          <div class="warn">Next milestone: heavy escalation for still-ambiguous prompts</div>
         </div>
       </div>
     </div>
@@ -253,7 +251,7 @@
     <div class="container">
       <div class="section-label">Current Status</div>
       <h2 class="section-title">A real alpha migration gate.</h2>
-      <p class="section-desc">The repository now includes a deterministic quality layer and a real decision engine. The next step is higher-confidence judging for the prompts where deterministic checks are not enough.</p>
+      <p class="section-desc">The repository now includes deterministic checks, a light judge for ambiguous prompts, and a decision engine with confidence and report output. The next step is real heavy escalation when the light judge is not enough.</p>
       <div class="grid-2">
         <div class="card">
           <span class="status-chip status-now">Shipping now</span>
@@ -262,7 +260,7 @@
             <li>Config and corpus validation</li>
             <li>Stratified batch sampling by category and criticality</li>
             <li>Concurrent baseline/candidate execution via LiteLLM</li>
-            <li>Deterministic quality checks and failure archetypes</li>
+            <li>Deterministic checks and light judging for ambiguity</li>
             <li>Latency, cost, decision output, and HTML reporting</li>
           </ul>
         </div>
@@ -270,7 +268,7 @@
           <span class="status-chip status-next">Planned next</span>
           <h3>What sharpens the wedge further</h3>
           <ul class="list">
-            <li>Judge-based comparison for ambiguous cases</li>
+            <li>Heavy escalation after the light judge</li>
             <li>Richer failure archetypes beyond deterministic checks</li>
             <li>Better benchmark demos and report polish</li>
             <li>More confidence on borderline migration candidates</li>
@@ -299,7 +297,7 @@
         <div class="card">
           <div class="step-num">03</div>
           <h3>Run and decide</h3>
-          <p>Baseline and candidate run concurrently for each prompt. The runtime records latency and cost, evaluates deterministic checks, and updates the migration decision after each batch.</p>
+          <p>Baseline and candidate run concurrently for each prompt. The runtime records latency and cost, judges only ambiguous prompts, and updates the migration decision after each batch.</p>
         </div>
       </div>
     </div>
@@ -327,12 +325,12 @@
           <tr>
             <td>Current alpha</td>
             <td>Quality measurement</td>
-            <td>Sampling + deterministic checks + migration decisions</td>
+            <td>Sampling + light semantic judging + migration decisions</td>
           </tr>
           <tr>
             <td>Next milestone</td>
             <td>More benchmarks and scoring</td>
-            <td>Judge-based review for ambiguous evidence</td>
+            <td>Heavy escalation for unclear evidence</td>
           </tr>
           <tr>
             <td>Output shape</td>
@@ -359,11 +357,11 @@
         </div>
         <div class="faq">
           <h3>What is implemented right now?</h3>
-          <p>Validation, sampling, paired model execution, deterministic checks, latency tracking, cost tracking, decision output, JSON export, and HTML reporting. Judge-based quality comparison is still the main roadmap item.</p>
+          <p>Validation, sampling, paired model execution, deterministic checks, light judging for ambiguous prompts, latency tracking, cost tracking, decision output, JSON export, and HTML reporting.</p>
         </div>
         <div class="faq">
           <h3>What does a run cost?</h3>
-          <p>Today the cost is the sampled baseline and candidate model calls. Judge cost enters later when the next quality layer lands.</p>
+          <p>Today the cost is the sampled baseline and candidate model calls plus optional judge cost for ambiguous prompts only. The judge is designed to be selective, not universal.</p>
         </div>
       </div>
     </div>
@@ -371,7 +369,7 @@
 
   <footer>
     <div class="container footer-wrap">
-      <span>driftcut - v0.3.0 alpha CLI for LLM migration canaries</span>
+      <span>driftcut - v0.4.0 alpha CLI for LLM migration canaries</span>
       <span>
         <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> -
         <a href="https://docs.driftcut.dev/getting-started/">Docs</a> -

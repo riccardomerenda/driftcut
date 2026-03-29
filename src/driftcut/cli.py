@@ -102,7 +102,8 @@ def _print_validation_summary(
         f"Total prompts to test: {total_prompts}/{corpus.size} ({coverage:.0f}%)",
         "Deterministic checks: expected format, required content, and optional JSON keys",
         "Judge strategy: "
-        f"{cfg.evaluation.judge_strategy} (placeholder for future model-based review)",
+        f"{cfg.evaluation.judge_strategy} "
+        "(semantic comparison for ambiguous prompts when enabled)",
     ]
     console.print(Panel("\n".join(plan_lines), title="Sampling Plan", border_style="blue"))
 
