@@ -1,0 +1,130 @@
+"""Tests for latency and cost trackers."""
+
+from driftcut.models import ModelResponse, PromptResult
+from driftcut.trackers import CostTracker, LatencyTracker, _percentile
+
+
+def _make_result(
+    category: str = "support",
+    baseline_latency: float = 100.0,
+    candidate_latency: float = 80.0,
+    baseline_cost: float = 0.01,
+    candidate_cost: float = 0.005,
+    baseline_error: str | None = None,
+    candidate_error: str | None = None,
+) -> PromptResult:
+    return PromptResult(
+        prompt_id="p1",
+        category=category,
+        criticality="high",
+        prompt_text="test",
+        expected_output_type="free_text",
+        baseline=ModelResponse(
+            output="b",
+            latency_ms=baseline_latency,
+            cost_usd=baseline_cost,
+            error=baseline_error,
+        ),
+        candidate=ModelResponse(
+            output="c",
+            latency_ms=candidate_latency,
+            cost_usd=candidate_cost,
+            error=candidate_error,
+        ),
+    )
+
+
+class TestPercentile:
+    def test_single_value(self):
+        assert _percentile([100.0], 95) == 100.0
+
+    def test_two_values(self):
+        result = _percentile([10.0, 100.0], 50)
+        assert result == 55.0
+
+    def test_empty(self):
+        assert _percentile([], 95) == 0.0
+
+    def test_known_p95(self):
+        values = list(range(1, 101))  # 1..100
+        p95 = _percentile(values, 95)
+        assert 95.0 <= p95 <= 96.0
+
+
+class TestLatencyTracker:
+    def test_empty_tracker(self):
+        lt = LatencyTracker()
+        stats = lt.baseline_stats()
+        assert stats.count == 0
+        assert stats.p50_ms == 0
+
+    def test_records_latencies(self):
+        lt = LatencyTracker()
+        lt.record(_make_result(baseline_latency=100, candidate_latency=50))
+        lt.record(_make_result(baseline_latency=200, candidate_latency=80))
+        lt.record(_make_result(baseline_latency=300, candidate_latency=120))
+
+        bl = lt.baseline_stats()
+        assert bl.count == 3
+        assert bl.p50_ms == 200.0
+        assert bl.min_ms == 100.0
+        assert bl.max_ms == 300.0
+
+        cd = lt.candidate_stats()
+        assert cd.count == 3
+        assert cd.p50_ms == 80.0
+
+    def test_per_category(self):
+        lt = LatencyTracker()
+        lt.record(_make_result(category="a", baseline_latency=100, candidate_latency=50))
+        lt.record(_make_result(category="b", baseline_latency=500, candidate_latency=300))
+
+        a_stats = lt.baseline_stats("a")
+        assert a_stats.count == 1
+        assert a_stats.p50_ms == 100.0
+
+        overall = lt.baseline_stats()
+        assert overall.count == 2
+
+    def test_categories_property(self):
+        lt = LatencyTracker()
+        lt.record(_make_result(category="b"))
+        lt.record(_make_result(category="a"))
+        assert lt.categories == ["a", "b"]
+
+    def test_errors_excluded_from_latency(self):
+        lt = LatencyTracker()
+        lt.record(_make_result(candidate_error="timeout"))
+        bl = lt.baseline_stats()
+        assert bl.count == 1
+        cd = lt.candidate_stats()
+        assert cd.count == 0
+
+
+class TestCostTracker:
+    def test_empty_tracker(self):
+        ct = CostTracker()
+        s = ct.summary
+        assert s.total_usd == 0.0
+        assert s.baseline_usd == 0.0
+        assert s.candidate_usd == 0.0
+
+    def test_accumulates_cost(self):
+        ct = CostTracker()
+        ct.record(_make_result(baseline_cost=0.01, candidate_cost=0.005))
+        ct.record(_make_result(baseline_cost=0.02, candidate_cost=0.01))
+
+        s = ct.summary
+        assert abs(s.baseline_usd - 0.03) < 1e-9
+        assert abs(s.candidate_usd - 0.015) < 1e-9
+        assert abs(s.total_usd - 0.045) < 1e-9
+
+    def test_per_category_cost(self):
+        ct = CostTracker()
+        ct.record(_make_result(category="a", baseline_cost=0.01, candidate_cost=0.005))
+        ct.record(_make_result(category="b", baseline_cost=0.02, candidate_cost=0.01))
+        ct.record(_make_result(category="a", baseline_cost=0.01, candidate_cost=0.005))
+
+        s = ct.summary
+        assert abs(s.per_category["a"] - 0.03) < 1e-9
+        assert abs(s.per_category["b"] - 0.03) < 1e-9

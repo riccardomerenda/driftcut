@@ -1,5 +1,8 @@
 """Driftcut CLI — early-stop canary testing for LLM model migrations."""
 
+from __future__ import annotations
+
+import asyncio
 from pathlib import Path
 
 import typer
@@ -131,10 +134,87 @@ def run(
         exists=True,
         readable=True,
     ),
+    seed: int = typer.Option(
+        42,
+        "--seed",
+        help="Random seed for reproducible sampling.",
+    ),
 ) -> None:
     """Run a migration canary test."""
-    console.print(f"[bold]Loading config from[/bold] {config}")
-    console.print("[yellow]Migration runner not yet implemented — coming soon.[/yellow]")
+    from driftcut.runner import run_migration
+
+    try:
+        cfg = load_config(config)
+    except Exception as e:
+        console.print(f"[red bold]Config error:[/red bold] {e}")
+        raise typer.Exit(code=1) from e
+
+    corpus_path = _resolve_corpus_path(config, cfg.corpus.file)
+    try:
+        corpus = load_corpus(corpus_path)
+    except Exception as e:
+        console.print(f"[red bold]Corpus error:[/red bold] {e}")
+        raise typer.Exit(code=1) from e
+
+    sampler = StratifiedSampler(corpus, cfg.sampling, seed=seed)
+    result = asyncio.run(run_migration(cfg, sampler))
+
+    if cfg.output.save_json:
+        _save_json_results(config, result)
+
+
+def _save_json_results(config_path: Path, result) -> None:
+    """Save run results as JSON next to the config file."""
+    import json
+
+    from driftcut.models import BatchResult, PromptResult
+
+    output_dir = config_path.parent / "driftcut-results"
+    output_dir.mkdir(exist_ok=True)
+    output_file = output_dir / "results.json"
+
+    def _prompt_result_dict(pr: PromptResult) -> dict:
+        return {
+            "prompt_id": pr.prompt_id,
+            "category": pr.category,
+            "criticality": pr.criticality,
+            "baseline": {
+                "output": pr.baseline.output[:500],
+                "latency_ms": round(pr.baseline.latency_ms, 1),
+                "cost_usd": pr.baseline.cost_usd,
+                "error": pr.baseline.error,
+            },
+            "candidate": {
+                "output": pr.candidate.output[:500],
+                "latency_ms": round(pr.candidate.latency_ms, 1),
+                "cost_usd": pr.candidate.cost_usd,
+                "error": pr.candidate.error,
+            },
+        }
+
+    def _batch_dict(br: BatchResult) -> dict:
+        return {
+            "batch_number": br.batch_number,
+            "size": br.size,
+            "total_cost_usd": br.total_cost_usd,
+            "results": [_prompt_result_dict(r) for r in br.results],
+        }
+
+    data = {
+        "name": result.config_name,
+        "total_prompts": result.total_prompts,
+        "total_batches": result.total_batches,
+        "cost": {
+            "baseline_usd": result.cost.summary.baseline_usd,
+            "candidate_usd": result.cost.summary.candidate_usd,
+            "total_usd": result.cost.summary.total_usd,
+        },
+        "batches": [_batch_dict(b) for b in result.batches],
+    }
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    console.print(f"[dim]Results saved to {output_file}[/dim]")
 
 
 @app.command()
