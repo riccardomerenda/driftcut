@@ -7,10 +7,10 @@ from typing import Any
 
 import litellm
 
-litellm.suppress_debug_info = True
-
 from driftcut.config import ModelConfig
 from driftcut.models import ModelResponse
+
+litellm.suppress_debug_info = True
 
 
 def _litellm_model_name(config: ModelConfig) -> str:
