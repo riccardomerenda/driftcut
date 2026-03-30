@@ -1,0 +1,39 @@
+name: "Historical GPT-4o to Claude Haiku replay gate"
+description: "Replay historical paired outputs through the Driftcut decision engine"
+
+models:
+  baseline:
+    provider: openai
+    model: gpt-4o
+  candidate:
+    provider: anthropic
+    model: claude-haiku
+
+sampling:
+  batch_size_per_category: 1
+  max_batches: 2
+  min_batches: 1
+
+risk:
+  high_criticality_weight: 2.0
+  stop_on_schema_break_rate: 0.25
+  stop_on_high_criticality_failure_rate: 0.20
+  proceed_if_overall_risk_below: 0.08
+
+evaluation:
+  judge_strategy: light
+  judge_model_light: openai/gpt-4.1-mini
+  judge_model_heavy: openai/gpt-4.1
+  detect_failure_archetypes: true
+
+latency:
+  track: true
+  regression_threshold_p50: 1.5
+  regression_threshold_p95: 2.0
+
+output:
+  save_json: true
+  save_html: true
+  save_examples: true
+  show_thresholds: true
+  show_confidence: true

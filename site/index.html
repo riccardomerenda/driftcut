@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Driftcut - v0.4.0 alpha migration decision CLI</title>
-<meta name="description" content="Driftcut is a v0.4.0 alpha CLI for LLM migration canaries with deterministic checks, light judging for ambiguous prompts, and STOP/CONTINUE/PROCEED decisions.">
-<meta property="og:title" content="Driftcut - v0.4.0 alpha migration decision CLI">
-<meta property="og:description" content="Validate a prompt corpus, sample representative batches, compare baseline and candidate models, judge ambiguous prompts, and decide whether to stop, continue, or proceed.">
+<title>Driftcut - v0.5.0 alpha migration decision CLI</title>
+<meta name="description" content="Driftcut is a v0.5.0 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, selective judging, and STOP/CONTINUE/PROCEED decisions.">
+<meta property="og:title" content="Driftcut - v0.5.0 alpha migration decision CLI">
+<meta property="og:description" content="Validate a prompt corpus or replay historical paired outputs, sample representative batches, compare baseline and candidate models, judge ambiguous prompts, and decide whether to stop, continue, or proceed.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://driftcut.dev">
 <link rel="canonical" href="https://driftcut.dev">
@@ -201,9 +201,9 @@
   <section class="hero">
     <div class="container hero-grid">
       <div>
-        <div class="badge">v0.4.0 alpha</div>
-        <h1>Sample migrations<br>before full eval.</h1>
-        <p><strong>Driftcut</strong> is an alpha CLI for LLM migration canaries. It validates a structured prompt corpus, samples representative batches, runs baseline and candidate models, checks deterministic quality signals, judges only the ambiguous prompts, and tells you whether to stop, continue, or proceed.</p>
+        <div class="badge">v0.5.0 alpha</div>
+        <h1>Sample or replay<br>before full eval.</h1>
+        <p><strong>Driftcut</strong> is an alpha CLI for LLM migration canaries. It validates a structured prompt corpus, samples representative batches, runs baseline and candidate models, or replays historical paired outputs, checks deterministic quality signals, judges only the ambiguous prompts, and tells you whether to stop, continue, or proceed.</p>
         <p>The scope is narrow on purpose: help teams decide whether a migration candidate is promising enough to keep testing before spending on a full evaluation.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://github.com/riccardomerenda/driftcut">View on GitHub</a>
@@ -212,6 +212,7 @@
         <div class="pill-row">
           <span class="pill">CLI-first</span>
           <span class="pill">CSV / JSON corpus</span>
+          <span class="pill">Historical replay</span>
           <span class="pill">Light judge on ambiguity</span>
           <span class="pill">Decision + HTML report</span>
         </div>
@@ -251,7 +252,7 @@
     <div class="container">
       <div class="section-label">Current Status</div>
       <h2 class="section-title">A real alpha migration gate.</h2>
-      <p class="section-desc">The repository now includes deterministic checks, a light judge for ambiguous prompts, and a decision engine with confidence and report output. The next step is real heavy escalation when the light judge is not enough.</p>
+      <p class="section-desc">The repository now includes deterministic checks, a light judge for ambiguous prompts, a decision engine with confidence and report output, and a replay path for historical paired outputs. The next step is real heavy escalation when the light judge is not enough.</p>
       <div class="grid-2">
         <div class="card">
           <span class="status-chip status-now">Shipping now</span>
@@ -260,6 +261,7 @@
             <li>Config and corpus validation</li>
             <li>Stratified batch sampling by category and criticality</li>
             <li>Concurrent baseline/candidate execution via LiteLLM</li>
+            <li>Historical replay on canonical paired-output JSON</li>
             <li>Deterministic checks and light judging for ambiguity</li>
             <li>Latency, cost, decision output, and HTML reporting</li>
           </ul>
@@ -292,12 +294,12 @@
         <div class="card">
           <div class="step-num">02</div>
           <h3>Sample strategically</h3>
-          <p>The sampler builds balanced batches and prioritizes high-criticality prompts earlier, so the first slice is more informative than a naive random sample.</p>
+          <p>The sampler builds balanced batches and prioritizes high-criticality prompts earlier, so the first slice is more informative than a naive random sample in both live and replay mode.</p>
         </div>
         <div class="card">
           <div class="step-num">03</div>
-          <h3>Run and decide</h3>
-          <p>Baseline and candidate run concurrently for each prompt. The runtime records latency and cost, judges only ambiguous prompts, and updates the migration decision after each batch.</p>
+          <h3>Run or replay and decide</h3>
+          <p>Baseline and candidate can run live for each prompt, or historical paired outputs can be replayed through the same runtime. Driftcut records latency and cost when available, judges only ambiguous prompts, and updates the migration decision after each batch.</p>
         </div>
       </div>
     </div>
@@ -325,7 +327,7 @@
           <tr>
             <td>Current alpha</td>
             <td>Quality measurement</td>
-            <td>Sampling + light semantic judging + migration decisions</td>
+            <td>Sampling or replay + light semantic judging + migration decisions</td>
           </tr>
           <tr>
             <td>Next milestone</td>
@@ -357,7 +359,7 @@
         </div>
         <div class="faq">
           <h3>What is implemented right now?</h3>
-          <p>Validation, sampling, paired model execution, deterministic checks, light judging for ambiguous prompts, latency tracking, cost tracking, decision output, JSON export, and HTML reporting.</p>
+          <p>Validation, sampling, paired model execution, canonical replay loading, deterministic checks, light judging for ambiguous prompts, latency tracking, cost tracking, decision output, JSON export, and HTML reporting.</p>
         </div>
         <div class="faq">
           <h3>What does a run cost?</h3>
@@ -369,7 +371,7 @@
 
   <footer>
     <div class="container footer-wrap">
-      <span>driftcut - v0.4.0 alpha CLI for LLM migration canaries</span>
+      <span>driftcut - v0.5.0 alpha CLI for LLM migration canaries</span>
       <span>
         <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> -
         <a href="https://docs.driftcut.dev/getting-started/">Docs</a> -

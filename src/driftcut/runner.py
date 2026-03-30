@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from typing import Literal
 
 from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID, TextColumn
@@ -18,12 +20,14 @@ from driftcut.judge import (
     judge_strategy_enabled,
     prompt_needs_judge,
 )
-from driftcut.models import BatchResult, PromptResult, RunDecision
+from driftcut.models import BatchResult, ModelResponse, PromptResult, RunDecision
 from driftcut.quality import evaluate_prompt_result
+from driftcut.replay import ReplayDataset
 from driftcut.sampler import Batch, StratifiedSampler
 from driftcut.trackers import CostTracker, LatencyTracker
 
 console = Console()
+type BatchRunner = Callable[[Batch, DriftcutConfig, Progress, TaskID], Awaitable[BatchResult]]
 
 
 @dataclass
@@ -31,12 +35,14 @@ class RunResult:
     """Complete result of a migration run."""
 
     config_name: str
+    mode: Literal["live", "replay"] = "live"
     batches: list[BatchResult] = field(default_factory=list)
     latency: LatencyTracker = field(default_factory=LatencyTracker)
     cost: CostTracker = field(default_factory=CostTracker)
     decision_history: list[RunDecision] = field(default_factory=list)
     final_decision: RunDecision | None = None
     stopped_early: bool = False
+    historical_metrics_present: dict[str, bool] = field(default_factory=dict)
 
     @property
     def total_prompts(self) -> int:
@@ -45,6 +51,38 @@ class RunResult:
     @property
     def total_batches(self) -> int:
         return len(self.batches)
+
+
+def build_prompt_result(
+    prompt: PromptRecord,
+    baseline_resp: ModelResponse,
+    candidate_resp: ModelResponse,
+) -> PromptResult:
+    """Build a PromptResult from metadata plus paired baseline/candidate responses."""
+    return PromptResult(
+        prompt_id=prompt.id,
+        category=prompt.category,
+        criticality=prompt.criticality,
+        prompt_text=prompt.prompt,
+        expected_output_type=prompt.expected_output_type,
+        baseline=baseline_resp,
+        candidate=candidate_resp,
+        notes=prompt.notes,
+        required_substrings=list(prompt.required_substrings),
+        forbidden_substrings=list(prompt.forbidden_substrings),
+        json_required_keys=list(prompt.json_required_keys),
+        max_output_chars=prompt.max_output_chars,
+    )
+
+
+async def finalize_prompt_result(result: PromptResult, config: DriftcutConfig) -> PromptResult:
+    """Run shared post-processing for a paired prompt result."""
+    result.evaluation = evaluate_prompt_result(result)
+    result.evaluation.needs_judge = prompt_needs_judge(result)
+    if result.evaluation.needs_judge and judge_strategy_enabled(config.evaluation):
+        judge = await judge_prompt_result(result, config.evaluation)
+        result.evaluation = apply_judge_result(result.evaluation, judge)
+    return result
 
 
 async def _run_prompt(
@@ -70,12 +108,15 @@ async def _run_prompt(
         json_required_keys=list(prompt.json_required_keys),
         max_output_chars=prompt.max_output_chars,
     )
-    result.evaluation = evaluate_prompt_result(result)
-    result.evaluation.needs_judge = prompt_needs_judge(result)
-    if result.evaluation.needs_judge and judge_strategy_enabled(config.evaluation):
-        judge = await judge_prompt_result(result, config.evaluation)
-        result.evaluation = apply_judge_result(result.evaluation, judge)
-    return result
+    return await finalize_prompt_result(result, config)
+
+
+async def _finalize_indexed_result(
+    index: int,
+    result: PromptResult,
+    config: DriftcutConfig,
+) -> tuple[int, PromptResult]:
+    return index, await finalize_prompt_result(result, config)
 
 
 async def _run_batch(
@@ -99,22 +140,74 @@ async def _run_batch(
     return BatchResult(batch_number=batch.batch_number, results=results)
 
 
-async def run_migration(
+async def _run_replay_batch(
+    batch: Batch,
     config: DriftcutConfig,
-    sampler: StratifiedSampler,
-) -> RunResult:
-    """Execute the full migration canary run."""
-    run_result = RunResult(config_name=config.name)
-    total_prompts = sampler.total_prompts_planned
-    total_batches = sampler.total_batches_possible
+    replay_dataset: ReplayDataset,
+    progress: Progress,
+    task_id: TaskID,
+) -> BatchResult:
+    """Materialize one replay batch and apply the shared evaluation pipeline."""
+
+    async def _materialize_indexed_prompt(
+        index: int,
+        prompt: PromptRecord,
+    ) -> tuple[int, PromptResult]:
+        pair = replay_dataset.pair_for(prompt)
+        result = build_prompt_result(prompt, pair.baseline, pair.candidate)
+        return await _finalize_indexed_result(index, result, config)
+
+    tasks = [_materialize_indexed_prompt(i, prompt) for i, prompt in enumerate(batch.prompts)]
+    indexed_results: list[tuple[int, PromptResult]] = []
+    for coro in asyncio.as_completed(tasks):
+        indexed_results.append(await coro)
+        progress.advance(task_id)
+    indexed_results.sort(key=lambda item: item[0])
+    results = [result for _, result in indexed_results]
+    return BatchResult(batch_number=batch.batch_number, results=results)
+
+
+def _print_run_header(config: DriftcutConfig, *, mode: Literal["live", "replay"]) -> None:
     baseline_name = f"{config.models.baseline.provider}/{config.models.baseline.model}"
     candidate_name = f"{config.models.candidate.provider}/{config.models.candidate.model}"
 
     console.print()
     console.print(f"[bold]{config.name}[/bold]")
+    console.print(f"  Mode:      {mode}")
     console.print(f"  Baseline:  {baseline_name}")
     console.print(f"  Candidate: {candidate_name}")
     console.print()
+
+
+def _record_batch_metrics(
+    run_result: RunResult,
+    batch_result: BatchResult,
+    *,
+    track_latency: bool,
+) -> None:
+    for prompt_result in batch_result.results:
+        if track_latency:
+            run_result.latency.record(prompt_result)
+        run_result.cost.record(prompt_result)
+
+
+async def _execute_canary(
+    config: DriftcutConfig,
+    sampler: StratifiedSampler,
+    batch_runner: BatchRunner,
+    *,
+    mode: Literal["live", "replay"],
+    historical_metrics_present: dict[str, bool] | None = None,
+) -> RunResult:
+    """Execute a live or replay canary run."""
+    run_result = RunResult(
+        config_name=config.name,
+        mode=mode,
+        historical_metrics_present=historical_metrics_present or {},
+    )
+    total_prompts = sampler.total_prompts_planned
+    total_batches = sampler.total_batches_possible
+    _print_run_header(config, mode=mode)
 
     with Progress(
         SpinnerColumn(),
@@ -128,12 +221,9 @@ async def run_migration(
                 f"Batch {batch.batch_number}",
                 total=batch.size,
             )
-            batch_result = await _run_batch(batch, config, progress, task_id)
+            batch_result = await batch_runner(batch, config, progress, task_id)
             run_result.batches.append(batch_result)
-
-            for prompt_result in batch_result.results:
-                run_result.latency.record(prompt_result)
-                run_result.cost.record(prompt_result)
+            _record_batch_metrics(run_result, batch_result, track_latency=config.latency.track)
 
             decision = decide_run(
                 config,
@@ -166,16 +256,59 @@ async def run_migration(
     return run_result
 
 
+async def run_migration(
+    config: DriftcutConfig,
+    sampler: StratifiedSampler,
+) -> RunResult:
+    """Execute the full migration canary run."""
+    return await _execute_canary(
+        config,
+        sampler,
+        _run_batch,
+        mode="live",
+    )
+
+
+async def run_replay(
+    config: DriftcutConfig,
+    replay_dataset: ReplayDataset,
+    sampler: StratifiedSampler,
+) -> RunResult:
+    """Replay a historical paired-output dataset through the Driftcut decision engine."""
+
+    async def _batch_runner(
+        batch: Batch,
+        batch_config: DriftcutConfig,
+        progress: Progress,
+        task_id: TaskID,
+    ) -> BatchResult:
+        return await _run_replay_batch(batch, batch_config, replay_dataset, progress, task_id)
+
+    return await _execute_canary(
+        config,
+        sampler,
+        _batch_runner,
+        mode="replay",
+        historical_metrics_present=replay_dataset.historical_metrics_present,
+    )
+
+
 def _print_batch_summary(batch: BatchResult, run: RunResult, config: DriftcutConfig) -> None:
     """Print a short summary after each batch."""
     cost = run.cost.summary
     decision = run.final_decision
+    cost_label = f"${cost.total_usd:.4f} cumulative"
+    if run.mode == "replay":
+        if run.historical_metrics_present.get("cost", False) or cost.judge_usd > 0:
+            cost_label = f"${cost.total_usd:.4f} combined cost view"
+        else:
+            cost_label = "cost unavailable"
 
     console.print(
         f"  [dim]Batch {batch.batch_number}:[/dim] "
         f"{batch.size} prompts, "
         f"{batch.candidate_errors} API errors, "
-        f"${cost.total_usd:.4f} cumulative"
+        f"{cost_label}"
     )
     if decision is not None:
         confidence = (
@@ -201,20 +334,30 @@ def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig
     decision = run.final_decision
 
     console.print()
-    console.print("[bold]Run complete[/bold]")
+    console.print(f"[bold]{'Replay complete' if run.mode == 'replay' else 'Run complete'}[/bold]")
     console.print(f"  Prompts tested: {run.total_prompts}/{corpus_total}")
     console.print(f"  Batches tested: {run.total_batches}")
-    console.print(f"  Total cost:     ${cost.total_usd:.4f}")
-    if cost.judge_usd > 0:
-        console.print(f"  Judge cost:     ${cost.judge_usd:.4f}")
-    if baseline_latency.count > 0 and candidate_latency.count > 0:
+    if run.mode == "replay":
+        if run.historical_metrics_present.get("cost", False):
+            console.print(f"  Historical model cost: ${cost.baseline_usd + cost.candidate_usd:.4f}")
+        else:
+            console.print("  Historical model cost: not provided")
+        if cost.judge_usd > 0:
+            console.print(f"  Replay-time judge cost: ${cost.judge_usd:.4f}")
+        console.print(f"  Combined cost view:     ${cost.total_usd:.4f}")
+    else:
+        console.print(f"  Total cost:     ${cost.total_usd:.4f}")
+        if cost.judge_usd > 0:
+            console.print(f"  Judge cost:     ${cost.judge_usd:.4f}")
+    if config.latency.track and baseline_latency.count > 0 and candidate_latency.count > 0:
+        latency_label = "Historical latency" if run.mode == "replay" else "Latency"
         console.print(
-            "  Latency p50:    "
+            f"  {latency_label} p50:    "
             f"{baseline_latency.p50_ms:.0f}ms (baseline) -> "
             f"{candidate_latency.p50_ms:.0f}ms (candidate)"
         )
         console.print(
-            "  Latency p95:    "
+            f"  {latency_label} p95:    "
             f"{baseline_latency.p95_ms:.0f}ms (baseline) -> "
             f"{candidate_latency.p95_ms:.0f}ms (candidate)"
         )

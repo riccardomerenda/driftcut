@@ -13,6 +13,7 @@ from rich.table import Table
 from driftcut import __version__
 from driftcut.config import DriftcutConfig, load_config
 from driftcut.corpus import Corpus, load_corpus
+from driftcut.replay import load_replay_dataset
 from driftcut.reporting import save_run_outputs
 from driftcut.sampler import StratifiedSampler
 
@@ -58,6 +59,10 @@ def _print_validation_summary(
     sampler: StratifiedSampler,
 ) -> None:
     """Print a Rich summary of the validated config and corpus."""
+    if cfg.corpus is None:
+        msg = "corpus.file is required for validation"
+        raise ValueError(msg)
+
     console.print()
     console.print(
         Panel(
@@ -134,6 +139,12 @@ def _load_config_and_corpus(config_path: Path) -> tuple[DriftcutConfig, Corpus]:
         console.print(f"[red bold]Config error:[/red bold] {exc}")
         raise typer.Exit(code=1) from exc
 
+    if cfg.corpus is None:
+        console.print(
+            "[red bold]Config error:[/red bold] corpus.file is required for live run and validate"
+        )
+        raise typer.Exit(code=1)
+
     corpus_path = _resolve_corpus_path(config_path, cfg.corpus.file)
     try:
         corpus = load_corpus(corpus_path)
@@ -166,6 +177,53 @@ def run(
     cfg, corpus = _load_config_and_corpus(config)
     sampler = StratifiedSampler(corpus, cfg.sampling, seed=seed)
     result = asyncio.run(run_migration(cfg, sampler))
+
+    written_files = save_run_outputs(config, cfg, result)
+    for path in written_files:
+        console.print(f"[dim]Saved {path.name} -> {path}[/dim]")
+
+
+@app.command()
+def replay(
+    config: Path = typer.Option(
+        ...,
+        "--config",
+        "-c",
+        help="Path to replay config YAML file.",
+        exists=True,
+        readable=True,
+    ),
+    input: Path = typer.Option(
+        ...,
+        "--input",
+        "-i",
+        help="Path to canonical replay JSON file.",
+        exists=True,
+        readable=True,
+    ),
+    seed: int = typer.Option(
+        42,
+        "--seed",
+        help="Random seed for reproducible replay sampling.",
+    ),
+) -> None:
+    """Replay historical paired outputs through the Driftcut decision engine."""
+    from driftcut.runner import run_replay
+
+    try:
+        cfg = load_config(config)
+    except Exception as exc:
+        console.print(f"[red bold]Config error:[/red bold] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    try:
+        replay_dataset = load_replay_dataset(input, cfg)
+    except Exception as exc:
+        console.print(f"[red bold]Replay input error:[/red bold] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    sampler = StratifiedSampler(replay_dataset.corpus, cfg.sampling, seed=seed)
+    result = asyncio.run(run_replay(cfg, replay_dataset, sampler))
 
     written_files = save_run_outputs(config, cfg, result)
     for path in written_files:

@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.4.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.5.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -47,6 +47,7 @@ Today, Driftcut can:
 - Validate a structured corpus and migration config
 - Build stratified batches that prioritize high-criticality prompts
 - Run baseline and candidate models concurrently via LiteLLM
+- Replay historical paired outputs through the same deterministic checks, judge flow, and decision engine
 - Run deterministic checks for format, JSON validity, required content, and output limits
 - Send ambiguous prompts to a judge model for semantic comparison
 - Track latency, baseline/candidate cost, and judge cost
@@ -109,6 +110,14 @@ driftcut run --config migration.yaml
 - decides whether to stop, continue, or proceed,
 - writes `driftcut-results/results.json`,
 - writes `driftcut-results/report.html`.
+
+`driftcut replay` uses the same decision layer on historical paired outputs:
+
+```bash
+driftcut replay --config examples/replay.yaml --input examples/replay.json
+```
+
+Replay is intentionally narrow: it accepts a canonical paired-output JSON contract, not arbitrary vendor exports.
 
 Works with any [LiteLLM-supported provider](https://docs.litellm.ai/): OpenAI, Anthropic, OpenRouter, Azure, self-hosted, and more.
 

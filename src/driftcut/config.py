@@ -63,7 +63,7 @@ class DriftcutConfig(BaseModel):
     name: str
     description: str = ""
     models: ModelsConfig
-    corpus: CorpusConfig
+    corpus: CorpusConfig | None = None
     sampling: SamplingConfig = Field(default_factory=SamplingConfig)
     risk: RiskConfig = Field(default_factory=RiskConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)

@@ -1,0 +1,58 @@
+{
+  "format_version": 1,
+  "records": [
+    {
+      "id": "cx-001",
+      "category": "customer_support",
+      "prompt": "Draft a response to: 'I want a refund for a duplicate charge.'",
+      "criticality": "high",
+      "expected_output_type": "free_text",
+      "notes": "Support replay example",
+      "required_substrings": [
+        "refund"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [],
+      "max_output_chars": 600,
+      "baseline": {
+        "output": "We can process a refund for the duplicate charge today.",
+        "latency_ms": 820.0,
+        "cost_usd": 0.012,
+        "error": null
+      },
+      "candidate": {
+        "output": "Please contact support later for help with your billing issue.",
+        "latency_ms": 640.0,
+        "cost_usd": 0.009,
+        "error": null
+      }
+    },
+    {
+      "id": "ex-001",
+      "category": "structured_extraction",
+      "prompt": "Extract entities from: 'Alice joined Acme Corp in Milan'. Return JSON.",
+      "criticality": "medium",
+      "expected_output_type": "json",
+      "notes": "Extraction replay example",
+      "required_substrings": [],
+      "forbidden_substrings": [],
+      "json_required_keys": [
+        "people",
+        "organizations"
+      ],
+      "max_output_chars": null,
+      "baseline": {
+        "output": "{\"people\":[\"Alice\"],\"organizations\":[\"Acme Corp\"],\"locations\":[\"Milan\"]}",
+        "latency_ms": 940.0,
+        "cost_usd": 0.011,
+        "error": null
+      },
+      "candidate": {
+        "output": "{\"people\":[\"Alice\"],\"organizations\":[\"Acme Corp\"],\"locations\":[\"Milan\"]}",
+        "latency_ms": 710.0,
+        "cost_usd": 0.008,
+        "error": null
+      }
+    }
+  ]
+}

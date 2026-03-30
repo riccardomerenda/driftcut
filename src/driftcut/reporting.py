@@ -31,6 +31,7 @@ def save_run_outputs(config_path: Path, config: DriftcutConfig, result: RunResul
 def _write_json(path: Path, config: DriftcutConfig, result: RunResult) -> None:
     data: dict[str, object] = {
         "name": result.config_name,
+        "mode": result.mode,
         "total_prompts": result.total_prompts,
         "total_batches": result.total_batches,
         "stopped_early": result.stopped_early,
@@ -50,6 +51,8 @@ def _write_json(path: Path, config: DriftcutConfig, result: RunResult) -> None:
             for batch in result.batches
         ],
     }
+    if result.mode == "replay":
+        data["historical_metrics_present"] = dict(result.historical_metrics_present)
 
     with open(path, "w", encoding="utf-8") as file_obj:
         json.dump(data, file_obj, indent=2)
@@ -158,16 +161,23 @@ def _prompt_result_dict(prompt: PromptResult, *, save_examples: bool) -> dict[st
 def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
     """Render a lightweight HTML report for one run."""
     decision = result.final_decision
-    cost = result.cost.summary
     baseline_latency = result.latency.baseline_stats()
     candidate_latency = result.latency.candidate_stats()
     metrics = decision.metrics if decision is not None else DecisionMetrics()
     decision_outcome = decision.outcome if decision is not None else "CONTINUE"
     decision_reason = decision.reason if decision is not None else "No decision available."
     decision_color = _decision_color(decision)
+    report_title = "replay report" if result.mode == "replay" else "report"
     confidence_line = ""
     if decision is not None and config.output.show_confidence:
         confidence_line = f"<p><strong>Confidence:</strong> {decision.confidence:.0%}</p>"
+    mode_label = "Replay mode" if result.mode == "replay" else "Live mode"
+    mode_note = ""
+    if result.mode == "replay":
+        mode_note = (
+            '<p class="mode-note">Replay uses historical baseline/candidate outputs. '
+            "Judge calls, if enabled, are replay-time work.</p>"
+        )
 
     example_rows = _render_examples(config, result)
     thresholds = _render_thresholds(config)
@@ -189,7 +199,9 @@ def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{html.escape(result.config_name)} - Driftcut report</title>
+  <title>
+    {html.escape(result.config_name)} - Driftcut {report_title}
+  </title>
   <style>
     :root {{
       --bg: #0b0e11;
@@ -223,6 +235,23 @@ def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 16px;
       align-items: start;
+    }}
+    .mode-badge {{
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 71, 71, 0.28);
+      background: rgba(255, 71, 71, 0.12);
+      color: var(--text);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }}
+    .mode-note {{
+      color: var(--muted);
+      margin-top: 10px;
+      margin-bottom: 0;
     }}
     .decision {{
       font-size: 28px;
@@ -271,23 +300,23 @@ def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
     <section>
       <div class="hero">
         <div>
+          <div class="mode-badge">{html.escape(mode_label)}</div>
           <div class="label">Run</div>
           <h1>{html.escape(result.config_name)}</h1>
           <div class="decision">{html.escape(decision_outcome)}</div>
           <p>{html.escape(decision_reason)}</p>
           {confidence_line}
+          {mode_note}
         </div>
         <div class="card">
           <div class="label">Coverage</div>
           <div>{result.total_prompts} prompts across {result.total_batches} batches</div>
-          <div>Total cost: ${cost.total_usd:.4f}</div>
-          <div>Judge cost: ${cost.judge_usd:.4f}</div>
+          {_render_cost_lines(result)}
           <div>Stopped early: {"yes" if result.stopped_early else "no"}</div>
         </div>
         <div class="card">
           <div class="label">Latency</div>
-          <div>p50: {baseline_latency.p50_ms:.0f}ms -> {candidate_latency.p50_ms:.0f}ms</div>
-          <div>p95: {baseline_latency.p95_ms:.0f}ms -> {candidate_latency.p95_ms:.0f}ms</div>
+          {_render_latency_lines(result, config, baseline_latency, candidate_latency)}
         </div>
       </div>
     </section>
@@ -360,6 +389,52 @@ def _render_examples(config: DriftcutConfig, result: RunResult) -> str:
             "</tr>"
         )
     return "".join(rows)
+
+
+def _render_cost_lines(result: RunResult) -> str:
+    cost = result.cost.summary
+    if result.mode == "replay":
+        lines: list[str] = []
+        if result.historical_metrics_present.get("cost", False):
+            historical_cost = cost.baseline_usd + cost.candidate_usd
+            lines.append(f"<div>Historical model cost: ${historical_cost:.4f}</div>")
+        else:
+            lines.append("<div>Historical model cost: not provided</div>")
+        if cost.judge_usd > 0:
+            lines.append(f"<div>Replay-time judge cost: ${cost.judge_usd:.4f}</div>")
+        lines.append(f"<div>Combined cost view: ${cost.total_usd:.4f}</div>")
+        return "".join(lines)
+
+    lines = [f"<div>Total cost: ${cost.total_usd:.4f}</div>"]
+    if cost.judge_usd > 0:
+        lines.append(f"<div>Judge cost: ${cost.judge_usd:.4f}</div>")
+    return "".join(lines)
+
+
+def _render_latency_lines(
+    result: RunResult,
+    config: DriftcutConfig,
+    baseline_latency: object,
+    candidate_latency: object,
+) -> str:
+    from driftcut.trackers import LatencyStats
+
+    if not isinstance(baseline_latency, LatencyStats) or not isinstance(
+        candidate_latency, LatencyStats
+    ):
+        msg = "Expected LatencyStats values"
+        raise TypeError(msg)
+
+    if not config.latency.track or baseline_latency.count == 0 or candidate_latency.count == 0:
+        return "<div>Latency not tracked for this run.</div>"
+
+    prefix = "Historical " if result.mode == "replay" else ""
+    return (
+        f"<div>{prefix}p50: "
+        f"{baseline_latency.p50_ms:.0f}ms -> {candidate_latency.p50_ms:.0f}ms</div>"
+        f"<div>{prefix}p95: "
+        f"{baseline_latency.p95_ms:.0f}ms -> {candidate_latency.p95_ms:.0f}ms</div>"
+    )
 
 
 def _render_thresholds(config: DriftcutConfig) -> str:

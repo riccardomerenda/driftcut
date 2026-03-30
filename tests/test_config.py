@@ -21,6 +21,7 @@ def test_load_example_config() -> None:
 
 def test_corpus_file_parsed() -> None:
     cfg = load_config(EXAMPLES_DIR / "migration.yaml")
+    assert cfg.corpus is not None
     assert cfg.corpus.file == Path("prompts.csv")
 
 
@@ -73,6 +74,20 @@ def test_defaults_applied_when_sections_missing(tmp_path: Path) -> None:
     assert cfg.sampling.batch_size_per_category == 3
     assert cfg.risk.stop_on_high_criticality_failure_rate == 0.20
     assert cfg.evaluation.judge_strategy == "light"
+
+
+def test_replay_config_can_omit_corpus(tmp_path: Path) -> None:
+    replay_cfg = {
+        "name": "replay run",
+        "models": {
+            "baseline": {"provider": "openai", "model": "gpt-4o"},
+            "candidate": {"provider": "anthropic", "model": "claude-haiku"},
+        },
+    }
+    config_file = tmp_path / "replay.yaml"
+    config_file.write_text(yaml.dump(replay_cfg))
+    cfg = load_config(config_file)
+    assert cfg.corpus is None
 
 
 def test_missing_required_field(tmp_path: Path) -> None:
