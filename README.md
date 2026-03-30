@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.5.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.5.1 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -47,6 +47,7 @@ Today, Driftcut can:
 - Validate a structured corpus and migration config
 - Build stratified batches that prioritize high-criticality prompts
 - Run baseline and candidate models concurrently via LiteLLM
+- Retry transient rate limits, timeouts, connection failures, and 5xx responses before counting an API error
 - Replay historical paired outputs through the same deterministic checks, judge flow, and decision engine
 - Run deterministic checks for format, JSON validity, required content, and output limits
 - Send ambiguous prompts to a judge model for semantic comparison
@@ -120,6 +121,76 @@ driftcut replay --config examples/replay.yaml --input examples/replay.json
 Replay is intentionally narrow: it accepts a canonical paired-output JSON contract, not arbitrary vendor exports.
 
 Works with any [LiteLLM-supported provider](https://docs.litellm.ai/): OpenAI, Anthropic, OpenRouter, Azure, self-hosted, and more.
+
+## What you get back
+
+Example terminal output:
+
+```text
+$ driftcut run --config migration.yaml
+
+GPT-4o to Claude Haiku migration gate
+  Mode:      live
+  Baseline:  openai/gpt-4o
+  Candidate: anthropic/claude-haiku
+
+  Batch 1: 12 prompts, 0 API errors, $0.1840 cumulative
+    Decision: CONTINUE (58% confidence)
+    Judge coverage: 3/3 ambiguous prompts
+    Risk is still borderline after the first sampled batch.
+
+  Batch 2: 12 prompts, 0 API errors, $0.3120 cumulative
+    Decision: PROCEED (82% confidence)
+    Judge coverage: 4/4 ambiguous prompts
+    Risk stayed below the configured proceed threshold.
+
+Run complete
+  Prompts tested: 24/30
+  Batches tested: 2
+  Total cost:     $0.3120
+  Judge cost:     $0.0280
+  Latency p50:    910ms (baseline) -> 690ms (candidate)
+  Latency p95:    1480ms (baseline) -> 1100ms (candidate)
+  Decision:       PROCEED (82% confidence)
+  Reason:         Risk stayed below the configured proceed threshold.
+```
+
+Example `driftcut-results/results.json` excerpt:
+
+```json
+{
+  "mode": "live",
+  "decision": {
+    "outcome": "PROCEED",
+    "confidence": 0.82,
+    "reason": "Risk stayed below the configured proceed threshold."
+  },
+  "cost": {
+    "baseline_usd": 0.184,
+    "candidate_usd": 0.1,
+    "judge_usd": 0.028,
+    "total_usd": 0.312
+  },
+  "batches": [
+    {
+      "batch_number": 1,
+      "results": [
+        {
+          "prompt_id": "cx-001",
+          "candidate": {
+            "latency_ms": 640.0,
+            "retry_count": 1,
+            "cost_usd": 0.009,
+            "error": null
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+The HTML report summarizes the same run-level decision, threshold context, failure archetypes, and prompt examples in a shareable format.
 
 ## How it works
 

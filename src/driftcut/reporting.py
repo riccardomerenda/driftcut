@@ -108,12 +108,14 @@ def _batch_dict(batch: BatchResult, *, save_examples: bool) -> dict[str, object]
 def _prompt_result_dict(prompt: PromptResult, *, save_examples: bool) -> dict[str, object]:
     baseline_data: dict[str, object] = {
         "latency_ms": round(prompt.baseline.latency_ms, 1),
+        "retry_count": prompt.baseline.retry_count,
         "cost_usd": prompt.baseline.cost_usd,
         "cost_error": prompt.baseline.cost_error,
         "error": prompt.baseline.error,
     }
     candidate_data: dict[str, object] = {
         "latency_ms": round(prompt.candidate.latency_ms, 1),
+        "retry_count": prompt.candidate.retry_count,
         "cost_usd": prompt.candidate.cost_usd,
         "cost_error": prompt.candidate.cost_error,
         "error": prompt.candidate.error,

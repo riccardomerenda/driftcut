@@ -46,8 +46,8 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
         criticality="high",
         prompt_text="Help me",
         expected_output_type="free_text",
-        baseline=ModelResponse(output="All good", latency_ms=100.0, cost_usd=0.01),
-        candidate=ModelResponse(output="All good", latency_ms=80.0, cost_usd=0.005),
+        baseline=ModelResponse(output="All good", latency_ms=100.0, retry_count=1, cost_usd=0.01),
+        candidate=ModelResponse(output="All good", latency_ms=80.0, retry_count=2, cost_usd=0.005),
         evaluation=PromptEvaluation(
             baseline=ResponseEvaluation(passed=True, structure_valid=True),
             candidate=ResponseEvaluation(passed=True, structure_valid=True),
@@ -92,6 +92,7 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
     html_text = (tmp_path / "driftcut-results" / "report.html").read_text(encoding="utf-8")
     assert '"mode": "live"' in json_text
     assert '"outcome": "PROCEED"' in json_text
+    assert '"retry_count": 2' in json_text
     assert '"judge_usd": 0.002' in json_text
     assert '"verdict": "equivalent"' in json_text
     assert "Report run - Driftcut report" in html_text

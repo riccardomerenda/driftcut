@@ -64,24 +64,72 @@ async def test_execute_prompt_success() -> None:
     assert result.output_tokens == 20
     assert result.cost_usd == 0.001
     assert result.latency_ms > 0
+    assert result.retry_count == 0
     assert result.is_error is False
 
 
 @pytest.mark.asyncio
-async def test_execute_prompt_api_error() -> None:
+async def test_execute_prompt_non_retryable_api_error() -> None:
     with patch(
         "driftcut.executor.litellm.acompletion",
         new_callable=AsyncMock,
-        side_effect=Exception("Rate limit exceeded"),
+        side_effect=Exception("Authentication failed"),
     ):
         cfg = ModelConfig(provider="openai", model="gpt-4o")
         result = await execute_prompt("Say hello", cfg)
 
     assert result.is_error is True
     assert result.error is not None
-    assert "Rate limit exceeded" in result.error
+    assert "Authentication failed" in result.error
     assert result.output == ""
     assert result.latency_ms > 0
+    assert result.retry_count == 0
+
+
+@pytest.mark.asyncio
+async def test_execute_prompt_retries_transient_error_and_succeeds() -> None:
+    mock_choice = MagicMock()
+    mock_choice.message.content = "Hello after retry"
+
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+    mock_response.usage = None
+
+    with (
+        patch("driftcut.executor.asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        patch("driftcut.executor.litellm.acompletion", new_callable=AsyncMock) as mock_ac,
+        patch("driftcut.executor.litellm.completion_cost", return_value=0.0),
+    ):
+        mock_ac.side_effect = [Exception("Rate limit exceeded"), mock_response]
+        cfg = ModelConfig(provider="openai", model="gpt-4o")
+        result = await execute_prompt("Say hello", cfg)
+
+    assert result.is_error is False
+    assert result.output == "Hello after retry"
+    assert result.retry_count == 1
+    assert mock_ac.await_count == 2
+    mock_sleep.assert_awaited_once_with(0.5)
+
+
+@pytest.mark.asyncio
+async def test_execute_prompt_gives_up_after_transient_retries() -> None:
+    with (
+        patch("driftcut.executor.asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        patch(
+            "driftcut.executor.litellm.acompletion",
+            new_callable=AsyncMock,
+            side_effect=Exception("Timeout while connecting"),
+        ) as mock_ac,
+    ):
+        cfg = ModelConfig(provider="openai", model="gpt-4o")
+        result = await execute_prompt("Say hello", cfg)
+
+    assert result.is_error is True
+    assert result.error is not None
+    assert "Timeout while connecting" in result.error
+    assert result.retry_count == 2
+    assert mock_ac.await_count == 3
+    assert mock_sleep.await_count == 2
 
 
 @pytest.mark.asyncio

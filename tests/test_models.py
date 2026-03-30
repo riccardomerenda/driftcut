@@ -56,6 +56,7 @@ class TestModelResponse:
 
     def test_defaults(self) -> None:
         r = ModelResponse(output="hello", latency_ms=50.0)
+        assert r.retry_count == 0
         assert r.input_tokens == 0
         assert r.output_tokens == 0
         assert r.cost_usd == 0.0

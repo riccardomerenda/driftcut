@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Driftcut - v0.5.0 alpha migration decision CLI</title>
-<meta name="description" content="Driftcut is a v0.5.0 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, selective judging, and STOP/CONTINUE/PROCEED decisions.">
-<meta property="og:title" content="Driftcut - v0.5.0 alpha migration decision CLI">
+<title>Driftcut - v0.5.1 alpha migration decision CLI</title>
+<meta name="description" content="Driftcut is a v0.5.1 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, selective judging, transient-retry handling, and STOP/CONTINUE/PROCEED decisions.">
+<meta property="og:title" content="Driftcut - v0.5.1 alpha migration decision CLI">
 <meta property="og:description" content="Validate a prompt corpus or replay historical paired outputs, sample representative batches, compare baseline and candidate models, judge ambiguous prompts, and decide whether to stop, continue, or proceed.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://driftcut.dev">
@@ -201,9 +201,9 @@
   <section class="hero">
     <div class="container hero-grid">
       <div>
-        <div class="badge">v0.5.0 alpha</div>
+        <div class="badge">v0.5.1 alpha</div>
         <h1>Sample or replay<br>before full eval.</h1>
-        <p><strong>Driftcut</strong> is an alpha CLI for LLM migration canaries. It validates a structured prompt corpus, samples representative batches, runs baseline and candidate models, or replays historical paired outputs, checks deterministic quality signals, judges only the ambiguous prompts, and tells you whether to stop, continue, or proceed.</p>
+        <p><strong>Driftcut</strong> is an alpha CLI for LLM migration canaries. It validates a structured prompt corpus, samples representative batches, runs baseline and candidate models, or replays historical paired outputs, retries transient provider failures, checks deterministic quality signals, judges only the ambiguous prompts, and tells you whether to stop, continue, or proceed.</p>
         <p>The scope is narrow on purpose: help teams decide whether a migration candidate is promising enough to keep testing before spending on a full evaluation.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://github.com/riccardomerenda/driftcut">View on GitHub</a>
@@ -213,6 +213,7 @@
           <span class="pill">CLI-first</span>
           <span class="pill">CSV / JSON corpus</span>
           <span class="pill">Historical replay</span>
+          <span class="pill">Transient retries</span>
           <span class="pill">Light judge on ambiguity</span>
           <span class="pill">Decision + HTML report</span>
         </div>
@@ -261,6 +262,7 @@
             <li>Config and corpus validation</li>
             <li>Stratified batch sampling by category and criticality</li>
             <li>Concurrent baseline/candidate execution via LiteLLM</li>
+            <li>Transient retry handling for rate limits, timeouts, and 5xxs</li>
             <li>Historical replay on canonical paired-output JSON</li>
             <li>Deterministic checks and light judging for ambiguity</li>
             <li>Latency, cost, decision output, and HTML reporting</li>
@@ -371,7 +373,7 @@
 
   <footer>
     <div class="container footer-wrap">
-      <span>driftcut - v0.5.0 alpha CLI for LLM migration canaries</span>
+      <span>driftcut - v0.5.1 alpha CLI for LLM migration canaries</span>
       <span>
         <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> -
         <a href="https://docs.driftcut.dev/getting-started/">Docs</a> -

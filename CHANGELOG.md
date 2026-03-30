@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-03-30
+
+### Added
+
+- CLI reference documentation page for `validate`, `run`, `replay`, and global flags
+- Visible quickstart output examples across the README and docs site, including terminal and `results.json` excerpts
+
+### Changed
+
+- README, landing page, and docs now show the produced artifacts more concretely instead of only describing the workflow
+- Concept documentation now reflects the shipped three-way decision engine and no longer implies category-scoped proceed decisions
+
+### Fixed
+
+- Live model calls now retry transient rate-limit, timeout, connection, and 5xx failures before counting them as API errors
+- JSON exports now include per-response `retry_count` so retry behavior is auditable in saved artifacts
+
 ## [0.5.0] - 2026-03-30
 
 ### Added
@@ -100,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.5.1]: https://github.com/riccardomerenda/driftcut/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/riccardomerenda/driftcut/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/riccardomerenda/driftcut/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/riccardomerenda/driftcut/compare/v0.2.2...v0.3.0
