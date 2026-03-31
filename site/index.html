@@ -488,24 +488,32 @@
         </div>
         <div class="terminal-body">
           <span class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">driftcut run --config migration.yaml</span></span>
-          <span class="t-line"><span class="t-dim">Loading corpus... 30 prompts, 4 categories</span></span>
           <span class="t-spacer"></span>
-          <span class="t-line"><span class="t-label">Baseline:</span> <span class="t-baseline">openai/gpt-4o</span></span>
-          <span class="t-line"><span class="t-label">Candidate:</span> <span class="t-candidate">anthropic/claude-haiku</span></span>
+          <span class="t-line"><span class="t-heading">GPT-4o to Claude Haiku migration gate</span></span>
+          <span class="t-line"><span class="t-dim">  Mode:      live</span></span>
+          <span class="t-line"><span class="t-dim">  Baseline:  </span><span class="t-baseline">openai/gpt-4o</span></span>
+          <span class="t-line"><span class="t-dim">  Candidate: </span><span class="t-candidate">anthropic/claude-haiku</span></span>
+          <span class="t-line"><span class="t-dim">  Corpus:    30 prompts, 4 categories</span></span>
           <span class="t-spacer"></span>
-          <span class="t-line"><span class="t-label">Batch 1</span> <span class="t-green"><span class="progress-bar"><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span></span></span> <span class="t-dim">12/24</span></span>
-          <span class="t-line"><span class="t-dim">Judge coverage: 3/3 ambiguous prompts</span></span>
-          <span class="t-line"><span class="t-dim">Decision:</span> <span class="t-yellow">CONTINUE</span> <span class="t-dim">(58% confidence)</span></span>
+          <span class="t-line"><span class="t-label">  Batch 1:</span> <span class="t-dim">12 prompts, 0 API errors, $0.18 cumulative</span></span>
+          <span class="t-line"><span class="t-dim">    </span><span class="t-green"><span class="progress-bar"><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span></span></span> <span class="t-dim">12/24</span></span>
+          <span class="t-line"><span class="t-dim">    Judge coverage: 3/3 ambiguous prompts</span></span>
+          <span class="t-line"><span class="t-dim">    Decision:</span> <span class="t-yellow">CONTINUE</span> <span class="t-dim">(58% confidence)</span></span>
           <span class="t-spacer"></span>
-          <span class="t-line"><span class="t-label">Batch 2</span> <span class="t-green"><span class="progress-bar"><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span></span></span> <span class="t-dim">24/24</span></span>
+          <span class="t-line"><span class="t-label">  Batch 2:</span> <span class="t-dim">12 prompts, 0 API errors, $0.31 cumulative</span></span>
+          <span class="t-line"><span class="t-dim">    </span><span class="t-green"><span class="progress-bar"><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span></span></span> <span class="t-dim">24/24</span></span>
+          <span class="t-line"><span class="t-dim">    Judge coverage: 4/4 ambiguous prompts</span></span>
+          <span class="t-line"><span class="t-dim">    Decision:</span> <span class="t-green">PROCEED</span> <span class="t-dim">(82% confidence)</span></span>
           <span class="t-spacer"></span>
           <span class="t-line"><span class="t-heading">Run complete</span></span>
-          <span class="t-line"><span class="t-dim">Prompts tested: 24/30 (80%)</span></span>
-          <span class="t-line"><span class="t-dim">Total cost: $1.96</span></span>
-          <span class="t-line"><span class="t-dim">Judge cost: $0.12</span></span>
-          <span class="t-line"><span class="t-label">Decision:</span> <span class="t-green t-bold">PROCEED</span></span>
-          <span class="t-line"><span class="t-dim">Output: ./driftcut-results/results.json + report.html</span></span>
-          <span class="t-highlight"><span class="t-red">Next milestone: heavy escalation for still-ambiguous prompts</span></span>
+          <span class="t-line"><span class="t-dim">  Prompts tested: 24/30</span></span>
+          <span class="t-line"><span class="t-dim">  Total cost:     $0.31</span></span>
+          <span class="t-line"><span class="t-dim">  Judge cost:     $0.03</span></span>
+          <span class="t-line"><span class="t-dim">  Latency p50:    </span><span class="t-label">910ms</span><span class="t-dim"> → </span><span class="t-candidate">690ms</span></span>
+          <span class="t-line"><span class="t-dim">  Latency p95:    </span><span class="t-label">1480ms</span><span class="t-dim"> → </span><span class="t-candidate">1100ms</span></span>
+          <span class="t-line"><span class="t-dim">  Decision:       </span><span class="t-green t-bold">PROCEED</span> <span class="t-dim">(82% confidence)</span></span>
+          <span class="t-line"><span class="t-dim">  Output: ./driftcut-results/results.json + report.html</span></span>
+          <span class="t-highlight"><span class="t-red">Next: heavy escalation for still-ambiguous prompts</span></span>
         </div>
       </div>
     </div>
