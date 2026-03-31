@@ -3,383 +3,675 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Driftcut - v0.5.1 alpha migration decision CLI</title>
+<title>driftcut — Sample or replay before full eval</title>
 <meta name="description" content="Driftcut is a v0.5.1 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, selective judging, transient-retry handling, and STOP/CONTINUE/PROCEED decisions.">
-<meta property="og:title" content="Driftcut - v0.5.1 alpha migration decision CLI">
+<meta property="og:title" content="driftcut — Sample or replay before full eval">
 <meta property="og:description" content="Validate a prompt corpus or replay historical paired outputs, sample representative batches, compare baseline and candidate models, judge ambiguous prompts, and decide whether to stop, continue, or proceed.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://driftcut.dev">
 <link rel="canonical" href="https://driftcut.dev">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23FF4747'/><line x1='22' y1='4' x2='10' y2='28' stroke='%230B0E11' stroke-width='3.5' stroke-linecap='round'/></svg>">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23e8564a'/><line x1='22' y1='4' x2='10' y2='28' stroke='%230b0f14' stroke-width='3.5' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=JetBrains+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --cut:#FF4747;
-    --cut-dim:#D93636;
-    --teal:#2DD4A8;
-    --amber:#FBBF24;
-    --slate-900:#0B0E11;
-    --slate-800:#111519;
-    --slate-700:#181D23;
-    --slate-600:#1F252D;
-    --slate-500:#2A323D;
-    --muted:#6B7A8D;
-    --silver:#9EAAB8;
-    --light:#CBD5E1;
-    --white:#F1F5F9;
+  :root {
+    --bg-deep: #0b0f14;
+    --bg-card: #111820;
+    --bg-surface: #161d27;
+    --bg-terminal: #0d1117;
+    --text-primary: #e2e8f0;
+    --text-secondary: #8b97a8;
+    --text-muted: #5a6777;
+    --accent-coral: #e8564a;
+    --accent-coral-dim: #d44a3f;
+    --accent-coral-glow: rgba(232, 86, 74, 0.15);
+    --accent-green: #34d399;
+    --accent-green-dim: rgba(52, 211, 153, 0.12);
+    --accent-cyan: #38bdf8;
+    --accent-yellow: #fbbf24;
+    --accent-red: #f87171;
+    --border: rgba(255, 255, 255, 0.06);
+    --border-light: rgba(255, 255, 255, 0.1);
+    --font-display: 'Instrument Serif', Georgia, serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{
-    font-family:'Outfit',sans-serif;
-    background:
-      radial-gradient(circle at top right, rgba(255,71,71,0.10), transparent 30%),
-      linear-gradient(180deg, #0B0E11 0%, #10141A 100%);
-    color:var(--silver);
-    -webkit-font-smoothing:antialiased;
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
-  a{color:inherit}
-  .container{max-width:1120px;margin:0 auto;padding:0 24px}
-  nav{
-    position:sticky;top:0;z-index:20;
-    background:rgba(11,14,17,0.88);
-    backdrop-filter:blur(18px);
-    border-bottom:1px solid rgba(255,255,255,0.06);
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
   }
-  .nav-wrap{
-    display:flex;justify-content:space-between;align-items:center;
-    min-height:72px;gap:24px;
+
+  a { color: inherit; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(11, 15, 20, 0.88);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+    animation: fadeDown 0.6s ease-out;
   }
-  .brand{
-    display:flex;align-items:center;gap:12px;text-decoration:none;
-    font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--white);
+
+  .nav-wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 72px; gap: 24px;
   }
-  .brand-mark{
-    width:34px;height:34px;border-radius:10px;background:var(--cut);position:relative;flex:0 0 auto;
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--font-mono); font-weight: 700; font-size: 18px;
+    letter-spacing: -0.02em; color: var(--text-primary); text-decoration: none;
   }
-  .brand-mark::after{
-    content:"";position:absolute;inset:7px 14px;background:var(--slate-900);
-    transform:skewX(-28deg);border-radius:2px;
+
+  .nav-logo-icon {
+    width: 28px; height: 28px; background: var(--accent-coral); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: white; transform: rotate(-8deg);
   }
-  .nav-links{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-  .nav-links a{
-    text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);
+
+  .nav-links { display: flex; align-items: center; gap: 32px; }
+
+  .nav-links a {
+    font-family: var(--font-mono); font-size: 13px; color: var(--text-muted);
+    text-decoration: none; letter-spacing: 0.02em; transition: color 0.2s;
   }
-  .nav-links a:hover{color:var(--white)}
-  .nav-cta{
-    padding:10px 16px;border-radius:8px;background:var(--cut);color:var(--white)!important;font-weight:600;
+
+  .nav-links a:hover { color: var(--text-primary); }
+
+  .nav-cta {
+    background: var(--accent-coral) !important; color: white !important;
+    padding: 7px 16px; border-radius: 6px; font-weight: 500;
+    transition: background 0.2s, transform 0.15s !important;
   }
-  .hero{padding:92px 0 72px}
-  .hero-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:36px;align-items:start}
-  .badge{
-    display:inline-flex;align-items:center;gap:8px;margin-bottom:22px;
-    padding:8px 14px;border-radius:999px;border:1px solid rgba(255,71,71,0.22);
-    background:rgba(255,71,71,0.06);
-    font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--cut);
+
+  .nav-cta:hover {
+    background: var(--accent-coral-dim) !important;
+    transform: translateY(-1px);
   }
-  .badge::before{content:"";width:7px;height:7px;border-radius:999px;background:var(--cut)}
-  h1{
-    color:var(--white);font-size:clamp(40px,7vw,68px);line-height:0.98;font-weight:800;letter-spacing:-2px;
-    margin-bottom:18px;
+
+  /* ── Hero ── */
+  .hero { padding: 80px 0 100px; }
+
+  .hero-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
   }
-  .hero p{
-    font-size:18px;line-height:1.75;max-width:640px;color:var(--silver);margin-bottom:24px;
+
+  .hero-content { animation: fadeUp 0.7s ease-out 0.15s both; }
+
+  .version-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent-green-dim); border: 1px solid rgba(52, 211, 153, 0.2);
+    padding: 6px 14px; border-radius: 100px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-green);
+    margin-bottom: 40px;
   }
-  .hero p strong{color:var(--white);font-weight:600}
-  .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
-  .btn{
-    display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:12px 18px;
-    border-radius:10px;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;
-    border:1px solid transparent;
+
+  .version-badge::before {
+    content: ''; width: 6px; height: 6px; background: var(--accent-green);
+    border-radius: 50%; animation: pulse-dot 2s ease-in-out infinite;
   }
-  .btn-primary{background:var(--cut);color:var(--white)}
-  .btn-primary:hover{background:var(--cut-dim)}
-  .btn-ghost{border-color:var(--slate-500);color:var(--light);background:rgba(255,255,255,0.02)}
-  .btn-ghost:hover{border-color:var(--silver);color:var(--white)}
-  .pill-row{display:flex;flex-wrap:wrap;gap:8px}
-  .pill{
-    padding:7px 10px;border-radius:999px;background:var(--slate-800);border:1px solid var(--slate-600);
-    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
-  .panel,.card,.faq{
-    background:rgba(17,21,25,0.92);border:1px solid rgba(255,255,255,0.07);border-radius:18px;
-    box-shadow:0 18px 60px rgba(0,0,0,0.25);
+
+  .hero h1 {
+    font-family: var(--font-display); font-size: 62px; line-height: 1.05;
+    font-weight: 400; letter-spacing: -0.02em; color: var(--text-primary);
+    margin-bottom: 36px;
   }
-  .terminal-head{
-    display:flex;align-items:center;gap:8px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);
-    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
+
+  .hero h1 em { font-style: italic; color: var(--accent-coral); }
+
+  .hero-description {
+    font-size: 17px; line-height: 1.75; color: var(--text-secondary);
+    max-width: 480px; margin-bottom: 20px;
   }
-  .dot{width:10px;height:10px;border-radius:999px}
-  .dot.red{background:var(--cut)}
-  .dot.yellow{background:var(--amber)}
-  .dot.green{background:var(--teal)}
-  .terminal-body{
-    padding:20px 18px 22px;font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.9;color:var(--light);
+
+  .hero-description strong { color: var(--text-primary); font-weight: 500; }
+
+  .hero-sub {
+    font-size: 15px; line-height: 1.7; color: var(--text-muted);
+    max-width: 460px; margin-bottom: 44px;
   }
-  .dim{color:var(--muted)}
-  .good{color:var(--teal)}
-  .warn{color:var(--amber)}
-  section{padding:30px 0 80px}
-  .section-label{
-    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--cut);
-    margin-bottom:12px;
+
+  .hero-actions { display: flex; align-items: center; gap: 16px; margin-bottom: 48px; }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent-coral); color: white;
+    font-family: var(--font-mono); font-size: 14px; font-weight: 500;
+    padding: 13px 28px; border-radius: 8px; text-decoration: none;
+    transition: all 0.2s; box-shadow: 0 0 24px var(--accent-coral-glow);
   }
-  .section-title{
-    color:var(--white);font-size:clamp(28px,4.2vw,44px);line-height:1.05;font-weight:800;letter-spacing:-1.3px;
-    margin-bottom:14px;
+
+  .btn-primary:hover {
+    background: var(--accent-coral-dim); transform: translateY(-2px);
+    box-shadow: 0 4px 32px var(--accent-coral-glow);
   }
-  .section-desc{max-width:760px;font-size:17px;line-height:1.75;color:var(--muted);margin-bottom:34px}
-  .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-  .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
-  .card{padding:22px}
-  .card h3,.faq h3{
-    color:var(--white);font-size:18px;font-weight:700;margin-bottom:10px;
+
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.02); color: var(--text-secondary);
+    font-family: var(--font-mono); font-size: 14px; font-weight: 500;
+    padding: 12px 24px; border-radius: 8px; border: 1.5px solid var(--border-light);
+    text-decoration: none; transition: all 0.2s; backdrop-filter: blur(4px);
   }
-  .card p,.card li,.faq p{font-size:15px;line-height:1.7;color:var(--silver)}
-  .list{display:grid;gap:10px;list-style:none;margin-top:12px}
-  .list li::before{content:"/ ";color:var(--cut);font-family:'IBM Plex Mono',monospace}
-  .status-chip{
-    display:inline-block;margin-bottom:12px;padding:5px 10px;border-radius:999px;
-    font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.8px;text-transform:uppercase;
+
+  .btn-secondary:hover {
+    border-color: rgba(255,255,255,0.25); color: var(--text-primary);
+    background: rgba(255,255,255,0.04); transform: translateY(-1px);
   }
-  .status-now{background:rgba(45,212,168,0.12);color:var(--teal)}
-  .status-next{background:rgba(255,71,71,0.12);color:var(--cut)}
-  .step-num{
-    font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:700;color:rgba(255,71,71,0.16);margin-bottom:12px;
+
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .tag {
+    font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);
+    background: var(--bg-surface); border: 1px solid var(--border);
+    padding: 5px 12px; border-radius: 5px; letter-spacing: 0.01em;
+    transition: border-color 0.2s;
   }
-  table{
-    width:100%;border-collapse:collapse;background:rgba(17,21,25,0.92);
-    border:1px solid rgba(255,255,255,0.07);border-radius:18px;overflow:hidden;
+
+  .tag:hover { border-color: var(--border-light); }
+
+  /* ── Terminal ── */
+  .hero-terminal { animation: fadeUp 0.7s ease-out 0.35s both; }
+
+  .terminal {
+    background: var(--bg-terminal); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset;
   }
-  th,td{padding:16px 18px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.06)}
-  th{
-    font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);
-    background:rgba(255,255,255,0.02);
+
+  .terminal-bar {
+    display: flex; align-items: center; gap: 7px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
   }
-  tr:last-child td{border-bottom:none}
-  td:first-child{color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:13px}
-  footer{
-    padding:26px 0 36px;border-top:1px solid rgba(255,255,255,0.06);
+
+  .terminal-dot { width: 11px; height: 11px; border-radius: 50%; }
+  .terminal-dot:nth-child(1) { background: #ff5f57; }
+  .terminal-dot:nth-child(2) { background: #febc2e; }
+  .terminal-dot:nth-child(3) { background: #28c840; }
+
+  .terminal-title {
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); margin-left: 8px;
   }
-  .footer-wrap{
-    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
-    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);
+
+  .terminal-body {
+    padding: 20px; font-family: var(--font-mono); font-size: 12.5px;
+    line-height: 1.8; overflow-x: auto;
   }
-  .footer-wrap a{text-decoration:none}
-  .footer-wrap a:hover{color:var(--white)}
-  @media(max-width:980px){
-    .hero-grid,.grid-2,.grid-3{grid-template-columns:1fr}
+
+  .t-prompt { color: var(--text-muted); }
+  .t-cmd { color: var(--text-primary); font-weight: 500; }
+  .t-dim { color: var(--text-muted); }
+  .t-label { color: var(--text-secondary); }
+  .t-baseline { color: var(--accent-coral); }
+  .t-candidate { color: var(--accent-cyan); }
+  .t-green { color: var(--accent-green); }
+  .t-yellow { color: var(--accent-yellow); }
+  .t-red { color: var(--accent-red); }
+  .t-bold { font-weight: 700; }
+  .t-heading { color: var(--text-primary); font-weight: 700; }
+  .t-line { display: block; min-height: 1.8em; }
+  .t-spacer { display: block; height: 8px; }
+
+  .t-highlight {
+    background: rgba(232, 86, 74, 0.08); border-left: 2px solid var(--accent-coral);
+    margin: 6px -20px 0; padding: 8px 18px; display: block;
   }
-  @media(max-width:640px){
-    .container{padding:0 18px}
-    .nav-wrap{min-height:64px}
-    .nav-links a:not(.nav-cta){display:none}
-    .hero{padding:68px 0 56px}
-    .hero-actions{flex-direction:column}
-    .btn{width:100%}
-    th,td{padding:14px}
+
+  .progress-bar { display: inline-flex; gap: 1px; }
+  .progress-fill { width: 5px; height: 12px; background: var(--accent-green); border-radius: 1px; }
+  .progress-empty { width: 5px; height: 12px; background: rgba(255,255,255,0.06); border-radius: 1px; }
+
+  /* ── Shared section styles ── */
+  .section-divider { padding: 0; }
+  .section-divider hr {
+    border: none; height: 1px;
+    background: linear-gradient(to right, transparent, var(--border-light), transparent);
+  }
+
+  section { padding: 100px 0 80px; }
+
+  .section-label {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent-coral); margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: var(--font-display); font-size: clamp(32px, 4.2vw, 44px);
+    font-weight: 400; line-height: 1.15; color: var(--text-primary);
+    margin-bottom: 24px; max-width: 600px;
+  }
+
+  .section-desc {
+    font-size: 16px; line-height: 1.75; color: var(--text-secondary);
+    max-width: 680px; margin-bottom: 56px;
+  }
+
+  /* ── Cards ── */
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 36px; transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: var(--border-light); }
+
+  .card-badge {
+    display: inline-block; font-family: var(--font-mono); font-size: 10px;
+    font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 4px; margin-bottom: 20px;
+  }
+
+  .card-badge.shipping {
+    background: var(--accent-green-dim); color: var(--accent-green);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+  }
+
+  .card-badge.planned {
+    background: var(--accent-coral-glow); color: var(--accent-coral);
+    border: 1px solid rgba(232, 86, 74, 0.2);
+  }
+
+  .card h3 {
+    font-family: var(--font-body); font-size: 18px; font-weight: 700;
+    margin-bottom: 20px; color: var(--text-primary);
+  }
+
+  .card p, .card li {
+    font-size: 14.5px; color: var(--text-secondary); line-height: 1.6;
+  }
+
+  .card-list {
+    list-style: none; display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .card-list li {
+    padding-left: 20px; position: relative;
+  }
+
+  .card-list li::before {
+    content: '/'; position: absolute; left: 0; color: var(--accent-coral);
+    font-family: var(--font-mono); font-weight: 700;
+  }
+
+  /* ── Workflow steps ── */
+  .step-num {
+    font-family: var(--font-mono); font-size: 34px; font-weight: 700;
+    color: rgba(232, 86, 74, 0.16); margin-bottom: 16px;
+  }
+
+  /* ── Table ── */
+  .compare-table {
+    width: 100%; border-collapse: collapse; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+
+  .compare-table th, .compare-table td {
+    padding: 18px 20px; text-align: left; border-bottom: 1px solid var(--border);
+  }
+
+  .compare-table th {
+    font-family: var(--font-mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted); background: rgba(255,255,255,0.02);
+  }
+
+  .compare-table tr:last-child td { border-bottom: none; }
+
+  .compare-table td:first-child {
+    color: var(--text-primary); font-family: var(--font-mono); font-size: 13px;
+  }
+
+  .compare-table td {
+    font-size: 14.5px; color: var(--text-secondary); line-height: 1.5;
+  }
+
+  /* ── FAQ ── */
+  .faq {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 36px; transition: border-color 0.3s;
+  }
+
+  .faq:hover { border-color: var(--border-light); }
+
+  .faq h3 {
+    font-family: var(--font-body); font-size: 17px; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 12px;
+  }
+
+  .faq p {
+    font-size: 14.5px; line-height: 1.7; color: var(--text-secondary);
+  }
+
+  /* ── Footer ── */
+  footer {
+    padding: 26px 0 36px; border-top: 1px solid var(--border);
+  }
+
+  .footer-wrap {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; flex-wrap: wrap;
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);
+  }
+
+  .footer-wrap a { text-decoration: none; transition: color 0.2s; }
+  .footer-wrap a:hover { color: var(--text-primary); }
+
+  /* ── Animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .container { padding: 0 24px; }
+    .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+    .hero { padding: 48px 0 64px; }
+    .hero h1 { font-size: 42px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    section { padding: 64px 0 56px; }
+    nav .nav-wrap { min-height: 64px; }
+  }
+
+  @media (max-width: 640px) {
+    .container { padding: 0 18px; }
+    .nav-links a:not(.nav-cta) { display: none; }
+    .hero-actions { flex-direction: column; }
+    .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+    .compare-table th, .compare-table td { padding: 14px; font-size: 13px; }
   }
 </style>
 </head>
 <body>
-  <nav>
-    <div class="container nav-wrap">
-      <a class="brand" href="#">
-        <span class="brand-mark"></span>
-        <span>driftcut</span>
-      </a>
-      <div class="nav-links">
-        <a href="#status">Status</a>
-        <a href="#workflow">Workflow</a>
-        <a href="#faq">FAQ</a>
-        <a href="https://docs.driftcut.dev/getting-started/">Docs</a>
-        <a class="nav-cta" href="https://github.com/riccardomerenda/driftcut">GitHub</a>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="container nav-wrap">
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-icon">/</div>
+      driftcut
+    </a>
+    <div class="nav-links">
+      <a href="#status">Status</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://docs.driftcut.dev/getting-started/">Docs</a>
+      <a class="nav-cta" href="https://github.com/riccardomerenda/driftcut">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-content">
+      <div class="version-badge">v0.5.1 Alpha</div>
+
+      <h1>Sample or replay<br>before <em>full eval.</em></h1>
+
+      <p class="hero-description">
+        <strong>Driftcut</strong> is an alpha CLI for LLM migration canaries.
+        It validates a structured prompt corpus, samples representative batches,
+        runs baseline and candidate models, or replays historical paired outputs.
+      </p>
+
+      <p class="hero-sub">
+        Retries transient provider failures, checks deterministic quality signals,
+        judges only the ambiguous prompts, and tells you whether to stop, continue,
+        or proceed — before spending on a full evaluation.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn-primary" href="https://github.com/riccardomerenda/driftcut">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          View on GitHub
+        </a>
+        <a class="btn-secondary" href="https://docs.driftcut.dev/getting-started/">Read the docs &rarr;</a>
+      </div>
+
+      <div class="tags">
+        <span class="tag">CLI-first</span>
+        <span class="tag">CSV / JSON corpus</span>
+        <span class="tag">Historical replay</span>
+        <span class="tag">Transient retries</span>
+        <span class="tag">Light judge on ambiguity</span>
+        <span class="tag">Decision + HTML report</span>
       </div>
     </div>
-  </nav>
 
-  <section class="hero">
-    <div class="container hero-grid">
-      <div>
-        <div class="badge">v0.5.1 alpha</div>
-        <h1>Sample or replay<br>before full eval.</h1>
-        <p><strong>Driftcut</strong> is an alpha CLI for LLM migration canaries. It validates a structured prompt corpus, samples representative batches, runs baseline and candidate models, or replays historical paired outputs, retries transient provider failures, checks deterministic quality signals, judges only the ambiguous prompts, and tells you whether to stop, continue, or proceed.</p>
-        <p>The scope is narrow on purpose: help teams decide whether a migration candidate is promising enough to keep testing before spending on a full evaluation.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="https://github.com/riccardomerenda/driftcut">View on GitHub</a>
-          <a class="btn btn-ghost" href="https://docs.driftcut.dev/getting-started/">Read the docs</a>
-        </div>
-        <div class="pill-row">
-          <span class="pill">CLI-first</span>
-          <span class="pill">CSV / JSON corpus</span>
-          <span class="pill">Historical replay</span>
-          <span class="pill">Transient retries</span>
-          <span class="pill">Light judge on ambiguity</span>
-          <span class="pill">Decision + HTML report</span>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="terminal-head">
-          <span class="dot red"></span>
-          <span class="dot yellow"></span>
-          <span class="dot green"></span>
-          <span>alpha run</span>
+    <!-- Terminal -->
+    <div class="hero-terminal">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot"></div>
+          <div class="terminal-dot"></div>
+          <div class="terminal-dot"></div>
+          <span class="terminal-title">alpha run</span>
         </div>
         <div class="terminal-body">
-          <div><span class="dim">$</span> driftcut run --config migration.yaml</div>
-          <div class="dim">Loading corpus... 30 prompts, 4 categories</div>
-          <div>Baseline: <span class="good">openai/gpt-4o</span></div>
-          <div>Candidate: <span class="good">anthropic/claude-haiku</span></div>
-          <div style="height:8px"></div>
-          <div class="dim">Batch 1 <span class="good">######</span> 12/24</div>
-          <div class="dim">Judge coverage: 3/3 ambiguous prompts</div>
-          <div class="dim">Decision: CONTINUE (58% confidence)</div>
-          <div class="dim">Batch 2 <span class="good">######</span> 24/24</div>
-          <div style="height:8px"></div>
-          <div>Run complete</div>
-          <div class="dim">Prompts tested: <span>24/30 (80%)</span></div>
-          <div class="dim">Total cost: <span>$1.96</span></div>
-          <div class="dim">Judge cost: <span>$0.12</span></div>
-          <div class="dim">Decision: <span class="good">PROCEED</span></div>
-          <div class="dim">Output: <span>./driftcut-results/results.json + report.html</span></div>
-          <div class="warn">Next milestone: heavy escalation for still-ambiguous prompts</div>
+          <span class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">driftcut run --config migration.yaml</span></span>
+          <span class="t-line"><span class="t-dim">Loading corpus... 30 prompts, 4 categories</span></span>
+          <span class="t-spacer"></span>
+          <span class="t-line"><span class="t-label">Baseline:</span> <span class="t-baseline">openai/gpt-4o</span></span>
+          <span class="t-line"><span class="t-label">Candidate:</span> <span class="t-candidate">anthropic/claude-haiku</span></span>
+          <span class="t-spacer"></span>
+          <span class="t-line"><span class="t-label">Batch 1</span> <span class="t-green"><span class="progress-bar"><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span><span class="progress-empty"></span></span></span> <span class="t-dim">12/24</span></span>
+          <span class="t-line"><span class="t-dim">Judge coverage: 3/3 ambiguous prompts</span></span>
+          <span class="t-line"><span class="t-dim">Decision:</span> <span class="t-yellow">CONTINUE</span> <span class="t-dim">(58% confidence)</span></span>
+          <span class="t-spacer"></span>
+          <span class="t-line"><span class="t-label">Batch 2</span> <span class="t-green"><span class="progress-bar"><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span><span class="progress-fill"></span></span></span> <span class="t-dim">24/24</span></span>
+          <span class="t-spacer"></span>
+          <span class="t-line"><span class="t-heading">Run complete</span></span>
+          <span class="t-line"><span class="t-dim">Prompts tested: 24/30 (80%)</span></span>
+          <span class="t-line"><span class="t-dim">Total cost: $1.96</span></span>
+          <span class="t-line"><span class="t-dim">Judge cost: $0.12</span></span>
+          <span class="t-line"><span class="t-label">Decision:</span> <span class="t-green t-bold">PROCEED</span></span>
+          <span class="t-line"><span class="t-dim">Output: ./driftcut-results/results.json + report.html</span></span>
+          <span class="t-highlight"><span class="t-red">Next milestone: heavy escalation for still-ambiguous prompts</span></span>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="status">
-    <div class="container">
-      <div class="section-label">Current Status</div>
-      <h2 class="section-title">A real alpha migration gate.</h2>
-      <p class="section-desc">The repository now includes deterministic checks, a light judge for ambiguous prompts, a decision engine with confidence and report output, and a replay path for historical paired outputs. The next step is real heavy escalation when the light judge is not enough.</p>
-      <div class="grid-2">
-        <div class="card">
-          <span class="status-chip status-now">Shipping now</span>
-          <h3>What works today</h3>
-          <ul class="list">
-            <li>Config and corpus validation</li>
-            <li>Stratified batch sampling by category and criticality</li>
-            <li>Concurrent baseline/candidate execution via LiteLLM</li>
-            <li>Transient retry handling for rate limits, timeouts, and 5xxs</li>
-            <li>Historical replay on canonical paired-output JSON</li>
-            <li>Deterministic checks and light judging for ambiguity</li>
-            <li>Latency, cost, decision output, and HTML reporting</li>
-          </ul>
-        </div>
-        <div class="card">
-          <span class="status-chip status-next">Planned next</span>
-          <h3>What sharpens the wedge further</h3>
-          <ul class="list">
-            <li>Heavy escalation after the light judge</li>
-            <li>Richer failure archetypes beyond deterministic checks</li>
-            <li>Better benchmark demos and report polish</li>
-            <li>More confidence on borderline migration candidates</li>
-          </ul>
-        </div>
+<!-- ── DIVIDER ── -->
+<div class="container section-divider"><hr></div>
+
+<!-- ── STATUS ── -->
+<section id="status">
+  <div class="container">
+    <div class="section-label">Current Status</div>
+    <h2 class="section-title">A real alpha migration gate.</h2>
+    <p class="section-desc">
+      The repository now includes deterministic checks, a light judge for ambiguous prompts,
+      a decision engine with confidence and report output, and a replay path for historical
+      paired outputs. The next step is real heavy escalation when the light judge is not enough.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-badge shipping">Shipping Now</div>
+        <h3>What works today</h3>
+        <ul class="card-list">
+          <li>Config and corpus validation</li>
+          <li>Stratified batch sampling by category and criticality</li>
+          <li>Concurrent baseline/candidate execution via LiteLLM</li>
+          <li>Transient retry handling for rate limits, timeouts, and 5xxs</li>
+          <li>Historical replay on canonical paired-output JSON</li>
+          <li>Deterministic checks and light judging for ambiguity</li>
+          <li>Latency, cost, decision output, and HTML reporting</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-badge planned">Planned Next</div>
+        <h3>What sharpens the wedge further</h3>
+        <ul class="card-list">
+          <li>Heavy escalation after the light judge</li>
+          <li>Richer failure archetypes beyond deterministic checks</li>
+          <li>Better benchmark demos and report polish</li>
+          <li>More confidence on borderline migration candidates</li>
+        </ul>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="workflow">
-    <div class="container">
-      <div class="section-label">Workflow</div>
-      <h2 class="section-title">What the app does and how it works.</h2>
-      <p class="section-desc">Driftcut is built for teams that already have a real prompt corpus and want a cheaper first pass before a full migration evaluation.</p>
-      <div class="grid-3">
-        <div class="card">
-          <div class="step-num">01</div>
-          <h3>Bring your corpus</h3>
-          <p>Each prompt carries a category, a criticality level, an expected output type, and optional deterministic expectations such as required strings or JSON keys.</p>
-        </div>
-        <div class="card">
-          <div class="step-num">02</div>
-          <h3>Sample strategically</h3>
-          <p>The sampler builds balanced batches and prioritizes high-criticality prompts earlier, so the first slice is more informative than a naive random sample in both live and replay mode.</p>
-        </div>
-        <div class="card">
-          <div class="step-num">03</div>
-          <h3>Run or replay and decide</h3>
-          <p>Baseline and candidate can run live for each prompt, or historical paired outputs can be replayed through the same runtime. Driftcut records latency and cost when available, judges only ambiguous prompts, and updates the migration decision after each batch.</p>
-        </div>
+<!-- ── DIVIDER ── -->
+<div class="container section-divider"><hr></div>
+
+<!-- ── WORKFLOW ── -->
+<section id="workflow">
+  <div class="container">
+    <div class="section-label">Workflow</div>
+    <h2 class="section-title">What the app does and how it works.</h2>
+    <p class="section-desc">
+      Driftcut is built for teams that already have a real prompt corpus and want
+      a cheaper first pass before a full migration evaluation.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="step-num">01</div>
+        <h3>Bring your corpus</h3>
+        <p>Each prompt carries a category, a criticality level, an expected output type, and optional deterministic expectations such as required strings or JSON keys.</p>
+      </div>
+      <div class="card">
+        <div class="step-num">02</div>
+        <h3>Sample strategically</h3>
+        <p>The sampler builds balanced batches and prioritizes high-criticality prompts earlier, so the first slice is more informative than a naive random sample in both live and replay mode.</p>
+      </div>
+      <div class="card">
+        <div class="step-num">03</div>
+        <h3>Run or replay and decide</h3>
+        <p>Baseline and candidate can run live for each prompt, or historical paired outputs can be replayed through the same runtime. Driftcut records latency and cost when available, judges only ambiguous prompts, and updates the migration decision after each batch.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section>
-    <div class="container">
-      <div class="section-label">Positioning</div>
-      <h2 class="section-title">The wedge is still strong.</h2>
-      <p class="section-desc">Eval frameworks answer "how good is this model?" Driftcut is aimed at the earlier question: "should I keep spending money testing this migration candidate?"</p>
-      <table>
-        <thead>
-          <tr>
-            <th></th>
-            <th>Typical eval tooling</th>
-            <th>Driftcut direction</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Primary question</td>
-            <td>How good is this model overall?</td>
-            <td>Should I keep testing this migration candidate?</td>
-          </tr>
-          <tr>
-            <td>Current alpha</td>
-            <td>Quality measurement</td>
-            <td>Sampling or replay + light semantic judging + migration decisions</td>
-          </tr>
-          <tr>
-            <td>Next milestone</td>
-            <td>More benchmarks and scoring</td>
-            <td>Heavy escalation for unclear evidence</td>
-          </tr>
-          <tr>
-            <td>Output shape</td>
-            <td>Metrics to interpret</td>
-            <td>STOP / CONTINUE / PROCEED + HTML report</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+<!-- ── DIVIDER ── -->
+<div class="container section-divider"><hr></div>
 
-  <section id="faq">
-    <div class="container">
-      <div class="section-label">FAQ</div>
-      <h2 class="section-title">Common questions</h2>
-      <div class="grid-2">
-        <div class="faq">
-          <h3>Is this a replacement for full evaluation?</h3>
-          <p>No. It is the step before a full evaluation. Driftcut helps you run a cheaper first pass on real prompts before you invest in the larger comparison.</p>
-        </div>
-        <div class="faq">
-          <h3>Do I need labeled benchmarks?</h3>
-          <p>No ground-truth labels are required today, but you do need a structured prompt corpus. This project assumes the benchmark already exists in your product context.</p>
-        </div>
-        <div class="faq">
-          <h3>What is implemented right now?</h3>
-          <p>Validation, sampling, paired model execution, canonical replay loading, deterministic checks, light judging for ambiguous prompts, latency tracking, cost tracking, decision output, JSON export, and HTML reporting.</p>
-        </div>
-        <div class="faq">
-          <h3>What does a run cost?</h3>
-          <p>Today the cost is the sampled baseline and candidate model calls plus optional judge cost for ambiguous prompts only. The judge is designed to be selective, not universal.</p>
-        </div>
+<!-- ── POSITIONING ── -->
+<section>
+  <div class="container">
+    <div class="section-label">Positioning</div>
+    <h2 class="section-title">The wedge is still strong.</h2>
+    <p class="section-desc">
+      Eval frameworks answer "how good is this model?" Driftcut is aimed at the earlier
+      question: "should I keep spending money testing this migration candidate?"
+    </p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Typical eval tooling</th>
+          <th>Driftcut direction</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Primary question</td>
+          <td>How good is this model overall?</td>
+          <td>Should I keep testing this migration candidate?</td>
+        </tr>
+        <tr>
+          <td>Current alpha</td>
+          <td>Quality measurement</td>
+          <td>Sampling or replay + light semantic judging + migration decisions</td>
+        </tr>
+        <tr>
+          <td>Next milestone</td>
+          <td>More benchmarks and scoring</td>
+          <td>Heavy escalation for unclear evidence</td>
+        </tr>
+        <tr>
+          <td>Output shape</td>
+          <td>Metrics to interpret</td>
+          <td>STOP / CONTINUE / PROCEED + HTML report</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ── DIVIDER ── -->
+<div class="container section-divider"><hr></div>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <div class="container">
+    <div class="section-label">FAQ</div>
+    <h2 class="section-title">Common questions</h2>
+
+    <div class="grid-2">
+      <div class="faq">
+        <h3>Is this a replacement for full evaluation?</h3>
+        <p>No. It is the step before a full evaluation. Driftcut helps you run a cheaper first pass on real prompts before you invest in the larger comparison.</p>
+      </div>
+      <div class="faq">
+        <h3>Do I need labeled benchmarks?</h3>
+        <p>No ground-truth labels are required today, but you do need a structured prompt corpus. This project assumes the benchmark already exists in your product context.</p>
+      </div>
+      <div class="faq">
+        <h3>What is implemented right now?</h3>
+        <p>Validation, sampling, paired model execution, canonical replay loading, deterministic checks, light judging for ambiguous prompts, latency tracking, cost tracking, decision output, JSON export, and HTML reporting.</p>
+      </div>
+      <div class="faq">
+        <h3>What does a run cost?</h3>
+        <p>Today the cost is the sampled baseline and candidate model calls plus optional judge cost for ambiguous prompts only. The judge is designed to be selective, not universal.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <footer>
-    <div class="container footer-wrap">
-      <span>driftcut - v0.5.1 alpha CLI for LLM migration canaries</span>
-      <span>
-        <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> -
-        <a href="https://docs.driftcut.dev/getting-started/">Docs</a> -
-        <a href="https://driftcut.dev">driftcut.dev</a>
-      </span>
-    </div>
-  </footer>
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="container footer-wrap">
+    <span>driftcut &mdash; v0.5.1 alpha CLI for LLM migration canaries</span>
+    <span>
+      <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> &middot;
+      <a href="https://docs.driftcut.dev/getting-started/">Docs</a> &middot;
+      <a href="https://driftcut.dev">driftcut.dev</a>
+    </span>
+  </div>
+</footer>
+
 </body>
 </html>
