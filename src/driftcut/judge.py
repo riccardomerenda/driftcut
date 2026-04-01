@@ -64,7 +64,46 @@ async def judge_prompt_result(
     config: EvaluationConfig,
 ) -> JudgeResult:
     """Compare baseline and candidate outputs with a judge model."""
+    if config.judge_strategy == "tiered":
+        return await _tiered_judge(result, config)
+
     model_name = select_judge_model(config)
+    judge = await _call_judge_model(result, model_name)
+    judge.tier = "heavy" if config.judge_strategy == "heavy" else "light"
+    return judge
+
+
+async def _tiered_judge(
+    result: PromptResult,
+    config: EvaluationConfig,
+) -> JudgeResult:
+    """Light-first judge with escalation to heavy on low confidence."""
+    light = await _call_judge_model(result, config.judge_model_light)
+    light.tier = "light"
+
+    if light.is_error:
+        return light
+
+    if light.confidence >= config.tiered_escalation_threshold:
+        return light
+
+    heavy = await _call_judge_model(result, config.judge_model_heavy)
+    heavy.tier = "heavy"
+    heavy.escalated = True
+    heavy.cost_usd += light.cost_usd
+    heavy.latency_ms += light.latency_ms
+    if light.cost_error and heavy.cost_error:
+        heavy.cost_error = f"light: {light.cost_error}; heavy: {heavy.cost_error}"
+    elif light.cost_error:
+        heavy.cost_error = f"light: {light.cost_error}"
+    return heavy
+
+
+async def _call_judge_model(
+    result: PromptResult,
+    model_name: str,
+) -> JudgeResult:
+    """Call a single judge model and return the parsed result."""
     start = time.perf_counter()
     try:
         response = await litellm.acompletion(

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-01
+
+### Added
+
+- Real tiered judging with light-to-heavy escalation when light judge confidence is below threshold
+- Configurable `tiered_escalation_threshold` in evaluation config (default 0.6)
+- `tier` and `escalated` fields on judge results for tracking which judge tier produced the verdict
+- `escalated_prompts` metric in decision metrics and JSON/HTML reports
+- Split judge cost tracking: `judge_light_usd` and `judge_heavy_usd` in cost summaries
+- Escalation threshold shown in HTML thresholds table when strategy is tiered
+- 8 new tests for tiered escalation, config validation, cost splitting, and reporting (97 total)
+
+### Changed
+
+- `judge_strategy: tiered` now performs actual light-then-heavy escalation instead of aliasing to light
+- Judge cost breakdown (light vs heavy) shown in HTML report when both tiers are used
+- Console run summary includes escalated count when escalation occurs
+
 ## [0.5.1] - 2026-03-30
 
 ### Added
@@ -117,6 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.6.0]: https://github.com/riccardomerenda/driftcut/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/riccardomerenda/driftcut/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/riccardomerenda/driftcut/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/riccardomerenda/driftcut/compare/v0.3.0...v0.4.0

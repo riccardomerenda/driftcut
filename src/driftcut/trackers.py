@@ -71,6 +71,8 @@ class CostSummary:
     baseline_usd: float = 0.0
     candidate_usd: float = 0.0
     judge_usd: float = 0.0
+    judge_light_usd: float = 0.0
+    judge_heavy_usd: float = 0.0
     total_usd: float = 0.0
     per_category: dict[str, float] = field(default_factory=dict)
 
@@ -82,6 +84,8 @@ class CostTracker:
         self._baseline_total: float = 0.0
         self._candidate_total: float = 0.0
         self._judge_total: float = 0.0
+        self._judge_light_total: float = 0.0
+        self._judge_heavy_total: float = 0.0
         self._per_category: dict[str, float] = {}
 
     def record(self, result: PromptResult) -> None:
@@ -89,7 +93,12 @@ class CostTracker:
         self._candidate_total += result.candidate.cost_usd
         judge_cost = 0.0
         if result.evaluation is not None and result.evaluation.judge is not None:
-            judge_cost = result.evaluation.judge.cost_usd
+            judge = result.evaluation.judge
+            judge_cost = judge.cost_usd
+            if judge.tier == "heavy":
+                self._judge_heavy_total += judge_cost
+            else:
+                self._judge_light_total += judge_cost
         self._judge_total += judge_cost
         total = result.baseline.cost_usd + result.candidate.cost_usd + judge_cost
         cat = result.category
@@ -101,6 +110,8 @@ class CostTracker:
             baseline_usd=self._baseline_total,
             candidate_usd=self._candidate_total,
             judge_usd=self._judge_total,
+            judge_light_usd=self._judge_light_total,
+            judge_heavy_usd=self._judge_heavy_total,
             total_usd=self._baseline_total + self._candidate_total + self._judge_total,
             per_category=dict(sorted(self._per_category.items())),
         )

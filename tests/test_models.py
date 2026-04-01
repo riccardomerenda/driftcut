@@ -77,6 +77,21 @@ class TestJudgeResult:
         )
         assert judge.is_error is True
 
+    def test_tier_defaults(self) -> None:
+        judge = JudgeResult(model="openai/gpt-4.1-mini", verdict="equivalent")
+        assert judge.tier == "light"
+        assert judge.escalated is False
+
+    def test_escalated_judge(self) -> None:
+        judge = JudgeResult(
+            model="openai/gpt-4.1",
+            verdict="candidate_worse",
+            tier="heavy",
+            escalated=True,
+        )
+        assert judge.tier == "heavy"
+        assert judge.escalated is True
+
 
 class TestBatchResult:
     def test_empty_batch(self) -> None:

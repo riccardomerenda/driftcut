@@ -39,6 +39,8 @@ def _write_json(path: Path, config: DriftcutConfig, result: RunResult) -> None:
             "baseline_usd": result.cost.summary.baseline_usd,
             "candidate_usd": result.cost.summary.candidate_usd,
             "judge_usd": result.cost.summary.judge_usd,
+            "judge_light_usd": result.cost.summary.judge_light_usd,
+            "judge_heavy_usd": result.cost.summary.judge_heavy_usd,
             "total_usd": result.cost.summary.total_usd,
         },
         "decision": _decision_dict(result.final_decision, config.output.show_confidence),
@@ -79,6 +81,7 @@ def _metrics_dict(metrics: DecisionMetrics) -> dict[str, object]:
         "high_criticality_prompts": metrics.high_criticality_prompts,
         "ambiguous_prompts": metrics.ambiguous_prompts,
         "judged_prompts": metrics.judged_prompts,
+        "escalated_prompts": metrics.escalated_prompts,
         "candidate_failure_rate": round(metrics.candidate_failure_rate, 4),
         "candidate_regression_rate": round(metrics.candidate_regression_rate, 4),
         "schema_break_rate": round(metrics.schema_break_rate, 4),
@@ -151,6 +154,8 @@ def _prompt_result_dict(prompt: PromptResult, *, save_examples: bool) -> dict[st
                 "cost_usd": prompt.evaluation.judge.cost_usd,
                 "cost_error": prompt.evaluation.judge.cost_error,
                 "error": prompt.evaluation.judge.error,
+                "tier": prompt.evaluation.judge.tier,
+                "escalated": prompt.evaluation.judge.escalated,
             }
         data["evaluation"] = evaluation_data
     if save_examples:
@@ -342,6 +347,10 @@ def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
             <th>Judged prompts</th>
             <td>{metrics.judged_prompts}/{metrics.ambiguous_prompts}</td>
           </tr>
+          <tr>
+            <th>Escalated prompts</th>
+            <td>{metrics.escalated_prompts}</td>
+          </tr>
           <tr><th>Judge worse rate</th><td>{metrics.judge_worse_rate:.1%}</td></tr>
           <tr><th>Judge average confidence</th><td>{metrics.judge_average_confidence:.0%}</td></tr>
           <tr><th>Latency p50 ratio</th><td>{metrics.latency_p50_ratio:.2f}x</td></tr>
@@ -410,6 +419,11 @@ def _render_cost_lines(result: RunResult) -> str:
     lines = [f"<div>Total cost: ${cost.total_usd:.4f}</div>"]
     if cost.judge_usd > 0:
         lines.append(f"<div>Judge cost: ${cost.judge_usd:.4f}</div>")
+        if cost.judge_light_usd > 0 and cost.judge_heavy_usd > 0:
+            lines.append(
+                f"<div>Judge light: ${cost.judge_light_usd:.4f}"
+                f" | heavy: ${cost.judge_heavy_usd:.4f}</div>"
+            )
     return "".join(lines)
 
 
@@ -443,7 +457,7 @@ def _render_thresholds(config: DriftcutConfig) -> str:
     if not config.output.show_thresholds:
         return ""
 
-    rows = [
+    rows: list[tuple[str, str]] = [
         (
             "High-criticality stop",
             f"{config.risk.stop_on_high_criticality_failure_rate:.0%}",
@@ -459,6 +473,13 @@ def _render_thresholds(config: DriftcutConfig) -> str:
             f"{config.latency.regression_threshold_p95:.2f}x",
         ),
     ]
+    if config.evaluation.judge_strategy == "tiered":
+        rows.append(
+            (
+                "Tiered escalation threshold",
+                f"{config.evaluation.tiered_escalation_threshold:.0%}",
+            )
+        )
     row_html = "".join(
         f"<tr><th>{html.escape(label)}</th><td>{html.escape(value)}</td></tr>"
         for label, value in rows

@@ -375,10 +375,14 @@ def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig
                 f"schema={decision.metrics.schema_break_rate:.1%}"
             )
         if decision.metrics.ambiguous_prompts > 0:
+            escalated_str = ""
+            if decision.metrics.escalated_prompts > 0:
+                escalated_str = f", escalated={decision.metrics.escalated_prompts}"
             console.print(
                 "  Judge summary:  "
                 f"{decision.metrics.judged_prompts}/{decision.metrics.ambiguous_prompts} judged, "
                 f"worse={decision.metrics.judge_worse_rate:.1%}, "
                 f"avg_conf={decision.metrics.judge_average_confidence:.0%}"
+                f"{escalated_str}"
             )
     console.print()

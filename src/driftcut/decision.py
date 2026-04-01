@@ -142,6 +142,7 @@ def _collect_metrics(
     high_criticality_failures = 0
     ambiguous_prompts = 0
     judged_prompts = 0
+    escalated_prompts = 0
     judge_worse = 0
     judge_equivalent = 0
     judge_better = 0
@@ -171,6 +172,8 @@ def _collect_metrics(
         if evaluation.candidate_regressed:
             candidate_regressions += 1
         if evaluation.judge is not None:
+            if evaluation.judge.escalated:
+                escalated_prompts += 1
             if evaluation.judge.is_error:
                 archetypes["judge_unavailable"] = archetypes.get("judge_unavailable", 0) + 1
             elif evaluation.judge.verdict != "unavailable":
@@ -223,6 +226,7 @@ def _collect_metrics(
         high_criticality_prompts=high_criticality_prompts,
         ambiguous_prompts=ambiguous_prompts,
         judged_prompts=judged_prompts,
+        escalated_prompts=escalated_prompts,
         candidate_failure_rate=candidate_failure_rate,
         candidate_regression_rate=candidate_regression_rate,
         schema_break_rate=schema_break_rate,

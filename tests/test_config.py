@@ -98,6 +98,28 @@ def test_missing_required_field(tmp_path: Path) -> None:
         load_config(config_file)
 
 
+def test_tiered_escalation_threshold_default() -> None:
+    cfg = load_config(EXAMPLES_DIR / "migration.yaml")
+    assert cfg.evaluation.tiered_escalation_threshold == 0.6
+
+
+def test_tiered_escalation_threshold_custom(tmp_path: Path) -> None:
+    cfg_dict = {
+        "name": "test",
+        "models": {
+            "baseline": {"provider": "openai", "model": "gpt-4o"},
+            "candidate": {"provider": "anthropic", "model": "claude-haiku"},
+        },
+        "corpus": {"file": "prompts.csv"},
+        "evaluation": {"judge_strategy": "tiered", "tiered_escalation_threshold": 0.8},
+    }
+    config_file = tmp_path / "tiered.yaml"
+    config_file.write_text(yaml.dump(cfg_dict))
+    cfg = load_config(config_file)
+    assert cfg.evaluation.judge_strategy == "tiered"
+    assert cfg.evaluation.tiered_escalation_threshold == 0.8
+
+
 def test_invalid_judge_strategy(tmp_path: Path) -> None:
     cfg_dict = {
         "name": "test",

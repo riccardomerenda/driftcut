@@ -1,6 +1,11 @@
 """Tests for judge-layer helpers."""
 
-from driftcut.judge import apply_judge_result, prompt_needs_judge
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
+from driftcut.config import EvaluationConfig
+from driftcut.judge import apply_judge_result, judge_prompt_result, prompt_needs_judge
 from driftcut.models import (
     JudgeResult,
     ModelResponse,
@@ -74,3 +79,78 @@ def test_apply_judge_result_marks_regression() -> None:
     assert merged.candidate_failed is True
     assert merged.candidate_regressed is True
     assert merged.candidate_improved is False
+
+
+@pytest.mark.asyncio
+async def test_tiered_judge_no_escalation_on_high_confidence() -> None:
+    config = EvaluationConfig(judge_strategy="tiered", tiered_escalation_threshold=0.6)
+    result = _make_prompt_result(
+        baseline_output="We can issue a refund today.",
+        candidate_output="Contact support tomorrow.",
+    )
+    with patch("driftcut.judge._call_judge_model", new_callable=AsyncMock) as mock_call:
+        mock_call.return_value = JudgeResult(
+            model="openai/gpt-4.1-mini",
+            verdict="equivalent",
+            confidence=0.8,
+        )
+        judge = await judge_prompt_result(result, config)
+
+    assert judge.tier == "light"
+    assert judge.escalated is False
+    assert judge.confidence == 0.8
+    mock_call.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_tiered_judge_escalates_on_low_confidence() -> None:
+    config = EvaluationConfig(judge_strategy="tiered", tiered_escalation_threshold=0.6)
+    result = _make_prompt_result(
+        baseline_output="We can issue a refund today.",
+        candidate_output="Contact support tomorrow.",
+    )
+    light_result = JudgeResult(
+        model="openai/gpt-4.1-mini",
+        verdict="equivalent",
+        confidence=0.4,
+        latency_ms=100.0,
+        cost_usd=0.001,
+    )
+    heavy_result = JudgeResult(
+        model="openai/gpt-4.1",
+        verdict="candidate_worse",
+        confidence=0.9,
+        latency_ms=200.0,
+        cost_usd=0.01,
+    )
+    with patch("driftcut.judge._call_judge_model", new_callable=AsyncMock) as mock_call:
+        mock_call.side_effect = [light_result, heavy_result]
+        judge = await judge_prompt_result(result, config)
+
+    assert judge.tier == "heavy"
+    assert judge.escalated is True
+    assert judge.verdict == "candidate_worse"
+    assert judge.confidence == 0.9
+    assert abs(judge.cost_usd - 0.011) < 1e-9
+    assert abs(judge.latency_ms - 300.0) < 1e-9
+    assert mock_call.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_tiered_judge_no_escalation_on_light_error() -> None:
+    config = EvaluationConfig(judge_strategy="tiered", tiered_escalation_threshold=0.6)
+    result = _make_prompt_result(
+        baseline_output="We can issue a refund today.",
+        candidate_output="Contact support tomorrow.",
+    )
+    with patch("driftcut.judge._call_judge_model", new_callable=AsyncMock) as mock_call:
+        mock_call.return_value = JudgeResult(
+            model="openai/gpt-4.1-mini",
+            verdict="unavailable",
+            error="API timeout",
+        )
+        judge = await judge_prompt_result(result, config)
+
+    assert judge.is_error is True
+    assert judge.escalated is False
+    mock_call.assert_awaited_once()

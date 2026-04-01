@@ -95,6 +95,9 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
     assert '"retry_count": 2' in json_text
     assert '"judge_usd": 0.002' in json_text
     assert '"verdict": "equivalent"' in json_text
+    assert '"tier": "light"' in json_text
+    assert '"escalated": false' in json_text
+    assert '"escalated_prompts": 0' in json_text
     assert "Report run - Driftcut report" in html_text
     assert "Live mode" in html_text
     assert "Judge cost: $0.0020" in html_text

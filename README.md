@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.5.1 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.6.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -51,6 +51,7 @@ Today, Driftcut can:
 - Replay historical paired outputs through the same deterministic checks, judge flow, and decision engine
 - Run deterministic checks for format, JSON validity, required content, and output limits
 - Send ambiguous prompts to a judge model for semantic comparison
+- Escalate from a light judge to a heavy judge when confidence is low (tiered strategy)
 - Track latency, baseline/candidate cost, and judge cost
 - Produce `STOP`, `CONTINUE`, or `PROCEED` decisions during the run
 - Export both JSON results and an HTML report
@@ -58,9 +59,8 @@ Today, Driftcut can:
 
 Still planned next:
 
-- Real tiered escalation from light judge to heavy judge
 - Richer failure archetypes beyond deterministic checks and `judge_worse`
-- Better report polish and benchmark demos
+- Public benchmark demo
 
 ## Quickstart
 
@@ -291,7 +291,7 @@ su-001,summarization,"Summarize this document: {doc}",low,markdown,,,,1200
 
 ## Configuration
 
-The runtime actively uses `sampling`, `risk`, `latency`, `output`, and `evaluation.judge_strategy`. The current active strategies are `none`, `light`, and `heavy`. `tiered` currently behaves like `light` until heavy escalation lands.
+The runtime actively uses `sampling`, `risk`, `latency`, `output`, and `evaluation.judge_strategy`. The active strategies are `none`, `light`, `tiered`, and `heavy`. `tiered` calls the light judge first and escalates to the heavy judge when confidence is below `tiered_escalation_threshold`.
 
 ```yaml
 name: "OpenAI to Anthropic migration gate"
@@ -323,6 +323,7 @@ evaluation:
   judge_strategy: light
   judge_model_light: openai/gpt-4.1-mini
   judge_model_heavy: openai/gpt-4.1
+  tiered_escalation_threshold: 0.6
   detect_failure_archetypes: true
 
 latency:
@@ -346,7 +347,7 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 |---|---|---|---|
 | First pass | Deterministic checks | $0 | Format, schema, content, and output-limit failures |
 | Ambiguous prompts | Light judge | Low | Semantic quality differences where both outputs still pass deterministic checks |
-| Future follow-up | Heavy escalation | Higher | Cases that remain unclear after the light judge |
+| Low-confidence cases | Heavy escalation (tiered) | Higher | Cases where the light judge's confidence is below the escalation threshold |
 
 ## Roadmap
 
@@ -366,7 +367,7 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] Decision engine with configurable thresholds
 - [x] HTML report
 - [x] Light judge integration for ambiguous prompts
-- [ ] Heavy escalation and real tiered judging
+- [x] Tiered judging with light-to-heavy escalation
 - [ ] Richer failure archetypes
 - [ ] Public benchmark demo
 

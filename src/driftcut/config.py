@@ -42,6 +42,7 @@ class EvaluationConfig(BaseModel):
     judge_strategy: Literal["none", "light", "tiered", "heavy"] = "light"
     judge_model_light: str = "openai/gpt-4.1-mini"
     judge_model_heavy: str = "openai/gpt-4.1"
+    tiered_escalation_threshold: float = Field(default=0.6, ge=0.0, le=1.0)
     detect_failure_archetypes: bool = True
 
 

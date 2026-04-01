@@ -472,7 +472,7 @@
         <span class="tag">CSV / JSON corpus</span>
         <span class="tag">Historical replay</span>
         <span class="tag">Transient retries</span>
-        <span class="tag">Light judge on ambiguity</span>
+        <span class="tag">Tiered judge escalation</span>
         <span class="tag">Decision + HTML report</span>
       </div>
     </div>
@@ -513,7 +513,7 @@
           <span class="t-line"><span class="t-dim">  Latency p95:    </span><span class="t-label">1480ms</span><span class="t-dim"> → </span><span class="t-candidate">1100ms</span></span>
           <span class="t-line"><span class="t-dim">  Decision:       </span><span class="t-green t-bold">PROCEED</span> <span class="t-dim">(82% confidence)</span></span>
           <span class="t-line"><span class="t-dim">  Output: ./driftcut-results/results.json + report.html</span></span>
-          <span class="t-highlight"><span class="t-red">Next: heavy escalation for still-ambiguous prompts</span></span>
+          <span class="t-highlight"><span class="t-green">Tiered judging: light first, heavy on low confidence</span></span>
         </div>
       </div>
     </div>
@@ -529,9 +529,9 @@
     <div class="section-label">Current Status</div>
     <h2 class="section-title">A real alpha migration gate.</h2>
     <p class="section-desc">
-      The repository now includes deterministic checks, a light judge for ambiguous prompts,
-      a decision engine with confidence and report output, and a replay path for historical
-      paired outputs. The next step is real heavy escalation when the light judge is not enough.
+      The repository now includes deterministic checks, tiered judging that escalates from a
+      light judge to a heavy judge when confidence is low, a decision engine with confidence
+      and report output, and a replay path for historical paired outputs.
     </p>
 
     <div class="grid-2">
@@ -544,7 +544,7 @@
           <li>Concurrent baseline/candidate execution via LiteLLM</li>
           <li>Transient retry handling for rate limits, timeouts, and 5xxs</li>
           <li>Historical replay on canonical paired-output JSON</li>
-          <li>Deterministic checks and light judging for ambiguity</li>
+          <li>Deterministic checks and tiered judging (light + heavy escalation)</li>
           <li>Latency, cost, decision output, and HTML reporting</li>
         </ul>
       </div>
@@ -553,10 +553,8 @@
         <div class="card-badge planned">Planned Next</div>
         <h3>What sharpens the wedge further</h3>
         <ul class="card-list">
-          <li>Heavy escalation after the light judge</li>
           <li>Richer failure archetypes beyond deterministic checks</li>
-          <li>Better benchmark demos and report polish</li>
-          <li>More confidence on borderline migration candidates</li>
+          <li>Public benchmark demos and report polish</li>
         </ul>
       </div>
     </div>
@@ -626,12 +624,12 @@
         <tr>
           <td>Current alpha</td>
           <td>Quality measurement</td>
-          <td>Sampling or replay + light semantic judging + migration decisions</td>
+          <td>Sampling or replay + tiered semantic judging + migration decisions</td>
         </tr>
         <tr>
           <td>Next milestone</td>
           <td>More benchmarks and scoring</td>
-          <td>Heavy escalation for unclear evidence</td>
+          <td>Richer failure archetypes and benchmark demos</td>
         </tr>
         <tr>
           <td>Output shape</td>
@@ -663,7 +661,7 @@
       </div>
       <div class="faq">
         <h3>What is implemented right now?</h3>
-        <p>Validation, sampling, paired model execution, canonical replay loading, deterministic checks, light judging for ambiguous prompts, latency tracking, cost tracking, decision output, JSON export, and HTML reporting.</p>
+        <p>Validation, sampling, paired model execution, canonical replay loading, deterministic checks, tiered judging (light with heavy escalation) for ambiguous prompts, latency tracking, cost tracking, decision output, JSON export, and HTML reporting.</p>
       </div>
       <div class="faq">
         <h3>What does a run cost?</h3>
@@ -676,7 +674,7 @@
 <!-- ── FOOTER ── -->
 <footer>
   <div class="container footer-wrap">
-    <span>driftcut &mdash; v0.5.1 alpha CLI for LLM migration canaries</span>
+    <span>driftcut &mdash; v0.6.0 alpha CLI for LLM migration canaries</span>
     <span>
       <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> &middot;
       <a href="https://docs.driftcut.dev/getting-started/">Docs</a> &middot;

@@ -60,6 +60,8 @@ class JudgeResult:
     cost_usd: float = 0.0
     cost_error: str | None = None
     error: str | None = None
+    tier: Literal["light", "heavy"] = "light"
+    escalated: bool = False
 
     @property
     def is_error(self) -> bool:
@@ -76,6 +78,7 @@ class DecisionMetrics:
     high_criticality_prompts: int = 0
     ambiguous_prompts: int = 0
     judged_prompts: int = 0
+    escalated_prompts: int = 0
     candidate_failure_rate: float = 0.0
     candidate_regression_rate: float = 0.0
     schema_break_rate: float = 0.0

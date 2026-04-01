@@ -143,6 +143,24 @@ class TestCostTracker:
         assert abs(s.judge_usd - 0.002) < 1e-9
         assert abs(s.total_usd - 0.047) < 1e-9
 
+    def test_judge_cost_split_by_tier(self) -> None:
+        ct = CostTracker()
+        light_result = _make_result(judge_cost=0.001)
+        assert light_result.evaluation is not None and light_result.evaluation.judge is not None
+        light_result.evaluation.judge.tier = "light"
+        ct.record(light_result)
+
+        heavy_result = _make_result(judge_cost=0.011)
+        assert heavy_result.evaluation is not None and heavy_result.evaluation.judge is not None
+        heavy_result.evaluation.judge.tier = "heavy"
+        heavy_result.evaluation.judge.escalated = True
+        ct.record(heavy_result)
+
+        s = ct.summary
+        assert abs(s.judge_light_usd - 0.001) < 1e-9
+        assert abs(s.judge_heavy_usd - 0.011) < 1e-9
+        assert abs(s.judge_usd - 0.012) < 1e-9
+
     def test_per_category_cost(self) -> None:
         ct = CostTracker()
         ct.record(_make_result(category="a", baseline_cost=0.01, candidate_cost=0.005))
