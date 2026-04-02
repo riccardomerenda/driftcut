@@ -16,6 +16,7 @@ from driftcut.corpus import Corpus, load_corpus
 from driftcut.replay import load_replay_dataset
 from driftcut.reporting import save_run_outputs
 from driftcut.sampler import StratifiedSampler
+from driftcut.store import create_memory_store
 
 app = typer.Typer(
     name="driftcut",
@@ -110,6 +111,13 @@ def _print_validation_summary(
         f"{cfg.evaluation.judge_strategy} "
         "(semantic comparison for ambiguous prompts when enabled)",
     ]
+    if cfg.memory is not None:
+        plan_lines.append(
+            "Memory: "
+            f"{cfg.memory.backend} "
+            f"(cache={cfg.memory.response_cache.enabled}, "
+            f"history={cfg.memory.run_history.enabled})"
+        )
     console.print(Panel("\n".join(plan_lines), title="Sampling Plan", border_style="blue"))
 
     thresh_table = Table(show_header=True, box=None, padding=(0, 2))
@@ -176,7 +184,12 @@ def run(
 
     cfg, corpus = _load_config_and_corpus(config)
     sampler = StratifiedSampler(corpus, cfg.sampling, seed=seed)
-    result = asyncio.run(run_migration(cfg, sampler))
+    try:
+        store = create_memory_store(cfg.memory)
+    except Exception as exc:
+        console.print(f"[red bold]Memory config error:[/red bold] {exc}")
+        raise typer.Exit(code=1) from exc
+    result = asyncio.run(run_migration(cfg, sampler, store=store))
 
     written_files = save_run_outputs(config, cfg, result)
     for path in written_files:
@@ -223,7 +236,12 @@ def replay(
         raise typer.Exit(code=1) from exc
 
     sampler = StratifiedSampler(replay_dataset.corpus, cfg.sampling, seed=seed)
-    result = asyncio.run(run_replay(cfg, replay_dataset, sampler))
+    try:
+        store = create_memory_store(cfg.memory)
+    except Exception as exc:
+        console.print(f"[red bold]Memory config error:[/red bold] {exc}")
+        raise typer.Exit(code=1) from exc
+    result = asyncio.run(run_replay(cfg, replay_dataset, sampler, store=store))
 
     written_files = save_run_outputs(config, cfg, result)
     for path in written_files:

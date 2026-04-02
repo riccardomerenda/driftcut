@@ -29,7 +29,7 @@ class LatencyTracker:
 
     def record(self, result: PromptResult) -> None:
         cat = result.category
-        if not result.baseline.is_error:
+        if not result.baseline.is_error and not result.baseline.cache_hit:
             self._baseline.setdefault(cat, []).append(result.baseline.latency_ms)
         if not result.candidate.is_error:
             self._candidate.setdefault(cat, []).append(result.candidate.latency_ms)
@@ -73,6 +73,7 @@ class CostSummary:
     judge_usd: float = 0.0
     judge_light_usd: float = 0.0
     judge_heavy_usd: float = 0.0
+    baseline_cache_saved_usd: float = 0.0
     total_usd: float = 0.0
     per_category: dict[str, float] = field(default_factory=dict)
 
@@ -86,11 +87,14 @@ class CostTracker:
         self._judge_total: float = 0.0
         self._judge_light_total: float = 0.0
         self._judge_heavy_total: float = 0.0
+        self._baseline_cache_saved_total: float = 0.0
         self._per_category: dict[str, float] = {}
 
     def record(self, result: PromptResult) -> None:
         self._baseline_total += result.baseline.cost_usd
         self._candidate_total += result.candidate.cost_usd
+        if result.baseline.cache_hit and result.baseline.historical_cost_usd is not None:
+            self._baseline_cache_saved_total += result.baseline.historical_cost_usd
         judge_cost = 0.0
         if result.evaluation is not None and result.evaluation.judge is not None:
             judge = result.evaluation.judge
@@ -112,6 +116,7 @@ class CostTracker:
             judge_usd=self._judge_total,
             judge_light_usd=self._judge_light_total,
             judge_heavy_usd=self._judge_heavy_total,
+            baseline_cache_saved_usd=self._baseline_cache_saved_total,
             total_usd=self._baseline_total + self._candidate_total + self._judge_total,
             per_category=dict(sorted(self._per_category.items())),
         )

@@ -6,6 +6,7 @@ import html
 import json
 from pathlib import Path
 
+from driftcut import __version__
 from driftcut.config import DriftcutConfig
 from driftcut.models import BatchResult, DecisionMetrics, PromptResult, RunDecision
 from driftcut.runner import RunResult
@@ -19,7 +20,7 @@ def save_run_outputs(config_path: Path, config: DriftcutConfig, result: RunResul
     written_files: list[Path] = []
     if config.output.save_json:
         json_path = output_dir / "results.json"
-        _write_json(json_path, config, result)
+        _write_json(json_path, build_run_payload(config, result))
         written_files.append(json_path)
     if config.output.save_html:
         html_path = output_dir / "report.html"
@@ -28,19 +29,37 @@ def save_run_outputs(config_path: Path, config: DriftcutConfig, result: RunResul
     return written_files
 
 
-def _write_json(path: Path, config: DriftcutConfig, result: RunResult) -> None:
+def build_run_payload(config: DriftcutConfig, result: RunResult) -> dict[str, object]:
+    """Build the canonical structured payload for one Driftcut run."""
+    baseline_model = f"{config.models.baseline.provider}/{config.models.baseline.model}"
+    candidate_model = f"{config.models.candidate.provider}/{config.models.candidate.model}"
+    metrics = (
+        result.final_decision.metrics if result.final_decision is not None else DecisionMetrics()
+    )
     data: dict[str, object] = {
+        "version": __version__,
+        "run_id": result.run_id,
         "name": result.config_name,
+        "started_at": result.started_at,
+        "completed_at": result.completed_at,
         "mode": result.mode,
+        "baseline_model": baseline_model,
+        "candidate_model": candidate_model,
+        "memory_backend": result.memory_backend or "disabled",
         "total_prompts": result.total_prompts,
         "total_batches": result.total_batches,
         "stopped_early": result.stopped_early,
+        "cache": {
+            "baseline_hits": result.baseline_cache_hits,
+            "baseline_misses": result.baseline_cache_misses,
+        },
         "cost": {
             "baseline_usd": result.cost.summary.baseline_usd,
             "candidate_usd": result.cost.summary.candidate_usd,
             "judge_usd": result.cost.summary.judge_usd,
             "judge_light_usd": result.cost.summary.judge_light_usd,
             "judge_heavy_usd": result.cost.summary.judge_heavy_usd,
+            "baseline_cache_saved_usd": result.cost.summary.baseline_cache_saved_usd,
             "total_usd": result.cost.summary.total_usd,
         },
         "decision": _decision_dict(result.final_decision, config.output.show_confidence),
@@ -52,10 +71,14 @@ def _write_json(path: Path, config: DriftcutConfig, result: RunResult) -> None:
             _batch_dict(batch, save_examples=config.output.save_examples)
             for batch in result.batches
         ],
+        "archetype_names": sorted(metrics.archetypes),
     }
     if result.mode == "replay":
         data["historical_metrics_present"] = dict(result.historical_metrics_present)
+    return data
 
+
+def _write_json(path: Path, data: dict[str, object]) -> None:
     with open(path, "w", encoding="utf-8") as file_obj:
         json.dump(data, file_obj, indent=2)
 
@@ -115,6 +138,7 @@ def _prompt_result_dict(prompt: PromptResult, *, save_examples: bool) -> dict[st
         "cost_usd": prompt.baseline.cost_usd,
         "cost_error": prompt.baseline.cost_error,
         "error": prompt.baseline.error,
+        "cache_hit": prompt.baseline.cache_hit,
     }
     candidate_data: dict[str, object] = {
         "latency_ms": round(prompt.candidate.latency_ms, 1),
@@ -122,7 +146,16 @@ def _prompt_result_dict(prompt: PromptResult, *, save_examples: bool) -> dict[st
         "cost_usd": prompt.candidate.cost_usd,
         "cost_error": prompt.candidate.cost_error,
         "error": prompt.candidate.error,
+        "cache_hit": prompt.candidate.cache_hit,
     }
+    if prompt.baseline.historical_latency_ms is not None:
+        baseline_data["historical_latency_ms"] = round(prompt.baseline.historical_latency_ms, 1)
+    if prompt.baseline.historical_cost_usd is not None:
+        baseline_data["historical_cost_usd"] = prompt.baseline.historical_cost_usd
+    if prompt.candidate.historical_latency_ms is not None:
+        candidate_data["historical_latency_ms"] = round(prompt.candidate.historical_latency_ms, 1)
+    if prompt.candidate.historical_cost_usd is not None:
+        candidate_data["historical_cost_usd"] = prompt.candidate.historical_cost_usd
     data: dict[str, object] = {
         "prompt_id": prompt.prompt_id,
         "category": prompt.category,
@@ -319,6 +352,7 @@ def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
           <div class="label">Coverage</div>
           <div>{result.total_prompts} prompts across {result.total_batches} batches</div>
           {_render_cost_lines(result)}
+          {_render_memory_lines(result)}
           <div>Stopped early: {"yes" if result.stopped_early else "no"}</div>
         </div>
         <div class="card">
@@ -424,6 +458,21 @@ def _render_cost_lines(result: RunResult) -> str:
                 f"<div>Judge light: ${cost.judge_light_usd:.4f}"
                 f" | heavy: ${cost.judge_heavy_usd:.4f}</div>"
             )
+    if cost.baseline_cache_saved_usd > 0:
+        lines.append(f"<div>Baseline cache saved: ${cost.baseline_cache_saved_usd:.4f}</div>")
+    return "".join(lines)
+
+
+def _render_memory_lines(result: RunResult) -> str:
+    if result.memory_backend is None:
+        return ""
+    lines = [f"<div>Memory backend: {html.escape(result.memory_backend)}</div>"]
+    if result.baseline_cache_hits or result.baseline_cache_misses:
+        lines.append(
+            "<div>"
+            f"Baseline cache: {result.baseline_cache_hits} hit(s)"
+            f" / {result.baseline_cache_misses} miss(es)</div>"
+        )
     return "".join(lines)
 
 

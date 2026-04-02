@@ -53,6 +53,7 @@ Today, Driftcut can:
 - Send ambiguous prompts to a judge model for semantic comparison
 - Escalate from a light judge to a heavy judge when confidence is low (tiered strategy)
 - Track latency, baseline/candidate cost, and judge cost
+- Optionally reuse cached baseline responses and persist run history to Redis
 - Produce `STOP`, `CONTINUE`, or `PROCEED` decisions during the run
 - Export both JSON results and an HTML report
 - Summarize deterministic and judge-driven failure archetypes such as `json_invalid`, `missing_json_keys`, and `judge_worse`
@@ -64,10 +65,18 @@ Still planned next:
 
 ## Quickstart
 
+### Local Python
+
 ```bash
 git clone https://github.com/riccardomerenda/driftcut.git
 cd driftcut
 pip install -e .
+```
+
+For local Redis-memory testing without Docker:
+
+```bash
+pip install -e ".[dev,redis]"
 ```
 
 Create a config file:
@@ -93,7 +102,7 @@ sampling:
   min_batches: 2
 
 evaluation:
-  judge_strategy: light
+  judge_strategy: tiered
 ```
 
 Validate first, then run:
@@ -121,6 +130,36 @@ driftcut replay --config examples/replay.yaml --input examples/replay.json
 Replay is intentionally narrow: it accepts a canonical paired-output JSON contract, not arbitrary vendor exports.
 
 Works with any [LiteLLM-supported provider](https://docs.litellm.ai/): OpenAI, Anthropic, OpenRouter, Azure, self-hosted, and more.
+
+## Docker + Redis
+
+If you want a reproducible local stack for testing the optional memory layer, Driftcut now includes a `Dockerfile` and `docker-compose.yml`.
+
+The Compose stack uses `redis/redis-stack-server` because Driftcut's memory layer relies on Redis JSON and Search commands.
+
+Start Redis and validate the sample config:
+
+```bash
+docker compose up -d redis
+docker compose run --rm driftcut driftcut validate --config examples/migration.yaml
+```
+
+To exercise the Redis-backed baseline cache and run history:
+
+```bash
+docker compose run --rm driftcut driftcut run --config examples/migration.redis.yaml
+docker compose run --rm driftcut driftcut run --config examples/migration.redis.yaml
+```
+
+The second run should report baseline cache hits in the terminal summary and in `driftcut-results/results.json`.
+
+You can also run the test suite inside the container:
+
+```bash
+docker compose run --rm driftcut python -m pytest
+```
+
+Docker is optional. The normal local Python workflow remains first-class.
 
 ## What you get back
 
@@ -320,7 +359,7 @@ risk:
   proceed_if_overall_risk_below: 0.08
 
 evaluation:
-  judge_strategy: light
+  judge_strategy: tiered
   judge_model_light: openai/gpt-4.1-mini
   judge_model_heavy: openai/gpt-4.1
   tiered_escalation_threshold: 0.6
@@ -337,7 +376,28 @@ output:
   save_examples: true
   show_thresholds: true
   show_confidence: true
+
+memory:
+  backend: redis
+  redis_url: redis://localhost:6379/0
+  namespace: driftcut-dev
+  response_cache:
+    enabled: true
+    ttl_seconds: 604800
+  run_history:
+    enabled: true
+    ttl_seconds: 2592000
 ```
+
+### Optional Redis memory
+
+When `memory.backend=redis` is enabled, Driftcut can:
+
+- reuse cached baseline responses across repeated live runs
+- keep searchable run documents in Redis
+- disclose cache hits, misses, and saved baseline cost in JSON and HTML outputs
+
+Cached baseline responses are intentionally excluded from live latency comparison so cache reuse does not make the candidate appear artificially faster.
 
 ## Judge strategy
 

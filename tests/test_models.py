@@ -62,6 +62,9 @@ class TestModelResponse:
         assert r.cost_usd == 0.0
         assert r.cost_error is None
         assert r.error is None
+        assert r.cache_hit is False
+        assert r.historical_latency_ms is None
+        assert r.historical_cost_usd is None
 
 
 class TestJudgeResult:

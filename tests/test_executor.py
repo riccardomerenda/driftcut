@@ -6,6 +6,19 @@ import pytest
 
 from driftcut.config import ModelConfig
 from driftcut.executor import _litellm_model_name, execute_prompt
+from driftcut.models import ModelResponse
+
+
+class _StoreStub:
+    response_cache_enabled = True
+    run_history_enabled = False
+    backend_name = "redis"
+
+    def __init__(self, cached: ModelResponse | None = None) -> None:
+        self.get_baseline_response = AsyncMock(return_value=cached)
+        self.save_baseline_response = AsyncMock()
+        self.save_run_document = AsyncMock()
+        self.close = AsyncMock()
 
 
 def test_litellm_model_name() -> None:
@@ -227,3 +240,51 @@ async def test_execute_prompt_keeps_output_when_cost_lookup_fails() -> None:
     assert result.output == "still good"
     assert result.cost_usd == 0.0
     assert result.cost_error == "No pricing metadata"
+
+
+@pytest.mark.asyncio
+async def test_execute_prompt_returns_cached_baseline_response() -> None:
+    cached = ModelResponse(
+        output="cached baseline",
+        latency_ms=0.0,
+        cache_hit=True,
+        historical_latency_ms=120.0,
+        historical_cost_usd=0.01,
+    )
+    store = _StoreStub(cached=cached)
+
+    with patch("driftcut.executor.litellm.acompletion", new_callable=AsyncMock) as mock_ac:
+        cfg = ModelConfig(provider="openai", model="gpt-4o")
+        result = await execute_prompt("Say hello", cfg, store=store, use_baseline_cache=True)
+
+    assert result.cache_hit is True
+    assert result.output == "cached baseline"
+    assert result.historical_latency_ms == 120.0
+    assert result.historical_cost_usd == 0.01
+    mock_ac.assert_not_awaited()
+    store.get_baseline_response.assert_awaited_once()
+    store.save_baseline_response.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_execute_prompt_saves_successful_baseline_to_cache() -> None:
+    mock_choice = MagicMock()
+    mock_choice.message.content = "Hello world"
+
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+    mock_response.usage = None
+
+    store = _StoreStub(cached=None)
+    with (
+        patch("driftcut.executor.litellm.acompletion", new_callable=AsyncMock) as mock_ac,
+        patch("driftcut.executor.litellm.completion_cost", return_value=0.0),
+    ):
+        mock_ac.return_value = mock_response
+        cfg = ModelConfig(provider="openai", model="gpt-4o")
+        result = await execute_prompt("Say hello", cfg, store=store, use_baseline_cache=True)
+
+    assert result.output == "Hello world"
+    assert result.cache_hit is False
+    store.get_baseline_response.assert_awaited_once()
+    store.save_baseline_response.assert_awaited_once()

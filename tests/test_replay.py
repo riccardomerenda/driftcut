@@ -19,6 +19,7 @@ from driftcut.models import JudgeResult, ModelResponse
 from driftcut.replay import load_replay_dataset
 from driftcut.runner import run_migration, run_replay
 from driftcut.sampler import StratifiedSampler
+from driftcut.store_null import NullMemoryStore
 
 
 def _config(
@@ -113,7 +114,7 @@ async def test_run_replay_end_to_end(tmp_path: Path) -> None:
     dataset = load_replay_dataset(replay_file, config)
     sampler = StratifiedSampler(dataset.corpus, config.sampling, seed=42)
 
-    result = await run_replay(config, dataset, sampler)
+    result = await run_replay(config, dataset, sampler, store=NullMemoryStore())
 
     assert result.mode == "replay"
     assert result.total_prompts == 2
@@ -145,7 +146,7 @@ async def test_replay_matches_live_decision_for_equivalent_outputs(tmp_path: Pat
         ): ModelResponse(output='{"ok": true}', latency_ms=100.0, cost_usd=0.008),
     }
 
-    async def side_effect(prompt: str, model: ModelConfig) -> ModelResponse:
+    async def side_effect(prompt: str, model: ModelConfig, **_: object) -> ModelResponse:
         return response_map[(prompt, model.provider)]
 
     with patch(
@@ -153,9 +154,9 @@ async def test_replay_matches_live_decision_for_equivalent_outputs(tmp_path: Pat
         new_callable=AsyncMock,
         side_effect=side_effect,
     ):
-        live_result = await run_migration(config, live_sampler)
+        live_result = await run_migration(config, live_sampler, store=NullMemoryStore())
 
-    replay_result = await run_replay(config, dataset, replay_sampler)
+    replay_result = await run_replay(config, dataset, replay_sampler, store=NullMemoryStore())
 
     assert live_result.final_decision is not None
     assert replay_result.final_decision is not None
@@ -187,7 +188,7 @@ async def test_run_replay_uses_judge_for_ambiguous_outputs(tmp_path: Path) -> No
             cost_usd=0.002,
         ),
     ) as judge_mock:
-        result = await run_replay(config, dataset, sampler)
+        result = await run_replay(config, dataset, sampler, store=NullMemoryStore())
 
     assert result.final_decision is not None
     assert result.final_decision.metrics.judged_prompts == 1

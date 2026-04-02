@@ -11,6 +11,7 @@ import litellm
 
 from driftcut.config import ModelConfig
 from driftcut.models import ModelResponse
+from driftcut.store import MemoryStore
 
 litellm.suppress_debug_info = True
 
@@ -126,12 +127,20 @@ def _response_from_completion(
 async def execute_prompt(
     prompt: str,
     model_config: ModelConfig,
+    *,
+    store: MemoryStore | None = None,
+    use_baseline_cache: bool = False,
 ) -> ModelResponse:
     """Execute a single prompt against a model and return the response.
 
     Tracks latency, token usage, and cost. Returns an error response
     (instead of raising) when the model call fails.
     """
+    if use_baseline_cache and store is not None and store.response_cache_enabled:
+        cached = await store.get_baseline_response(prompt, model_config)
+        if cached is not None:
+            return cached
+
     kwargs = _completion_kwargs(prompt, model_config)
 
     for attempt_number in range(1, _MAX_COMPLETION_ATTEMPTS + 1):
@@ -153,11 +162,14 @@ async def execute_prompt(
             )
 
         elapsed_ms = (time.perf_counter() - start) * 1000
-        return _response_from_completion(
+        result = _response_from_completion(
             response,
             latency_ms=elapsed_ms,
             retry_count=attempt_number - 1,
         )
+        if use_baseline_cache and store is not None and store.response_cache_enabled:
+            await store.save_baseline_response(prompt, model_config, result)
+        return result
 
     msg = "Completion retry loop exhausted unexpectedly"
     raise RuntimeError(msg)

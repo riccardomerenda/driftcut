@@ -18,6 +18,9 @@ class ModelResponse:
     cost_usd: float = 0.0
     cost_error: str | None = None
     error: str | None = None
+    cache_hit: bool = False
+    historical_latency_ms: float | None = None
+    historical_cost_usd: float | None = None
 
     @property
     def is_error(self) -> bool:

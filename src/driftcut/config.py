@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ModelConfig(BaseModel):
@@ -60,6 +60,31 @@ class OutputConfig(BaseModel):
     show_confidence: bool = True
 
 
+class ResponseCacheConfig(BaseModel):
+    enabled: bool = True
+    ttl_seconds: int | None = Field(default=604800, ge=1)
+
+
+class RunHistoryConfig(BaseModel):
+    enabled: bool = True
+    ttl_seconds: int | None = Field(default=2592000, ge=1)
+
+
+class MemoryConfig(BaseModel):
+    backend: Literal["redis"] = "redis"
+    redis_url: str
+    namespace: str = "driftcut"
+    response_cache: ResponseCacheConfig = Field(default_factory=ResponseCacheConfig)
+    run_history: RunHistoryConfig = Field(default_factory=RunHistoryConfig)
+
+    @model_validator(mode="after")
+    def _validate_namespace(self) -> MemoryConfig:
+        if not self.namespace.strip():
+            msg = "memory.namespace cannot be blank"
+            raise ValueError(msg)
+        return self
+
+
 class DriftcutConfig(BaseModel):
     name: str
     description: str = ""
@@ -70,6 +95,7 @@ class DriftcutConfig(BaseModel):
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     latency: LatencyConfig = Field(default_factory=LatencyConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
+    memory: MemoryConfig | None = None
 
 
 def load_config(path: Path) -> DriftcutConfig:

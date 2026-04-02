@@ -48,7 +48,7 @@ risk:
 
 # -- Evaluation --------------------------------------------
 evaluation:
-  judge_strategy: light           # active now: none | light | heavy
+  judge_strategy: light           # active now: none | light | tiered | heavy
   judge_model_light: openai/gpt-4.1-mini
   judge_model_heavy: openai/gpt-4.1
   detect_failure_archetypes: true

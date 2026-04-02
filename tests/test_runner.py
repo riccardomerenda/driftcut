@@ -17,6 +17,24 @@ from driftcut.corpus import Corpus, PromptRecord
 from driftcut.models import JudgeResult, ModelResponse
 from driftcut.runner import RunResult, _run_prompt, run_migration
 from driftcut.sampler import StratifiedSampler
+from driftcut.store_null import NullMemoryStore
+
+
+class _StoreStub:
+    def __init__(
+        self,
+        *,
+        response_cache_enabled: bool = False,
+        run_history_enabled: bool = False,
+        backend_name: str = "disabled",
+    ) -> None:
+        self.response_cache_enabled = response_cache_enabled
+        self.run_history_enabled = run_history_enabled
+        self.backend_name = backend_name
+        self.get_baseline_response = AsyncMock(return_value=None)
+        self.save_baseline_response = AsyncMock()
+        self.save_run_document = AsyncMock()
+        self.close = AsyncMock()
 
 
 def _sample_config() -> DriftcutConfig:
@@ -118,13 +136,14 @@ def _mock_response(output: str = "response") -> ModelResponse:
 async def test_run_prompt() -> None:
     config = _sample_config()
     prompt = _sample_corpus().records[0]
+    store = NullMemoryStore()
 
     with patch(
         "driftcut.runner.execute_prompt",
         new_callable=AsyncMock,
         return_value=_mock_response(),
     ):
-        result = await _run_prompt(prompt, config)
+        result = await _run_prompt(prompt, config, store)
 
     assert result.prompt_id == "p1"
     assert result.category == "support"
@@ -137,13 +156,14 @@ async def test_run_migration_end_to_end() -> None:
     config = _sample_config()
     corpus = _sample_corpus()
     sampler = StratifiedSampler(corpus, config.sampling, seed=42)
+    store = NullMemoryStore()
 
     with patch(
         "driftcut.runner.execute_prompt",
         new_callable=AsyncMock,
         return_value=_mock_response(),
     ):
-        result = await run_migration(config, sampler)
+        result = await run_migration(config, sampler, store=store)
 
     assert isinstance(result, RunResult)
     assert result.config_name == "Test migration"
@@ -162,6 +182,7 @@ async def test_run_migration_handles_errors() -> None:
     config = _sample_config()
     corpus = _sample_corpus()
     sampler = StratifiedSampler(corpus, config.sampling, seed=42)
+    store = NullMemoryStore()
 
     error_response = ModelResponse(
         output="",
@@ -174,7 +195,7 @@ async def test_run_migration_handles_errors() -> None:
         new_callable=AsyncMock,
         return_value=error_response,
     ):
-        result = await run_migration(config, sampler)
+        result = await run_migration(config, sampler, store=store)
 
     assert result.total_prompts == 2
     batch = result.batches[0]
@@ -194,13 +215,14 @@ async def test_run_migration_proceeds_after_min_batches() -> None:
         sampling=SamplingConfig(batch_size_per_category=1, max_batches=3, min_batches=2),
     )
     sampler = StratifiedSampler(_multi_batch_corpus(), config.sampling, seed=42)
+    store = NullMemoryStore()
 
     with patch(
         "driftcut.runner.execute_prompt",
         new_callable=AsyncMock,
         return_value=_mock_response(output='{"ok": true}'),
     ):
-        result = await run_migration(config, sampler)
+        result = await run_migration(config, sampler, store=store)
 
     assert result.total_batches == 2
     assert result.stopped_early is True
@@ -220,8 +242,9 @@ async def test_run_migration_stops_on_schema_break() -> None:
         sampling=SamplingConfig(batch_size_per_category=1, max_batches=3, min_batches=2),
     )
     sampler = StratifiedSampler(_multi_batch_corpus(), config.sampling, seed=42)
+    store = NullMemoryStore()
 
-    async def side_effect(_: str, model: ModelConfig) -> ModelResponse:
+    async def side_effect(_: str, model: ModelConfig, **__: object) -> ModelResponse:
         if model.provider == "openai":
             return _mock_response(output='{"ok": true}')
         return _mock_response(output="not json")
@@ -231,7 +254,7 @@ async def test_run_migration_stops_on_schema_break() -> None:
         new_callable=AsyncMock,
         side_effect=side_effect,
     ):
-        result = await run_migration(config, sampler)
+        result = await run_migration(config, sampler, store=store)
 
     assert result.total_batches == 1
     assert result.final_decision is not None
@@ -258,8 +281,9 @@ async def test_run_prompt_uses_judge_for_ambiguous_outputs() -> None:
         criticality="high",
         expected_output_type="free_text",
     )
+    store = NullMemoryStore()
 
-    async def side_effect(_: str, model: ModelConfig) -> ModelResponse:
+    async def side_effect(_: str, model: ModelConfig, **__: object) -> ModelResponse:
         if model.provider == "openai":
             return _mock_response(output="We can issue a refund today.")
         return _mock_response(output="Contact support tomorrow.")
@@ -282,7 +306,7 @@ async def test_run_prompt_uses_judge_for_ambiguous_outputs() -> None:
             ),
         ) as judge_mock,
     ):
-        result = await _run_prompt(prompt, config)
+        result = await _run_prompt(prompt, config, store)
 
     assert result.evaluation is not None
     assert result.evaluation.needs_judge is True
@@ -290,3 +314,53 @@ async def test_run_prompt_uses_judge_for_ambiguous_outputs() -> None:
     assert result.evaluation.candidate_regressed is True
     assert result.evaluation.candidate_failed is True
     judge_mock.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_run_migration_persists_run_history_when_enabled() -> None:
+    config = _sample_config()
+    corpus = _sample_corpus()
+    sampler = StratifiedSampler(corpus, config.sampling, seed=42)
+    store = _StoreStub(run_history_enabled=True, backend_name="redis")
+
+    with patch(
+        "driftcut.runner.execute_prompt",
+        new_callable=AsyncMock,
+        return_value=_mock_response(),
+    ):
+        result = await run_migration(config, sampler, store=store)
+
+    assert result.memory_backend == "redis"
+    store.save_run_document.assert_awaited_once()
+    store.close.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_run_migration_tracks_baseline_cache_hits() -> None:
+    config = _sample_config()
+    corpus = _sample_corpus()
+    sampler = StratifiedSampler(corpus, config.sampling, seed=42)
+    store = _StoreStub(response_cache_enabled=True, backend_name="redis")
+
+    async def side_effect(_: str, model: ModelConfig, **__: object) -> ModelResponse:
+        if model.provider == "openai":
+            return ModelResponse(
+                output="cached baseline",
+                latency_ms=0.0,
+                cost_usd=0.0,
+                cache_hit=True,
+                historical_latency_ms=100.0,
+                historical_cost_usd=0.01,
+            )
+        return _mock_response()
+
+    with patch(
+        "driftcut.runner.execute_prompt",
+        new_callable=AsyncMock,
+        side_effect=side_effect,
+    ):
+        result = await run_migration(config, sampler, store=store)
+
+    assert result.baseline_cache_hits == 2
+    assert result.baseline_cache_misses == 0
+    assert abs(result.cost.summary.baseline_cache_saved_usd - 0.02) < 1e-9

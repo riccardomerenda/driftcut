@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Literal
+from uuid import uuid4
 
 from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID, TextColumn
@@ -24,6 +26,7 @@ from driftcut.models import BatchResult, ModelResponse, PromptResult, RunDecisio
 from driftcut.quality import evaluate_prompt_result
 from driftcut.replay import ReplayDataset
 from driftcut.sampler import Batch, StratifiedSampler
+from driftcut.store import MemoryStore
 from driftcut.trackers import CostTracker, LatencyTracker
 
 console = Console()
@@ -35,7 +38,11 @@ class RunResult:
     """Complete result of a migration run."""
 
     config_name: str
+    run_id: str = field(default_factory=lambda: f"run-{uuid4().hex[:12]}")
     mode: Literal["live", "replay"] = "live"
+    started_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    completed_at: str | None = None
+    memory_backend: str | None = None
     batches: list[BatchResult] = field(default_factory=list)
     latency: LatencyTracker = field(default_factory=LatencyTracker)
     cost: CostTracker = field(default_factory=CostTracker)
@@ -43,6 +50,8 @@ class RunResult:
     final_decision: RunDecision | None = None
     stopped_early: bool = False
     historical_metrics_present: dict[str, bool] = field(default_factory=dict)
+    baseline_cache_hits: int = 0
+    baseline_cache_misses: int = 0
 
     @property
     def total_prompts(self) -> int:
@@ -88,9 +97,15 @@ async def finalize_prompt_result(result: PromptResult, config: DriftcutConfig) -
 async def _run_prompt(
     prompt: PromptRecord,
     config: DriftcutConfig,
+    store: MemoryStore,
 ) -> PromptResult:
     """Run a single prompt against both models concurrently."""
-    baseline_task = execute_prompt(prompt.prompt, config.models.baseline)
+    baseline_task = execute_prompt(
+        prompt.prompt,
+        config.models.baseline,
+        store=store,
+        use_baseline_cache=True,
+    )
     candidate_task = execute_prompt(prompt.prompt, config.models.candidate)
     baseline_resp, candidate_resp = await asyncio.gather(baseline_task, candidate_task)
 
@@ -124,11 +139,12 @@ async def _run_batch(
     config: DriftcutConfig,
     progress: Progress,
     task_id: TaskID,
+    store: MemoryStore,
 ) -> BatchResult:
     """Run all prompts in a batch concurrently while preserving input order."""
 
     async def _run_indexed_prompt(index: int, prompt: PromptRecord) -> tuple[int, PromptResult]:
-        return index, await _run_prompt(prompt, config)
+        return index, await _run_prompt(prompt, config, store)
 
     tasks = [_run_indexed_prompt(i, prompt) for i, prompt in enumerate(batch.prompts)]
     indexed_results: list[tuple[int, PromptResult]] = []
@@ -184,17 +200,24 @@ def _record_batch_metrics(
     batch_result: BatchResult,
     *,
     track_latency: bool,
+    cache_enabled: bool,
 ) -> None:
     for prompt_result in batch_result.results:
         if track_latency:
             run_result.latency.record(prompt_result)
         run_result.cost.record(prompt_result)
+        if cache_enabled:
+            if prompt_result.baseline.cache_hit:
+                run_result.baseline_cache_hits += 1
+            else:
+                run_result.baseline_cache_misses += 1
 
 
 async def _execute_canary(
     config: DriftcutConfig,
     sampler: StratifiedSampler,
     batch_runner: BatchRunner,
+    store: MemoryStore,
     *,
     mode: Literal["live", "replay"],
     historical_metrics_present: dict[str, bool] | None = None,
@@ -203,68 +226,93 @@ async def _execute_canary(
     run_result = RunResult(
         config_name=config.name,
         mode=mode,
+        memory_backend=None if store.backend_name == "disabled" else store.backend_name,
         historical_metrics_present=historical_metrics_present or {},
     )
     total_prompts = sampler.total_prompts_planned
     total_batches = sampler.total_batches_possible
     _print_run_header(config, mode=mode)
 
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TextColumn("{task.completed}/{task.total}"),
-        console=console,
-    ) as progress:
-        for batch in sampler:
-            task_id = progress.add_task(
-                f"Batch {batch.batch_number}",
-                total=batch.size,
-            )
-            batch_result = await batch_runner(batch, config, progress, task_id)
-            run_result.batches.append(batch_result)
-            _record_batch_metrics(run_result, batch_result, track_latency=config.latency.track)
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("{task.completed}/{task.total}"),
+            console=console,
+        ) as progress:
+            for batch in sampler:
+                task_id = progress.add_task(
+                    f"Batch {batch.batch_number}",
+                    total=batch.size,
+                )
+                batch_result = await batch_runner(batch, config, progress, task_id)
+                run_result.batches.append(batch_result)
+                _record_batch_metrics(
+                    run_result,
+                    batch_result,
+                    track_latency=config.latency.track,
+                    cache_enabled=mode == "live" and store.response_cache_enabled,
+                )
 
-            decision = decide_run(
+                decision = decide_run(
+                    config,
+                    run_result.batches,
+                    run_result.latency,
+                    total_prompts_planned=total_prompts,
+                    total_batches_planned=total_batches,
+                    has_remaining_batches=sampler.has_next(),
+                )
+                run_result.decision_history.append(decision)
+                run_result.final_decision = decision
+
+                _print_batch_summary(batch_result, run_result, config)
+
+                if decision.outcome in {"STOP", "PROCEED"}:
+                    run_result.stopped_early = sampler.has_next()
+                    break
+
+        if run_result.final_decision is None:
+            run_result.final_decision = decide_run(
                 config,
                 run_result.batches,
                 run_result.latency,
                 total_prompts_planned=total_prompts,
                 total_batches_planned=total_batches,
-                has_remaining_batches=sampler.has_next(),
+                has_remaining_batches=False,
             )
-            run_result.decision_history.append(decision)
-            run_result.final_decision = decision
 
-            _print_batch_summary(batch_result, run_result, config)
+        run_result.completed_at = datetime.now(UTC).isoformat()
+        _print_run_summary(run_result, total_prompts, config)
 
-            if decision.outcome in {"STOP", "PROCEED"}:
-                run_result.stopped_early = sampler.has_next()
-                break
+        if store.run_history_enabled:
+            from driftcut.reporting import build_run_payload
 
-    if run_result.final_decision is None:
-        run_result.final_decision = decide_run(
-            config,
-            run_result.batches,
-            run_result.latency,
-            total_prompts_planned=total_prompts,
-            total_batches_planned=total_batches,
-            has_remaining_batches=False,
-        )
+            await store.save_run_document(run_result.run_id, build_run_payload(config, run_result))
 
-    _print_run_summary(run_result, total_prompts, config)
-    return run_result
+        return run_result
+    finally:
+        await store.close()
 
 
 async def run_migration(
     config: DriftcutConfig,
     sampler: StratifiedSampler,
+    *,
+    store: MemoryStore,
 ) -> RunResult:
     """Execute the full migration canary run."""
     return await _execute_canary(
         config,
         sampler,
-        _run_batch,
+        lambda batch, batch_config, progress, task_id: _run_batch(
+            batch,
+            batch_config,
+            progress,
+            task_id,
+            store,
+        ),
+        store,
         mode="live",
     )
 
@@ -273,6 +321,8 @@ async def run_replay(
     config: DriftcutConfig,
     replay_dataset: ReplayDataset,
     sampler: StratifiedSampler,
+    *,
+    store: MemoryStore,
 ) -> RunResult:
     """Replay a historical paired-output dataset through the Driftcut decision engine."""
 
@@ -288,6 +338,7 @@ async def run_replay(
         config,
         sampler,
         _batch_runner,
+        store,
         mode="replay",
         historical_metrics_present=replay_dataset.historical_metrics_present,
     )
@@ -349,6 +400,8 @@ def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig
         console.print(f"  Total cost:     ${cost.total_usd:.4f}")
         if cost.judge_usd > 0:
             console.print(f"  Judge cost:     ${cost.judge_usd:.4f}")
+        if cost.baseline_cache_saved_usd > 0:
+            console.print(f"  Baseline saved: ${cost.baseline_cache_saved_usd:.4f}")
     if config.latency.track and baseline_latency.count > 0 and candidate_latency.count > 0:
         latency_label = "Historical latency" if run.mode == "replay" else "Latency"
         console.print(
@@ -384,5 +437,12 @@ def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig
                 f"worse={decision.metrics.judge_worse_rate:.1%}, "
                 f"avg_conf={decision.metrics.judge_average_confidence:.0%}"
                 f"{escalated_str}"
+            )
+    if run.memory_backend is not None:
+        console.print(f"  Memory backend: {run.memory_backend}")
+        if run.baseline_cache_hits or run.baseline_cache_misses:
+            console.print(
+                "  Baseline cache: "
+                f"{run.baseline_cache_hits} hit(s), {run.baseline_cache_misses} miss(es)"
             )
     console.print()

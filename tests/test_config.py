@@ -134,3 +134,30 @@ def test_invalid_judge_strategy(tmp_path: Path) -> None:
     config_file.write_text(yaml.dump(cfg_dict))
     with pytest.raises((ValueError, TypeError)):
         load_config(config_file)
+
+
+def test_memory_config_can_be_loaded(tmp_path: Path) -> None:
+    cfg_dict = {
+        "name": "memory test",
+        "models": {
+            "baseline": {"provider": "openai", "model": "gpt-4o"},
+            "candidate": {"provider": "anthropic", "model": "claude-haiku"},
+        },
+        "corpus": {"file": "prompts.csv"},
+        "memory": {
+            "backend": "redis",
+            "redis_url": "redis://localhost:6379/0",
+            "namespace": "driftcut-test",
+            "response_cache": {"enabled": True, "ttl_seconds": 600},
+            "run_history": {"enabled": True, "ttl_seconds": 3600},
+        },
+    }
+    config_file = tmp_path / "memory.yaml"
+    config_file.write_text(yaml.dump(cfg_dict))
+    cfg = load_config(config_file)
+    assert cfg.memory is not None
+    assert cfg.memory.backend == "redis"
+    assert cfg.memory.redis_url == "redis://localhost:6379/0"
+    assert cfg.memory.namespace == "driftcut-test"
+    assert cfg.memory.response_cache.ttl_seconds == 600
+    assert cfg.memory.run_history.ttl_seconds == 3600

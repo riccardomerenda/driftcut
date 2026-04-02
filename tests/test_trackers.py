@@ -122,6 +122,17 @@ class TestLatencyTracker:
         cd = lt.candidate_stats()
         assert cd.count == 0
 
+    def test_cached_baseline_excluded_from_latency(self) -> None:
+        lt = LatencyTracker()
+        result = _make_result()
+        result.baseline.cache_hit = True
+        result.baseline.historical_latency_ms = 100.0
+        lt.record(result)
+        bl = lt.baseline_stats()
+        cd = lt.candidate_stats()
+        assert bl.count == 0
+        assert cd.count == 1
+
 
 class TestCostTracker:
     def test_empty_tracker(self) -> None:
@@ -170,3 +181,15 @@ class TestCostTracker:
         s = ct.summary
         assert abs(s.per_category["a"] - 0.03) < 1e-9
         assert abs(s.per_category["b"] - 0.03) < 1e-9
+
+    def test_cached_baseline_counts_saved_cost(self) -> None:
+        ct = CostTracker()
+        result = _make_result(baseline_cost=0.0, candidate_cost=0.005)
+        result.baseline.cache_hit = True
+        result.baseline.historical_cost_usd = 0.01
+        ct.record(result)
+
+        s = ct.summary
+        assert abs(s.baseline_usd - 0.0) < 1e-9
+        assert abs(s.total_usd - 0.005) < 1e-9
+        assert abs(s.baseline_cache_saved_usd - 0.01) < 1e-9

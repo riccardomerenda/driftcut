@@ -39,14 +39,23 @@ def _config() -> DriftcutConfig:
 
 def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
     config = _config()
-    result = RunResult(config_name=config.name)
+    result = RunResult(config_name=config.name, memory_backend="redis")
+    result.baseline_cache_hits = 1
     prompt = PromptResult(
         prompt_id="p1",
         category="support",
         criticality="high",
         prompt_text="Help me",
         expected_output_type="free_text",
-        baseline=ModelResponse(output="All good", latency_ms=100.0, retry_count=1, cost_usd=0.01),
+        baseline=ModelResponse(
+            output="All good",
+            latency_ms=0.0,
+            retry_count=0,
+            cost_usd=0.0,
+            cache_hit=True,
+            historical_latency_ms=100.0,
+            historical_cost_usd=0.01,
+        ),
         candidate=ModelResponse(output="All good", latency_ms=80.0, retry_count=2, cost_usd=0.005),
         evaluation=PromptEvaluation(
             baseline=ResponseEvaluation(passed=True, structure_valid=True),
@@ -92,8 +101,12 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
     html_text = (tmp_path / "driftcut-results" / "report.html").read_text(encoding="utf-8")
     assert '"mode": "live"' in json_text
     assert '"outcome": "PROCEED"' in json_text
+    assert '"memory_backend": "redis"' in json_text
+    assert '"baseline_hits": 1' in json_text
     assert '"retry_count": 2' in json_text
+    assert '"cache_hit": true' in json_text
     assert '"judge_usd": 0.002' in json_text
+    assert '"baseline_cache_saved_usd": 0.01' in json_text
     assert '"verdict": "equivalent"' in json_text
     assert '"tier": "light"' in json_text
     assert '"escalated": false' in json_text
@@ -101,6 +114,9 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
     assert "Report run - Driftcut report" in html_text
     assert "Live mode" in html_text
     assert "Judge cost: $0.0020" in html_text
+    assert "Baseline cache saved: $0.0100" in html_text
+    assert "Memory backend: redis" in html_text
+    assert "Baseline cache: 1 hit(s) / 0 miss(es)" in html_text
 
 
 def test_save_run_outputs_labels_replay_mode(tmp_path: Path) -> None:

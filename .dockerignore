@@ -1,0 +1,14 @@
+.git
+.github
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.tmp
+.venv
+driftcut-results
+site
+docs-live.html
+pytest-cache-files-*
+pytest-temp-*
+__pycache__
+*.pyc
