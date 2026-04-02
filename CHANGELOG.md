@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-04-02
+
+### Added
+
+- Optional Redis memory layer for baseline response caching and searchable run-history persistence
+- `cache_hit`, cache summary, and saved baseline cost metrics in JSON and HTML outputs
+- `driftcut[redis]` extra plus a Redis-enabled sample config for local testing
+- `Dockerfile`, `docker-compose.yml`, and `.dockerignore` for reproducible local Redis-backed runs
+- 9 new tests covering Redis config, caching behavior, reporting, and store adapters (106 total)
+
+### Changed
+
+- Cached baseline responses are excluded from live latency comparisons so reuse does not distort candidate latency decisions
+- Memory-backed runs now persist canonical run payloads through the same reporting shape used for file exports
+- README and docs now document local Docker + Redis workflows alongside the normal Python path
+
 ## [0.6.0] - 2026-04-01
 
 ### Added
@@ -135,6 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.7.0]: https://github.com/riccardomerenda/driftcut/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/riccardomerenda/driftcut/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/riccardomerenda/driftcut/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/riccardomerenda/driftcut/compare/v0.4.0...v0.5.0

@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.6.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.7.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -428,6 +428,9 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] HTML report
 - [x] Light judge integration for ambiguous prompts
 - [x] Tiered judging with light-to-heavy escalation
+- [x] Historical replay mode for paired-output backtesting
+- [x] Redis memory for baseline caching and run-history persistence
+- [x] Docker + Redis local dev stack
 - [ ] Richer failure archetypes
 - [ ] Public benchmark demo
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>driftcut — Sample or replay before full eval</title>
-<meta name="description" content="Driftcut is a v0.6.0 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, tiered judging, transient-retry handling, and STOP/CONTINUE/PROCEED decisions.">
+<meta name="description" content="Driftcut is a v0.7.0 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, tiered judging, optional Redis memory, and STOP/CONTINUE/PROCEED decisions.">
 <meta property="og:title" content="driftcut — Sample or replay before full eval">
 <meta property="og:description" content="Validate a prompt corpus or replay historical paired outputs, sample representative batches, compare baseline and candidate models, judge ambiguous prompts, and decide whether to stop, continue, or proceed.">
 <meta property="og:type" content="website">
@@ -443,7 +443,7 @@
 <section class="hero">
   <div class="container hero-grid">
     <div class="hero-content">
-      <div class="version-badge">v0.6.0 Alpha</div>
+      <div class="version-badge">v0.7.0 Alpha</div>
 
       <h1>Sample or replay<br>before <em>full eval.</em></h1>
 
@@ -474,6 +474,7 @@
         <span class="tag">Transient retries</span>
         <span class="tag">Tiered judge escalation</span>
         <span class="tag">Decision + HTML report</span>
+        <span class="tag">Optional Redis memory</span>
       </div>
     </div>
 
@@ -531,7 +532,8 @@
     <p class="section-desc">
       The repository now includes deterministic checks, tiered judging that escalates from a
       light judge to a heavy judge when confidence is low, a decision engine with confidence
-      and report output, and a replay path for historical paired outputs.
+      and report output, a replay path for historical paired outputs, and an optional Redis
+      memory layer for baseline caching and run-history persistence.
     </p>
 
     <div class="grid-2">
@@ -661,7 +663,7 @@
       </div>
       <div class="faq">
         <h3>What is implemented right now?</h3>
-        <p>Validation, sampling, paired model execution, canonical replay loading, deterministic checks, tiered judging (light with heavy escalation) for ambiguous prompts, latency tracking, cost tracking, decision output, JSON export, and HTML reporting.</p>
+        <p>Validation, sampling, paired model execution, canonical replay loading, deterministic checks, tiered judging (light with heavy escalation) for ambiguous prompts, latency tracking, cost tracking, optional Redis-backed baseline caching, decision output, JSON export, and HTML reporting.</p>
       </div>
       <div class="faq">
         <h3>What does a run cost?</h3>
@@ -674,7 +676,7 @@
 <!-- ── FOOTER ── -->
 <footer>
   <div class="container footer-wrap">
-    <span>driftcut &mdash; v0.6.0 alpha CLI for LLM migration canaries</span>
+    <span>driftcut &mdash; v0.7.0 alpha CLI for LLM migration canaries</span>
     <span>
       <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> &middot;
       <a href="https://docs.driftcut.dev/getting-started/">Docs</a> &middot;
