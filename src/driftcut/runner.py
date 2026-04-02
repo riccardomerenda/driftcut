@@ -90,7 +90,12 @@ async def finalize_prompt_result(result: PromptResult, config: DriftcutConfig) -
     result.evaluation.needs_judge = prompt_needs_judge(result)
     if result.evaluation.needs_judge and judge_strategy_enabled(config.evaluation):
         judge = await judge_prompt_result(result, config.evaluation)
-        result.evaluation = apply_judge_result(result.evaluation, judge)
+        result.evaluation = apply_judge_result(
+            result,
+            result.evaluation,
+            judge,
+            detect_failure_archetypes=config.evaluation.detect_failure_archetypes,
+        )
     return result
 
 
@@ -427,6 +432,9 @@ def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig
                 f"high-crit={decision.metrics.high_criticality_failure_rate:.1%}, "
                 f"schema={decision.metrics.schema_break_rate:.1%}"
             )
+            top_category = _top_category_summary(decision.metrics)
+            if top_category:
+                console.print(f"  Top category:   {top_category}")
         if decision.metrics.ambiguous_prompts > 0:
             escalated_str = ""
             if decision.metrics.escalated_prompts > 0:
@@ -446,3 +454,17 @@ def _print_run_summary(run: RunResult, corpus_total: int, config: DriftcutConfig
                 f"{run.baseline_cache_hits} hit(s), {run.baseline_cache_misses} miss(es)"
             )
     console.print()
+
+
+def _top_category_summary(metrics: object) -> str:
+    from driftcut.models import DecisionMetrics
+
+    if not isinstance(metrics, DecisionMetrics) or not metrics.category_scores:
+        return ""
+
+    score = metrics.category_scores[0]
+    archetypes = ""
+    if score.archetypes:
+        top = sorted(score.archetypes.items(), key=lambda item: (-item[1], item[0]))[:2]
+        archetypes = " | " + ", ".join(f"{name} x{count}" for name, count in top)
+    return f"{score.category} ({score.overall_risk:.1%} risk{archetypes})"

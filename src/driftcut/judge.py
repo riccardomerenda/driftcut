@@ -15,6 +15,60 @@ from driftcut.models import JudgeResult, PromptEvaluation, PromptResult
 
 _MAX_OUTPUT_CHARS = 3500
 type JudgeVerdict = Literal["candidate_worse", "equivalent", "candidate_better"]
+_REFUSAL_PHRASES = (
+    "i'm sorry",
+    "i am sorry",
+    "cannot help",
+    "can't help",
+    "cannot comply",
+    "can't comply",
+    "unable to",
+    "i cannot",
+    "i can't",
+    "won't be able",
+)
+_HALLUCINATION_HINTS = (
+    "hallucinat",
+    "fabricat",
+    "invent",
+    "made up",
+    "unsupported",
+    "false claim",
+    "incorrect fact",
+)
+_INSTRUCTION_HINTS = (
+    "misses the task",
+    "misses the request",
+    "does not answer",
+    "doesn't answer",
+    "fails to answer",
+    "ignores the instruction",
+    "ignores the request",
+    "wrong task",
+    "instruction",
+    "request",
+)
+_FORMAT_HINTS = (
+    "format",
+    "schema",
+    "structure",
+    "json",
+    "markdown",
+    "field",
+    "key",
+)
+_INCOMPLETE_HINTS = (
+    "missing detail",
+    "missing details",
+    "omits",
+    "omitted",
+    "drops",
+    "incomplete",
+    "partial",
+    "less detail",
+    "too short",
+    "shorter",
+)
 
 
 def judge_strategy_enabled(config: EvaluationConfig) -> bool:
@@ -143,17 +197,31 @@ async def _call_judge_model(
         )
 
 
-def apply_judge_result(evaluation: PromptEvaluation, judge: JudgeResult) -> PromptEvaluation:
+def apply_judge_result(
+    result: PromptResult,
+    evaluation: PromptEvaluation,
+    judge: JudgeResult,
+    *,
+    detect_failure_archetypes: bool = True,
+) -> PromptEvaluation:
     """Blend judge evidence into the prompt-level quality verdict."""
     evaluation.judge = judge
 
     if judge.is_error or judge.verdict == "unavailable":
+        if "judge_unavailable" not in evaluation.failure_archetypes:
+            evaluation.failure_archetypes.append("judge_unavailable")
         return evaluation
 
     if judge.verdict == "candidate_worse":
         evaluation.candidate_failed = True
         evaluation.candidate_regressed = True
         evaluation.candidate_improved = False
+        semantic_archetypes = (
+            _infer_semantic_archetypes(result, judge)
+            if detect_failure_archetypes
+            else ["judge_worse"]
+        )
+        _attach_candidate_archetypes(evaluation, semantic_archetypes)
     elif judge.verdict == "candidate_better":
         evaluation.candidate_failed = False
         evaluation.candidate_regressed = False
@@ -289,3 +357,67 @@ def _normalized_labels(output: str) -> tuple[str, ...]:
 
 def _normalize_text(value: str) -> str:
     return " ".join(value.strip().lower().split())
+
+
+def _attach_candidate_archetypes(
+    evaluation: PromptEvaluation,
+    archetypes: list[str],
+) -> None:
+    for archetype in archetypes:
+        if archetype not in evaluation.failure_archetypes:
+            evaluation.failure_archetypes.append(archetype)
+        if archetype not in evaluation.candidate.archetypes:
+            evaluation.candidate.archetypes.append(archetype)
+    if evaluation.candidate.archetype is None and evaluation.candidate.archetypes:
+        evaluation.candidate.archetype = evaluation.candidate.archetypes[0]
+
+
+def _infer_semantic_archetypes(result: PromptResult, judge: JudgeResult) -> list[str]:
+    if judge.verdict != "candidate_worse":
+        return []
+
+    rationale = _normalize_text(judge.rationale)
+    baseline_text = _normalize_text(result.baseline.output)
+    candidate_text = _normalize_text(result.candidate.output)
+    archetypes: list[str] = []
+
+    if _looks_like_refusal(candidate_text) and not _looks_like_refusal(baseline_text):
+        archetypes.append("refusal_regression")
+    if _contains_any(rationale, _HALLUCINATION_HINTS):
+        archetypes.append("hallucination_risk")
+    if _contains_any(rationale, _FORMAT_HINTS) or _looks_like_format_drift(result):
+        archetypes.append("format_drift")
+    if _contains_any(rationale, _INSTRUCTION_HINTS):
+        archetypes.append("instruction_miss")
+    if _contains_any(rationale, _INCOMPLETE_HINTS) or _looks_incomplete(
+        baseline_text, candidate_text
+    ):
+        archetypes.append("incomplete_answer")
+    if not archetypes:
+        archetypes.append("semantic_regression")
+
+    return list(dict.fromkeys(archetypes))
+
+
+def _contains_any(text: str, phrases: tuple[str, ...]) -> bool:
+    return any(phrase in text for phrase in phrases)
+
+
+def _looks_like_refusal(text: str) -> bool:
+    return _contains_any(text, _REFUSAL_PHRASES)
+
+
+def _looks_like_format_drift(result: PromptResult) -> bool:
+    if result.expected_output_type == "markdown":
+        baseline_markdown = _contains_any(result.baseline.output, ("# ", "* ", "- ", "1. "))
+        candidate_markdown = _contains_any(result.candidate.output, ("# ", "* ", "- ", "1. "))
+        return baseline_markdown and not candidate_markdown
+    return False
+
+
+def _looks_incomplete(baseline_text: str, candidate_text: str) -> bool:
+    baseline_words = baseline_text.split()
+    candidate_words = candidate_text.split()
+    if len(baseline_words) < 8 or not candidate_words:
+        return False
+    return len(candidate_words) / len(baseline_words) <= 0.6

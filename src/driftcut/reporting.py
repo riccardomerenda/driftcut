@@ -8,7 +8,7 @@ from pathlib import Path
 
 from driftcut import __version__
 from driftcut.config import DriftcutConfig
-from driftcut.models import BatchResult, DecisionMetrics, PromptResult, RunDecision
+from driftcut.models import BatchResult, CategoryScore, DecisionMetrics, PromptResult, RunDecision
 from driftcut.runner import RunResult
 
 
@@ -117,6 +117,28 @@ def _metrics_dict(metrics: DecisionMetrics) -> dict[str, object]:
         "latency_p50_ratio": round(metrics.latency_p50_ratio, 4),
         "latency_p95_ratio": round(metrics.latency_p95_ratio, 4),
         "archetypes": dict(metrics.archetypes),
+        "category_scores": [_category_score_dict(score) for score in metrics.category_scores],
+    }
+
+
+def _category_score_dict(score: CategoryScore) -> dict[str, object]:
+    return {
+        "category": score.category,
+        "prompts_evaluated": score.prompts_evaluated,
+        "structured_prompts": score.structured_prompts,
+        "high_criticality_prompts": score.high_criticality_prompts,
+        "ambiguous_prompts": score.ambiguous_prompts,
+        "judged_prompts": score.judged_prompts,
+        "candidate_failure_rate": round(score.candidate_failure_rate, 4),
+        "candidate_regression_rate": round(score.candidate_regression_rate, 4),
+        "schema_break_rate": round(score.schema_break_rate, 4),
+        "high_criticality_failure_rate": round(score.high_criticality_failure_rate, 4),
+        "judge_worse_rate": round(score.judge_worse_rate, 4),
+        "judge_average_confidence": round(score.judge_average_confidence, 4),
+        "overall_risk": round(score.overall_risk, 4),
+        "latency_p50_ratio": round(score.latency_p50_ratio, 4),
+        "latency_p95_ratio": round(score.latency_p95_ratio, 4),
+        "archetypes": dict(score.archetypes),
     }
 
 
@@ -176,6 +198,7 @@ def _prompt_result_dict(prompt: PromptResult, *, save_examples: bool) -> dict[st
             "baseline_reasons": list(prompt.evaluation.baseline.reasons),
             "candidate_reasons": list(prompt.evaluation.candidate.reasons),
             "failure_archetype": prompt.evaluation.candidate.archetype,
+            "failure_archetypes": list(prompt.evaluation.failure_archetypes),
         }
         if prompt.evaluation.judge is not None:
             evaluation_data["judge"] = {
@@ -222,6 +245,7 @@ def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
     example_rows = _render_examples(config, result)
     thresholds = _render_thresholds(config)
     archetypes = _render_archetypes(metrics)
+    category_scorecards = _render_category_scorecards(metrics)
 
     examples_section = ""
     if example_rows:
@@ -400,6 +424,8 @@ def render_html_report(config: DriftcutConfig, result: RunResult) -> str:
       <ul>{archetypes}</ul>
     </section>
 
+    {category_scorecards}
+
     {examples_section}
   </main>
 </body>
@@ -422,7 +448,12 @@ def _render_examples(config: DriftcutConfig, result: RunResult) -> str:
             judge_text = f" Judge: {judge.verdict} ({judge.confidence:.0%})"
             if judge.rationale:
                 judge_text += f" - {judge.rationale}"
+        failure_archetypes = (
+            prompt.evaluation.failure_archetypes if prompt.evaluation is not None else []
+        )
         issues_text = ", ".join(candidate_reasons) or "No deterministic failures"
+        if failure_archetypes:
+            issues_text += f" | Archetypes: {', '.join(failure_archetypes)}"
         issues_text += judge_text
         rows.append(
             "<tr>"
@@ -538,10 +569,45 @@ def _render_thresholds(config: DriftcutConfig) -> str:
 
 def _render_archetypes(metrics: DecisionMetrics) -> str:
     if not metrics.archetypes:
-        return "<li>No deterministic failures observed.</li>"
-    return "".join(
-        f"<li>{html.escape(name)}: {count}</li>" for name, count in metrics.archetypes.items()
+        return "<li>No failure archetypes observed.</li>"
+    sorted_archetypes = sorted(metrics.archetypes.items(), key=lambda item: (-item[1], item[0]))
+    return "".join(f"<li>{html.escape(name)}: {count}</li>" for name, count in sorted_archetypes)
+
+
+def _render_category_scorecards(metrics: DecisionMetrics) -> str:
+    if not metrics.category_scores:
+        return ""
+
+    rows: list[str] = []
+    for score in metrics.category_scores:
+        archetypes = _format_archetype_cell(score.archetypes)
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(score.category)}</td>"
+            f"<td>{score.prompts_evaluated}</td>"
+            f"<td>{score.overall_risk:.1%}</td>"
+            f"<td>{score.candidate_failure_rate:.1%}</td>"
+            f"<td>{score.high_criticality_failure_rate:.1%}</td>"
+            f"<td>{score.judge_worse_rate:.1%}</td>"
+            f"<td>{score.latency_p95_ratio:.2f}x</td>"
+            f"<td>{html.escape(archetypes)}</td>"
+            "</tr>"
+        )
+
+    return (
+        "<section><h2>Category Scorecards</h2>"
+        "<table><thead><tr>"
+        "<th>Category</th><th>Prompts</th><th>Risk</th><th>Failure rate</th>"
+        "<th>High-crit fail</th><th>Judge worse</th><th>Latency p95</th><th>Top archetypes</th>"
+        "</tr></thead><tbody>" + "".join(rows) + "</tbody></table></section>"
     )
+
+
+def _format_archetype_cell(archetypes: dict[str, int]) -> str:
+    if not archetypes:
+        return "none"
+    top = sorted(archetypes.items(), key=lambda item: (-item[1], item[0]))[:3]
+    return ", ".join(f"{name} x{count}" for name, count in top)
 
 
 def _decision_color(decision: RunDecision | None) -> str:

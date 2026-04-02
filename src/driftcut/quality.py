@@ -30,6 +30,7 @@ def evaluate_prompt_result(result: PromptResult) -> PromptEvaluation:
             and baseline_eval.structure_valid
             and not candidate_eval.structure_valid
         ),
+        failure_archetypes=list(candidate_eval.archetypes),
     )
 
 
@@ -41,7 +42,7 @@ def _evaluate_response(result: PromptResult, response: object) -> ResponseEvalua
         raise TypeError(msg)
 
     reasons: list[str] = []
-    archetype: str | None = None
+    archetypes: list[str] = []
     structure_valid = True
 
     if response.is_error:
@@ -50,6 +51,7 @@ def _evaluate_response(result: PromptResult, response: object) -> ResponseEvalua
             structure_valid=False,
             reasons=[response.error or "Model call failed"],
             archetype="api_error",
+            archetypes=["api_error"],
         )
 
     output = response.output.strip()
@@ -59,6 +61,7 @@ def _evaluate_response(result: PromptResult, response: object) -> ResponseEvalua
             structure_valid=False,
             reasons=["Response output is empty"],
             archetype="empty_output",
+            archetypes=["empty_output"],
         )
 
     if result.expected_output_type == "json":
@@ -69,6 +72,7 @@ def _evaluate_response(result: PromptResult, response: object) -> ResponseEvalua
                 structure_valid=False,
                 reasons=["Output is not valid JSON"],
                 archetype="json_invalid",
+                archetypes=["json_invalid"],
             )
         if isinstance(parsed_json, dict):
             missing_keys = [key for key in result.json_required_keys if key not in parsed_json]
@@ -76,7 +80,7 @@ def _evaluate_response(result: PromptResult, response: object) -> ResponseEvalua
             missing_keys = list(result.json_required_keys)
         if missing_keys:
             reasons.append(f"Missing JSON keys: {', '.join(missing_keys)}")
-            archetype = archetype or "missing_json_keys"
+            archetypes.append("missing_json_keys")
     elif result.expected_output_type == "labels":
         labels = _parse_labels(output)
         if not labels:
@@ -85,6 +89,7 @@ def _evaluate_response(result: PromptResult, response: object) -> ResponseEvalua
                 structure_valid=False,
                 reasons=["Output does not contain any labels"],
                 archetype="invalid_labels",
+                archetypes=["invalid_labels"],
             )
 
     missing_required = [
@@ -92,26 +97,29 @@ def _evaluate_response(result: PromptResult, response: object) -> ResponseEvalua
     ]
     if missing_required:
         reasons.append(f"Missing required content: {', '.join(missing_required)}")
-        archetype = archetype or "missing_required_content"
+        archetypes.append("missing_required_content")
 
     forbidden_matches = [
         phrase for phrase in result.forbidden_substrings if phrase.lower() in output.lower()
     ]
     if forbidden_matches:
         reasons.append(f"Forbidden content present: {', '.join(forbidden_matches)}")
-        archetype = archetype or "forbidden_content"
+        archetypes.append("forbidden_content")
 
     if result.max_output_chars is not None and len(output) > result.max_output_chars:
         reasons.append(
             f"Output length {len(output)} exceeds max_output_chars={result.max_output_chars}"
         )
-        archetype = archetype or "overlong_output"
+        archetypes.append("overlong_output")
+
+    deduped_archetypes = list(dict.fromkeys(archetypes))
 
     return ResponseEvaluation(
         passed=not reasons,
         structure_valid=structure_valid,
         reasons=reasons,
-        archetype=archetype,
+        archetype=deduped_archetypes[0] if deduped_archetypes else None,
+        archetypes=deduped_archetypes,
     )
 
 

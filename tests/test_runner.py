@@ -260,6 +260,13 @@ async def test_run_migration_stops_on_schema_break() -> None:
     assert result.final_decision is not None
     assert result.final_decision.outcome == "STOP"
     assert "schema break threshold" in result.final_decision.reason
+    assert "Most affected category: extraction" in result.final_decision.reason
+    category_scores = {
+        score.category: score for score in result.final_decision.metrics.category_scores
+    }
+    assert category_scores["extraction"].schema_break_rate == 1.0
+    assert category_scores["support"].schema_break_rate == 0.0
+    assert category_scores["extraction"].archetypes["json_invalid"] == 1
 
 
 @pytest.mark.asyncio

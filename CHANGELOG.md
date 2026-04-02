@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-04-02
+
+### Added
+
+- Richer prompt-level failure archetypes, including semantic regressions such as `refusal_regression`, `instruction_miss`, `incomplete_answer`, and `format_drift`
+- Per-category scorecards in decision metrics, JSON output, and HTML reports
+- Category-aware decision reasoning and console summaries that highlight the highest-risk category
+- 4 new tests covering richer archetypes, category scorecards, and clearer run-level reasoning (110 total)
+
+### Changed
+
+- Prompt evaluations now retain multiple failure archetypes instead of collapsing to a single coarse label
+- Judge-driven regressions can now classify into more actionable semantic buckets instead of only `judge_worse`
+- HTML examples now surface archetype summaries alongside deterministic and judge rationale
+
 ## [0.7.0] - 2026-04-02
 
 ### Added
@@ -151,6 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.8.0]: https://github.com/riccardomerenda/driftcut/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/riccardomerenda/driftcut/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/riccardomerenda/driftcut/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/riccardomerenda/driftcut/compare/v0.5.0...v0.5.1

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>driftcut — Sample or replay before full eval</title>
-<meta name="description" content="Driftcut is a v0.7.0 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, tiered judging, optional Redis memory, and STOP/CONTINUE/PROCEED decisions.">
+<meta name="description" content="Driftcut is a v0.8.0 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, richer failure archetypes, category scorecards, optional Redis memory, and STOP/CONTINUE/PROCEED decisions.">
 <meta property="og:title" content="driftcut — Sample or replay before full eval">
 <meta property="og:description" content="Validate a prompt corpus or replay historical paired outputs, sample representative batches, compare baseline and candidate models, judge ambiguous prompts, and decide whether to stop, continue, or proceed.">
 <meta property="og:type" content="website">
@@ -443,7 +443,7 @@
 <section class="hero">
   <div class="container hero-grid">
     <div class="hero-content">
-      <div class="version-badge">v0.7.0 Alpha</div>
+      <div class="version-badge">v0.8.0 Alpha</div>
 
       <h1>Sample or replay<br>before <em>full eval.</em></h1>
 
@@ -475,6 +475,7 @@
         <span class="tag">Tiered judge escalation</span>
         <span class="tag">Decision + HTML report</span>
         <span class="tag">Optional Redis memory</span>
+        <span class="tag">Category scorecards</span>
       </div>
     </div>
 
@@ -547,7 +548,8 @@
           <li>Transient retry handling for rate limits, timeouts, and 5xxs</li>
           <li>Historical replay on canonical paired-output JSON</li>
           <li>Deterministic checks and tiered judging (light + heavy escalation)</li>
-          <li>Latency, cost, decision output, and HTML reporting</li>
+          <li>Latency, cost, category scorecards, decision output, and HTML reporting</li>
+          <li>Richer semantic failure archetypes beyond a generic judge-worse label</li>
         </ul>
       </div>
 
@@ -555,8 +557,8 @@
         <div class="card-badge planned">Planned Next</div>
         <h3>What sharpens the wedge further</h3>
         <ul class="card-list">
-          <li>Richer failure archetypes beyond deterministic checks</li>
           <li>Public benchmark demos and report polish</li>
+          <li>PyPI publish and smoother packaging</li>
         </ul>
       </div>
     </div>
@@ -631,7 +633,7 @@
         <tr>
           <td>Next milestone</td>
           <td>More benchmarks and scoring</td>
-          <td>Richer failure archetypes and benchmark demos</td>
+          <td>Benchmark demos, packaging, and polish</td>
         </tr>
         <tr>
           <td>Output shape</td>
@@ -676,7 +678,7 @@
 <!-- ── FOOTER ── -->
 <footer>
   <div class="container footer-wrap">
-    <span>driftcut &mdash; v0.7.0 alpha CLI for LLM migration canaries</span>
+    <span>driftcut &mdash; v0.8.0 alpha CLI for LLM migration canaries</span>
     <span>
       <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> &middot;
       <a href="https://docs.driftcut.dev/getting-started/">Docs</a> &middot;

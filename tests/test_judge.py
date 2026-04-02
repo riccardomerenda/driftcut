@@ -55,6 +55,10 @@ def test_prompt_needs_judge_true_for_semantic_difference() -> None:
 
 
 def test_apply_judge_result_marks_regression() -> None:
+    result = _make_prompt_result(
+        baseline_output="We can issue a refund today.",
+        candidate_output="Contact support tomorrow.",
+    )
     evaluation = PromptEvaluation(
         baseline=ResponseEvaluation(passed=True, structure_valid=True),
         candidate=ResponseEvaluation(passed=True, structure_valid=True),
@@ -66,12 +70,13 @@ def test_apply_judge_result_marks_regression() -> None:
     )
 
     merged = apply_judge_result(
+        result,
         evaluation,
         JudgeResult(
             model="openai/gpt-4.1-mini",
             verdict="candidate_worse",
             confidence=0.85,
-            rationale="Candidate drops the concrete resolution step.",
+            rationale="Candidate is materially worse than the baseline.",
         ),
     )
 
@@ -79,6 +84,38 @@ def test_apply_judge_result_marks_regression() -> None:
     assert merged.candidate_failed is True
     assert merged.candidate_regressed is True
     assert merged.candidate_improved is False
+    assert merged.failure_archetypes == ["semantic_regression"]
+
+
+def test_apply_judge_result_classifies_refusal_regression() -> None:
+    result = _make_prompt_result(
+        baseline_output="We can issue the refund and close the case today.",
+        candidate_output="I'm sorry, but I can't help with that request.",
+    )
+    evaluation = PromptEvaluation(
+        baseline=ResponseEvaluation(passed=True, structure_valid=True),
+        candidate=ResponseEvaluation(passed=True, structure_valid=True),
+        candidate_failed=False,
+        candidate_regressed=False,
+        candidate_improved=False,
+        schema_break=False,
+        needs_judge=True,
+    )
+
+    merged = apply_judge_result(
+        result,
+        evaluation,
+        JudgeResult(
+            model="openai/gpt-4.1-mini",
+            verdict="candidate_worse",
+            confidence=0.91,
+            rationale="Candidate refuses the request instead of solving it.",
+        ),
+    )
+
+    assert "refusal_regression" in merged.failure_archetypes
+    assert "instruction_miss" in merged.failure_archetypes
+    assert merged.candidate.archetype == "refusal_regression"
 
 
 @pytest.mark.asyncio

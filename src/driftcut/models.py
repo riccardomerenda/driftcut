@@ -35,6 +35,13 @@ class ResponseEvaluation:
     structure_valid: bool
     reasons: list[str] = field(default_factory=list)
     archetype: str | None = None
+    archetypes: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.archetype is not None and not self.archetypes:
+            self.archetypes = [self.archetype]
+        elif self.archetype is None and self.archetypes:
+            self.archetype = self.archetypes[0]
 
 
 @dataclass
@@ -49,6 +56,11 @@ class PromptEvaluation:
     schema_break: bool
     needs_judge: bool = False
     judge: JudgeResult | None = None
+    failure_archetypes: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if not self.failure_archetypes:
+            self.failure_archetypes = list(self.candidate.archetypes)
 
 
 @dataclass
@@ -69,6 +81,28 @@ class JudgeResult:
     @property
     def is_error(self) -> bool:
         return self.error is not None
+
+
+@dataclass
+class CategoryScore:
+    """Per-category quality scorecard for one canary run."""
+
+    category: str
+    prompts_evaluated: int = 0
+    structured_prompts: int = 0
+    high_criticality_prompts: int = 0
+    ambiguous_prompts: int = 0
+    judged_prompts: int = 0
+    candidate_failure_rate: float = 0.0
+    candidate_regression_rate: float = 0.0
+    schema_break_rate: float = 0.0
+    high_criticality_failure_rate: float = 0.0
+    judge_worse_rate: float = 0.0
+    judge_average_confidence: float = 0.0
+    overall_risk: float = 0.0
+    latency_p50_ratio: float = 1.0
+    latency_p95_ratio: float = 1.0
+    archetypes: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
@@ -94,6 +128,7 @@ class DecisionMetrics:
     latency_p50_ratio: float = 1.0
     latency_p95_ratio: float = 1.0
     archetypes: dict[str, int] = field(default_factory=dict)
+    category_scores: list[CategoryScore] = field(default_factory=list)
 
 
 @dataclass

@@ -96,6 +96,32 @@ class TestJudgeResult:
         assert judge.escalated is True
 
 
+class TestResponseEvaluation:
+    def test_primary_archetype_populates_archetype_list(self) -> None:
+        evaluation = ResponseEvaluation(
+            passed=False,
+            structure_valid=False,
+            archetype="json_invalid",
+        )
+        assert evaluation.archetypes == ["json_invalid"]
+
+    def test_prompt_evaluation_defaults_failure_archetypes_from_candidate(self) -> None:
+        candidate = ResponseEvaluation(
+            passed=False,
+            structure_valid=False,
+            archetypes=["json_invalid", "missing_json_keys"],
+        )
+        evaluation = PromptEvaluation(
+            baseline=ResponseEvaluation(passed=True, structure_valid=True),
+            candidate=candidate,
+            candidate_failed=True,
+            candidate_regressed=True,
+            candidate_improved=False,
+            schema_break=True,
+        )
+        assert evaluation.failure_archetypes == ["json_invalid", "missing_json_keys"]
+
+
 class TestBatchResult:
     def test_empty_batch(self) -> None:
         b = BatchResult(batch_number=1)

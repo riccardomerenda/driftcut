@@ -11,6 +11,8 @@ def _make_prompt_result(
     candidate_output: str = '{"ok": true}',
     json_required_keys: list[str] | None = None,
     required_substrings: list[str] | None = None,
+    forbidden_substrings: list[str] | None = None,
+    max_output_chars: int | None = None,
 ) -> PromptResult:
     return PromptResult(
         prompt_id="p1",
@@ -22,6 +24,8 @@ def _make_prompt_result(
         candidate=ModelResponse(output=candidate_output, latency_ms=80.0),
         json_required_keys=json_required_keys or [],
         required_substrings=required_substrings or [],
+        forbidden_substrings=forbidden_substrings or [],
+        max_output_chars=max_output_chars,
     )
 
 
@@ -59,3 +63,23 @@ def test_missing_required_substring_fails() -> None:
 
     assert evaluation.candidate.passed is False
     assert evaluation.candidate.archetype == "missing_required_content"
+
+
+def test_multiple_candidate_issues_produce_multiple_archetypes() -> None:
+    result = _make_prompt_result(
+        expected_output_type="free_text",
+        baseline_output="We can offer a refund today.",
+        candidate_output="Maybe we can review this request later.",
+        required_substrings=["refund"],
+        forbidden_substrings=["maybe"],
+        max_output_chars=20,
+    )
+
+    evaluation = evaluate_prompt_result(result)
+
+    assert evaluation.candidate.passed is False
+    assert evaluation.failure_archetypes == [
+        "missing_required_content",
+        "forbidden_content",
+        "overlong_output",
+    ]

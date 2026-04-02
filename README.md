@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.7.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.8.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -56,12 +56,14 @@ Today, Driftcut can:
 - Optionally reuse cached baseline responses and persist run history to Redis
 - Produce `STOP`, `CONTINUE`, or `PROCEED` decisions during the run
 - Export both JSON results and an HTML report
-- Summarize deterministic and judge-driven failure archetypes such as `json_invalid`, `missing_json_keys`, and `judge_worse`
+- Summarize deterministic and semantic failure archetypes such as `json_invalid`, `missing_json_keys`, `refusal_regression`, and `instruction_miss`
+- Show per-category quality scorecards in JSON and HTML outputs
+- Explain final decisions with category-aware risk summaries instead of only threshold math
 
 Still planned next:
 
-- Richer failure archetypes beyond deterministic checks and `judge_worse`
 - Public benchmark demo
+- PyPI package publish
 
 ## Quickstart
 
@@ -192,6 +194,7 @@ Run complete
   Latency p95:    1480ms (baseline) -> 1100ms (candidate)
   Decision:       PROCEED (82% confidence)
   Reason:         Risk stayed below the configured proceed threshold.
+  Top category:   extraction (11% risk | json_invalid x2)
 ```
 
 Example `driftcut-results/results.json` excerpt:
@@ -204,6 +207,22 @@ Example `driftcut-results/results.json` excerpt:
     "confidence": 0.82,
     "reason": "Risk stayed below the configured proceed threshold."
   },
+  "decision_history": [
+    {
+      "outcome": "PROCEED",
+      "metrics": {
+        "category_scores": [
+          {
+            "category": "extraction",
+            "overall_risk": 0.11,
+            "archetypes": {
+              "json_invalid": 2
+            }
+          }
+        ]
+      }
+    }
+  ],
   "cost": {
     "baseline_usd": 0.184,
     "candidate_usd": 0.1,
@@ -301,7 +320,12 @@ The current alpha can classify failures such as:
 | `missing_required_content` | Required substring was not found |
 | `forbidden_content` | Forbidden substring was found |
 | `overlong_output` | Output exceeded `max_output_chars` |
-| `judge_worse` | Judge found the candidate materially worse than baseline |
+| `refusal_regression` | Candidate refused or deflected a task the baseline completed |
+| `instruction_miss` | Candidate missed the core instruction even though it stayed syntactically valid |
+| `incomplete_answer` | Candidate response dropped useful detail or coverage relative to baseline |
+| `format_drift` | Candidate drifted away from the expected presentation or structure |
+| `hallucination_risk` | Judge flagged unsupported or fabricated content risk |
+| `semantic_regression` | Candidate was materially worse in meaning, but no more specific semantic bucket applied |
 
 ## Corpus format
 
@@ -431,8 +455,10 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] Historical replay mode for paired-output backtesting
 - [x] Redis memory for baseline caching and run-history persistence
 - [x] Docker + Redis local dev stack
-- [ ] Richer failure archetypes
+- [x] Richer failure archetypes
+- [x] Per-category quality scorecards
 - [ ] Public benchmark demo
+- [ ] PyPI package publish
 
 Full roadmap: [docs.driftcut.dev/roadmap](https://docs.driftcut.dev/roadmap/)
 

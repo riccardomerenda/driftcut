@@ -12,6 +12,7 @@ from driftcut.config import (
 )
 from driftcut.models import (
     BatchResult,
+    CategoryScore,
     DecisionMetrics,
     JudgeResult,
     ModelResponse,
@@ -87,6 +88,17 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
             ambiguous_prompts=1,
             judged_prompts=1,
             judge_average_confidence=0.9,
+            category_scores=[
+                CategoryScore(
+                    category="support",
+                    prompts_evaluated=1,
+                    high_criticality_prompts=1,
+                    judged_prompts=1,
+                    overall_risk=0.04,
+                    latency_p95_ratio=0.8,
+                    archetypes={"semantic_regression": 1},
+                )
+            ],
         ),
     )
     result.decision_history.append(result.final_decision)
@@ -108,11 +120,15 @@ def test_save_run_outputs_writes_json_and_html(tmp_path: Path) -> None:
     assert '"judge_usd": 0.002' in json_text
     assert '"baseline_cache_saved_usd": 0.01' in json_text
     assert '"verdict": "equivalent"' in json_text
+    assert '"failure_archetypes": []' in json_text
+    assert '"category_scores": [' in json_text
     assert '"tier": "light"' in json_text
     assert '"escalated": false' in json_text
     assert '"escalated_prompts": 0' in json_text
     assert "Report run - Driftcut report" in html_text
     assert "Live mode" in html_text
+    assert "Category Scorecards" in html_text
+    assert "support" in html_text
     assert "Judge cost: $0.0020" in html_text
     assert "Baseline cache saved: $0.0100" in html_text
     assert "Memory backend: redis" in html_text
