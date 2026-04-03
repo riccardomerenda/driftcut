@@ -63,7 +63,6 @@ Today, Driftcut can:
 Still planned next:
 
 - Public benchmark demo
-- PyPI package publish
 
 ## Quickstart
 
@@ -469,8 +468,8 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] Docker + Redis local dev stack
 - [x] Richer failure archetypes
 - [x] Per-category quality scorecards
+- [x] PyPI package publish
 - [ ] Public benchmark demo
-- [ ] PyPI package publish
 
 Full roadmap: [docs.driftcut.dev/roadmap](https://docs.driftcut.dev/roadmap/)
 
