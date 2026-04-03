@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-04-04
+
+### Added
+
+- `driftcut init` scaffolding command that generates a working `migration.yaml` and `prompts.csv`
+- `--baseline` and `--candidate` flags to pre-fill model names (e.g. `driftcut init --baseline azure/gpt-4-turbo --candidate openrouter/mistral-large`)
+- `--dir` flag to scaffold into a specific directory and `--force` flag to overwrite existing files
+- Scaffolded files pass `driftcut validate` out of the box
+- 12 new tests covering scaffolding logic and CLI command (122 total)
+
 ## [0.8.0] - 2026-04-02
 
 ### Added
@@ -166,6 +176,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.9.0]: https://github.com/riccardomerenda/driftcut/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/riccardomerenda/driftcut/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/riccardomerenda/driftcut/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/riccardomerenda/driftcut/compare/v0.5.1...v0.6.0

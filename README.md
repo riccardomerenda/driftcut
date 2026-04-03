@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.8.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.9.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -59,6 +59,7 @@ Today, Driftcut can:
 - Summarize deterministic and semantic failure archetypes such as `json_invalid`, `missing_json_keys`, `refusal_regression`, and `instruction_miss`
 - Show per-category quality scorecards in JSON and HTML outputs
 - Explain final decisions with category-aware risk summaries instead of only threshold math
+- Scaffold a new project with `driftcut init` (generates a working config and sample corpus)
 
 Still planned next:
 
@@ -92,7 +93,21 @@ For local Redis-memory testing without Docker:
 pip install -e ".[dev,redis]"
 ```
 
-Create a config file:
+### Scaffold a new project
+
+The fastest way to get started:
+
+```bash
+driftcut init
+```
+
+This creates a working `migration.yaml` and `prompts.csv` in the current directory. You can customize the models:
+
+```bash
+driftcut init --baseline azure/gpt-4-turbo --candidate openrouter/mistral-large
+```
+
+Or create a config file manually:
 
 ```yaml
 # migration.yaml
@@ -469,6 +484,7 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] Richer failure archetypes
 - [x] Per-category quality scorecards
 - [x] PyPI package publish
+- [x] `driftcut init` scaffolding command
 - [ ] Public benchmark demo
 
 Full roadmap: [docs.driftcut.dev/roadmap](https://docs.driftcut.dev/roadmap/)

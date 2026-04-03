@@ -13,6 +13,7 @@ from rich.table import Table
 from driftcut import __version__
 from driftcut.config import DriftcutConfig, load_config
 from driftcut.corpus import Corpus, load_corpus
+from driftcut.init import scaffold_project
 from driftcut.replay import load_replay_dataset
 from driftcut.reporting import save_run_outputs
 from driftcut.sampler import StratifiedSampler
@@ -246,6 +247,64 @@ def replay(
     written_files = save_run_outputs(config, cfg, result)
     for path in written_files:
         console.print(f"[dim]Saved {path.name} -> {path}[/dim]")
+
+
+@app.command()
+def init(
+    directory: Path = typer.Option(
+        ".",
+        "--dir",
+        "-d",
+        help="Directory to create files in (defaults to current directory).",
+    ),
+    baseline: str = typer.Option(
+        "openai/gpt-4o",
+        "--baseline",
+        "-b",
+        help="Baseline model in provider/model format.",
+    ),
+    candidate: str = typer.Option(
+        "anthropic/claude-haiku",
+        "--candidate",
+        "-c",
+        help="Candidate model in provider/model format.",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite existing files.",
+    ),
+) -> None:
+    """Scaffold a new migration config and sample corpus."""
+    target = directory.resolve()
+    target.mkdir(parents=True, exist_ok=True)
+
+    config_path = target / "migration.yaml"
+    corpus_path = target / "prompts.csv"
+
+    if not force:
+        existing = [p for p in (config_path, corpus_path) if p.exists()]
+        if existing:
+            names = ", ".join(p.name for p in existing)
+            console.print(
+                f"[red bold]Files already exist:[/red bold] {names}\n"
+                "Use [bold]--force[/bold] to overwrite."
+            )
+            raise typer.Exit(code=1)
+
+    written = scaffold_project(
+        target=target,
+        baseline=baseline,
+        candidate=candidate,
+    )
+    for path in written:
+        console.print(f"[dim]Created {path.name} -> {path}[/dim]")
+    console.print()
+    console.print("[green bold]Project scaffolded.[/green bold] Next steps:")
+    console.print(f"  1. Edit [bold]{corpus_path}[/bold] with your prompts")
+    console.print(f"  2. Run [bold]driftcut validate --config {config_path}[/bold]")
+    console.print(f"  3. Run [bold]driftcut run --config {config_path}[/bold]")
 
 
 @app.command()
