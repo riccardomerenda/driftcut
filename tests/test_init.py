@@ -97,9 +97,12 @@ def test_init_command_with_models(tmp_path: Path) -> None:
         app,
         [
             "init",
-            "--dir", str(tmp_path),
-            "--baseline", "azure/gpt-4-turbo",
-            "--candidate", "openrouter/mistral-large",
+            "--dir",
+            str(tmp_path),
+            "--baseline",
+            "azure/gpt-4-turbo",
+            "--candidate",
+            "openrouter/mistral-large",
         ],
     )
     assert result.exit_code == 0
