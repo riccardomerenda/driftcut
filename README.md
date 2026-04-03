@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="Driftcut" width="64" height="64">
+  <img src="https://raw.githubusercontent.com/riccardomerenda/driftcut/main/assets/logo.svg" alt="Driftcut" width="64" height="64">
 </p>
 
 <h1 align="center">Driftcut</h1>
@@ -67,7 +67,19 @@ Still planned next:
 
 ## Quickstart
 
-### Local Python
+### Install from PyPI
+
+```bash
+pip install driftcut
+```
+
+For Redis-backed memory support:
+
+```bash
+pip install "driftcut[redis]"
+```
+
+### From source
 
 ```bash
 git clone https://github.com/riccardomerenda/driftcut.git
