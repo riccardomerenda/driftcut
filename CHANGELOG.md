@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-04-04
+
+### Added
+
+- `driftcut bootstrap --input raw-prompts.txt` command that classifies raw prompts into a structured Driftcut corpus using an LLM
+- Accepts plain text (one per line or paragraph-separated), CSV with a `prompt` column, or JSON arrays of strings/objects
+- `--model` flag to choose the classification model (default: `openai/gpt-4.1-mini`)
+- `--output` flag for target path and `--force` to overwrite
+- Auto-generates IDs from inferred categories when the input has none
+- Normalizes invalid LLM responses (unknown criticality/output types fall back to safe defaults)
+- 20 new tests covering input loading, classification parsing, CSV output, and CLI (142 total)
+
 ## [0.9.0] - 2026-04-04
 
 ### Added
@@ -176,6 +188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.10.0]: https://github.com/riccardomerenda/driftcut/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/riccardomerenda/driftcut/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/riccardomerenda/driftcut/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/riccardomerenda/driftcut/compare/v0.6.0...v0.7.0

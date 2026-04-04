@@ -18,6 +18,8 @@ ruff format src tests                 # Format
 mypy src                              # Type check
 driftcut init                                 # Scaffold migration.yaml + prompts.csv
 driftcut init --baseline azure/gpt-4-turbo --candidate openrouter/mistral-large
+driftcut bootstrap --input raw.txt           # Classify raw prompts into structured corpus
+driftcut bootstrap --input raw.csv --model openai/gpt-4.1-mini --output prompts.csv
 driftcut validate --config migration.yaml   # Validate config + corpus
 driftcut run --config migration.yaml        # Run a migration test
 driftcut replay --config replay.yaml --input replay.json  # Replay historical outputs
@@ -44,9 +46,10 @@ Replay mode substitutes pre-recorded responses for live execution but uses the s
 
 | Module | Role |
 |---|---|
-| `cli.py` | Typer commands: `init`, `run`, `validate`, `replay` |
+| `cli.py` | Typer commands: `init`, `bootstrap`, `run`, `validate`, `replay` |
 | `config.py` | Pydantic models for YAML config with constrained fields |
 | `init.py` | Project scaffolding: generates starter config and corpus templates |
+| `bootstrap.py` | Corpus bootstrap: classifies raw prompts into structured corpus via LLM |
 | `corpus.py` | CSV/JSON loader → `PromptRecord` list with flexible delimiter parsing (`\|` or `;`) |
 | `sampler.py` | `StratifiedSampler` iterator — yields equal-sized batches, pre-sorted by criticality within category |
 | `runner.py` | Async orchestrator — batch loop, wires executor → quality → judge → decision |

@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.9.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.10.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -60,6 +60,7 @@ Today, Driftcut can:
 - Show per-category quality scorecards in JSON and HTML outputs
 - Explain final decisions with category-aware risk summaries instead of only threshold math
 - Scaffold a new project with `driftcut init` (generates a working config and sample corpus)
+- Bootstrap a structured corpus from raw prompts with `driftcut bootstrap` (LLM-powered classification)
 
 Still planned next:
 
@@ -107,7 +108,21 @@ This creates a working `migration.yaml` and `prompts.csv` in the current directo
 driftcut init --baseline azure/gpt-4-turbo --candidate openrouter/mistral-large
 ```
 
-Or create a config file manually:
+### Bootstrap a corpus from raw prompts
+
+If you already have prompts but they aren't categorized:
+
+```bash
+driftcut bootstrap --input raw-prompts.txt --output prompts.csv
+```
+
+This sends your prompts to an LLM that classifies each one with a category, criticality, and expected output type. Accepts `.txt` (one per line), `.csv` (with a `prompt` column), or `.json`. Review the output and edit as needed.
+
+```bash
+driftcut bootstrap --input prompts.json --model openai/gpt-4.1-mini --output prompts.csv
+```
+
+### Or create a config file manually:
 
 ```yaml
 # migration.yaml
@@ -485,6 +500,7 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] Per-category quality scorecards
 - [x] PyPI package publish
 - [x] `driftcut init` scaffolding command
+- [x] `driftcut bootstrap` corpus generator
 - [ ] Public benchmark demo
 
 Full roadmap: [docs.driftcut.dev/roadmap](https://docs.driftcut.dev/roadmap/)

@@ -11,6 +11,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from driftcut import __version__
+from driftcut.bootstrap import classify_prompts, load_raw_prompts, write_corpus_csv
 from driftcut.config import DriftcutConfig, load_config
 from driftcut.corpus import Corpus, load_corpus
 from driftcut.init import scaffold_project
@@ -305,6 +306,81 @@ def init(
     console.print(f"  1. Edit [bold]{corpus_path}[/bold] with your prompts")
     console.print(f"  2. Run [bold]driftcut validate --config {config_path}[/bold]")
     console.print(f"  3. Run [bold]driftcut run --config {config_path}[/bold]")
+
+
+@app.command()
+def bootstrap(
+    input_file: Path = typer.Option(
+        ...,
+        "--input",
+        "-i",
+        help="Path to raw prompts file (.txt, .csv, or .json).",
+        exists=True,
+        readable=True,
+    ),
+    output: Path = typer.Option(
+        "prompts.csv",
+        "--output",
+        "-o",
+        help="Path to write the structured corpus CSV.",
+    ),
+    model: str = typer.Option(
+        "openai/gpt-4.1-mini",
+        "--model",
+        "-m",
+        help="Model to use for classification (provider/model format).",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite existing output file.",
+    ),
+) -> None:
+    """Classify raw prompts into a structured Driftcut corpus."""
+    output_path = output.resolve()
+
+    if not force and output_path.exists():
+        console.print(
+            f"[red bold]File already exists:[/red bold] {output_path.name}\n"
+            "Use [bold]--force[/bold] to overwrite."
+        )
+        raise typer.Exit(code=1)
+
+    try:
+        prompts = load_raw_prompts(input_file)
+    except Exception as exc:
+        console.print(f"[red bold]Input error:[/red bold] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    if not prompts:
+        console.print("[red bold]No prompts found[/red bold] in the input file.")
+        raise typer.Exit(code=1)
+
+    console.print(f"Loaded [bold]{len(prompts)}[/bold] prompts from {input_file.name}")
+    console.print(f"Classifying with [bold]{model}[/bold]...")
+
+    try:
+        classifications = asyncio.run(classify_prompts(prompts, model=model))
+    except Exception as exc:
+        console.print(f"[red bold]Classification error:[/red bold] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    write_corpus_csv(output_path, prompts, classifications)
+
+    # Summarize what was generated
+    categories: dict[str, int] = {}
+    for c in classifications:
+        cat = c.get("category", "uncategorized")
+        categories[cat] = categories.get(cat, 0) + 1
+    cat_lines = [f"  {cat}: {count}" for cat, count in sorted(categories.items())]
+
+    console.print(f"\n[dim]Saved {output_path.name} -> {output_path}[/dim]")
+    console.print(Panel("\n".join(cat_lines), title="Categories", border_style="blue"))
+    console.print("[green bold]Corpus generated.[/green bold] Next steps:")
+    console.print(f"  1. Review and edit [bold]{output_path}[/bold]")
+    console.print("  2. Run [bold]driftcut validate --config migration.yaml[/bold]")
 
 
 @app.command()
