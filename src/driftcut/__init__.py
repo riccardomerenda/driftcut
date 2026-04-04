@@ -1,3 +1,3 @@
 """Driftcut - Early-stop decision gating for LLM model migrations."""
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"

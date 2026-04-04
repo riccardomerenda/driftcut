@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-04-04
+
+### Added
+
+- `driftcut diff --before results-v1.json --after results-v2.json` command to compare two run results
+- Shows decision change, metric deltas (risk, failure rates, latency), cost difference, category-level risk changes, and archetype additions/removals
+- Color-coded Rich output: green for improvements, red for regressions
+- 13 new tests covering diff logic, file loading, and CLI command (155 total)
+
 ## [0.10.0] - 2026-04-04
 
 ### Added
@@ -188,6 +197,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation site at docs.driftcut.dev
 - 35 tests covering config, corpus, sampler, and CLI
 
+[0.11.0]: https://github.com/riccardomerenda/driftcut/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/riccardomerenda/driftcut/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/riccardomerenda/driftcut/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/riccardomerenda/driftcut/compare/v0.7.0...v0.8.0

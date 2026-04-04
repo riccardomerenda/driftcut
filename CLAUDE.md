@@ -23,6 +23,7 @@ driftcut bootstrap --input raw.csv --model openai/gpt-4.1-mini --output prompts.
 driftcut validate --config migration.yaml   # Validate config + corpus
 driftcut run --config migration.yaml        # Run a migration test
 driftcut replay --config replay.yaml --input replay.json  # Replay historical outputs
+driftcut diff --before results-v1.json --after results-v2.json  # Compare two runs
 ```
 
 ## Architecture
@@ -46,7 +47,7 @@ Replay mode substitutes pre-recorded responses for live execution but uses the s
 
 | Module | Role |
 |---|---|
-| `cli.py` | Typer commands: `init`, `bootstrap`, `run`, `validate`, `replay` |
+| `cli.py` | Typer commands: `init`, `bootstrap`, `run`, `validate`, `replay`, `diff` |
 | `config.py` | Pydantic models for YAML config with constrained fields |
 | `init.py` | Project scaffolding: generates starter config and corpus templates |
 | `bootstrap.py` | Corpus bootstrap: classifies raw prompts into structured corpus via LLM |
@@ -60,6 +61,7 @@ Replay mode substitutes pre-recorded responses for live execution but uses the s
 | `trackers.py` | Cost and latency accumulators (cost gracefully handles missing LiteLLM pricing) |
 | `models.py` | Frozen dataclasses: `ModelResponse`, `PromptEvaluation`, `JudgeResult`, `RunDecision`, `RunResult` |
 | `reporting.py` | JSON serialization + HTML report with failure archetypes |
+| `diff.py` | Compare two run results: metric deltas, category risk changes, archetype diffs |
 | `replay.py` | Replay-specific data models for loading historical paired outputs |
 
 ### Decision engine (`decision.py`)

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Git ref to build and publish, for example main or v0.10.0
+        description: Git ref to build and publish, for example main or v0.11.0
         required: true
         default: main
 

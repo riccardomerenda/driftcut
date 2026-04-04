@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.10.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.11.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -61,6 +61,7 @@ Today, Driftcut can:
 - Explain final decisions with category-aware risk summaries instead of only threshold math
 - Scaffold a new project with `driftcut init` (generates a working config and sample corpus)
 - Bootstrap a structured corpus from raw prompts with `driftcut bootstrap` (LLM-powered classification)
+- Compare two runs with `driftcut diff` to see what changed between migration attempts
 
 Still planned next:
 
@@ -501,6 +502,7 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] PyPI package publish
 - [x] `driftcut init` scaffolding command
 - [x] `driftcut bootstrap` corpus generator
+- [x] `driftcut diff` run comparison
 - [ ] Public benchmark demo
 
 Full roadmap: [docs.driftcut.dev/roadmap](https://docs.driftcut.dev/roadmap/)

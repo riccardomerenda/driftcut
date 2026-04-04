@@ -14,6 +14,7 @@ from driftcut import __version__
 from driftcut.bootstrap import classify_prompts, load_raw_prompts, write_corpus_csv
 from driftcut.config import DriftcutConfig, load_config
 from driftcut.corpus import Corpus, load_corpus
+from driftcut.diff import DiffResult, diff_results, load_result
 from driftcut.init import scaffold_project
 from driftcut.replay import load_replay_dataset
 from driftcut.reporting import save_run_outputs
@@ -381,6 +382,157 @@ def bootstrap(
     console.print("[green bold]Corpus generated.[/green bold] Next steps:")
     console.print(f"  1. Review and edit [bold]{output_path}[/bold]")
     console.print("  2. Run [bold]driftcut validate --config migration.yaml[/bold]")
+
+
+@app.command()
+def diff(
+    before: Path = typer.Option(
+        ...,
+        "--before",
+        "-b",
+        help="Path to the earlier results.json file.",
+        exists=True,
+        readable=True,
+    ),
+    after: Path = typer.Option(
+        ...,
+        "--after",
+        "-a",
+        help="Path to the later results.json file.",
+        exists=True,
+        readable=True,
+    ),
+) -> None:
+    """Compare two Driftcut result files and show what changed."""
+    try:
+        before_data = load_result(before)
+        after_data = load_result(after)
+    except Exception as exc:
+        console.print(f"[red bold]Load error:[/red bold] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    result = diff_results(before_data, after_data)
+    _print_diff(result)
+
+
+def _decision_style(outcome: str) -> str:
+    if outcome == "PROCEED":
+        return "green bold"
+    if outcome == "STOP":
+        return "red bold"
+    return "yellow bold"
+
+
+def _delta_str(value: float, *, percent: bool = True, invert: bool = False) -> str:
+    """Format a delta with color. Lower is better unless invert=True."""
+    if value == 0:
+        return "[dim]—[/dim]"
+    sign = "+" if value > 0 else ""
+    text = f"{sign}{value:.1%}" if percent else f"{sign}{value:.2f}x"
+    better = value < 0 if not invert else value > 0
+    color = "green" if better else "red"
+    return f"[{color}]{text}[/{color}]"
+
+
+def _cost_delta_str(before: float, after: float) -> str:
+    delta = after - before
+    if delta == 0:
+        return "[dim]—[/dim]"
+    sign = "+" if delta > 0 else ""
+    color = "red" if delta > 0 else "green"
+    return f"[{color}]{sign}${delta:.4f}[/{color}]"
+
+
+def _print_diff(result: DiffResult) -> None:
+    console.print()
+
+    # Decision comparison
+    before_style = _decision_style(result.before_decision)
+    after_style = _decision_style(result.after_decision)
+    decision_changed = result.before_decision != result.after_decision
+    arrow = "[bold] → [/bold]" if decision_changed else "[dim] → [/dim]"
+    console.print(
+        Panel(
+            f"[{before_style}]{result.before_decision}[/{before_style}]"
+            f"{arrow}"
+            f"[{after_style}]{result.after_decision}[/{after_style}]",
+            title="Decision",
+            border_style="green" if result.after_decision == "PROCEED" else "red",
+        )
+    )
+
+    # Coverage + cost summary
+    summary_table = Table(show_header=True, box=None, padding=(0, 2))
+    summary_table.add_column("", style="dim")
+    summary_table.add_column("Before", justify="right")
+    summary_table.add_column("After", justify="right")
+    summary_table.add_column("Delta", justify="right")
+    summary_table.add_row(
+        "Prompts",
+        str(result.before_prompts),
+        str(result.after_prompts),
+        "",
+    )
+    summary_table.add_row(
+        "Batches",
+        str(result.before_batches),
+        str(result.after_batches),
+        "",
+    )
+    summary_table.add_row(
+        "Cost",
+        f"${result.before_cost:.4f}",
+        f"${result.after_cost:.4f}",
+        _cost_delta_str(result.before_cost, result.after_cost),
+    )
+    console.print(Panel(summary_table, title="Coverage", border_style="blue"))
+
+    # Metrics table
+    if result.metrics:
+        metrics_table = Table(show_header=True, box=None, padding=(0, 2))
+        metrics_table.add_column("Metric", style="bold")
+        metrics_table.add_column("Before", justify="right")
+        metrics_table.add_column("After", justify="right")
+        metrics_table.add_column("Delta", justify="right")
+        for m in result.metrics:
+            is_latency = "latency" in m.name.lower()
+            if is_latency:
+                b_str = f"{m.before:.2f}x"
+                a_str = f"{m.after:.2f}x"
+                d_str = _delta_str(m.delta, percent=False)
+            else:
+                b_str = f"{m.before:.1%}"
+                a_str = f"{m.after:.1%}"
+                d_str = _delta_str(m.delta)
+            metrics_table.add_row(m.name, b_str, a_str, d_str)
+        console.print(Panel(metrics_table, title="Metrics", border_style="blue"))
+
+    # Category deltas
+    if result.categories:
+        cat_table = Table(show_header=True, box=None, padding=(0, 2))
+        cat_table.add_column("Category", style="bold")
+        cat_table.add_column("Before risk", justify="right")
+        cat_table.add_column("After risk", justify="right")
+        cat_table.add_column("Delta", justify="right")
+        for c in sorted(result.categories, key=lambda x: -abs(x.risk_delta)):
+            cat_table.add_row(
+                c.category,
+                f"{c.before_risk:.1%}",
+                f"{c.after_risk:.1%}",
+                _delta_str(c.risk_delta),
+            )
+        console.print(Panel(cat_table, title="Categories", border_style="blue"))
+
+    # Archetype changes
+    if result.archetypes_added or result.archetypes_removed:
+        lines: list[str] = []
+        for name in result.archetypes_added:
+            lines.append(f"  [red]+[/red] {name}")
+        for name in result.archetypes_removed:
+            lines.append(f"  [green]-[/green] {name}")
+        console.print(Panel("\n".join(lines), title="Archetypes", border_style="blue"))
+
+    console.print()
 
 
 @app.command()
