@@ -426,7 +426,7 @@ def _decision_style(outcome: str) -> str:
 def _delta_str(value: float, *, percent: bool = True, invert: bool = False) -> str:
     """Format a delta with color. Lower is better unless invert=True."""
     if value == 0:
-        return "[dim]—[/dim]"
+        return "[dim]-[/dim]"
     sign = "+" if value > 0 else ""
     text = f"{sign}{value:.1%}" if percent else f"{sign}{value:.2f}x"
     better = value < 0 if not invert else value > 0
@@ -437,7 +437,7 @@ def _delta_str(value: float, *, percent: bool = True, invert: bool = False) -> s
 def _cost_delta_str(before: float, after: float) -> str:
     delta = after - before
     if delta == 0:
-        return "[dim]—[/dim]"
+        return "[dim]-[/dim]"
     sign = "+" if delta > 0 else ""
     color = "red" if delta > 0 else "green"
     return f"[{color}]{sign}${delta:.4f}[/{color}]"
@@ -450,7 +450,7 @@ def _print_diff(result: DiffResult) -> None:
     before_style = _decision_style(result.before_decision)
     after_style = _decision_style(result.after_decision)
     decision_changed = result.before_decision != result.after_decision
-    arrow = "[bold] → [/bold]" if decision_changed else "[dim] → [/dim]"
+    arrow = "[bold] -> [/bold]" if decision_changed else "[dim] -> [/dim]"
     console.print(
         Panel(
             f"[{before_style}]{result.before_decision}[/{before_style}]"
