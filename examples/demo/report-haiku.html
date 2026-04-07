@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    GPT-4o to Claude 3.5 Haiku migration - Driftcut report
+  </title>
+  <style>
+    :root {
+      --bg: #0b0e11;
+      --panel: #121821;
+      --line: #263243;
+      --text: #e5edf5;
+      --muted: #9aa9bb;
+      --accent: #ff4747;
+      --good: #2dd4a8;
+      --warn: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #0b0e11 0%, #101722 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 20px 48px; }
+    h1, h2 { margin: 0 0 12px; }
+    section {
+      background: rgba(18, 24, 33, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .mode-badge {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 71, 71, 0.28);
+      background: rgba(255, 71, 71, 0.12);
+      color: var(--text);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .mode-note {
+      color: var(--muted);
+      margin-top: 10px;
+      margin-bottom: 0;
+    }
+    .decision {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    pre {
+      white-space: pre-wrap;
+      margin: 0;
+      font-family: "Cascadia Code", monospace;
+      color: #dce7f3;
+    }
+    ul { margin: 0; padding-left: 18px; }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <div class="hero">
+        <div>
+          <div class="mode-badge">Live mode</div>
+          <div class="label">Run</div>
+          <h1>GPT-4o to Claude 3.5 Haiku migration</h1>
+          <div class="decision">STOP</div>
+          <p>Candidate exceeded the high-criticality failure threshold (45% &gt;= 20%). Most affected category: summarization (high-crit 100%; missing_required_content x1, overlong_output x1).</p>
+          <p><strong>Confidence:</strong> 59%</p>
+          
+        </div>
+        <div class="card">
+          <div class="label">Coverage</div>
+          <div>15 prompts across 1 batches</div>
+          <div>Total cost: $0.0311</div>
+          
+          <div>Stopped early: yes</div>
+        </div>
+        <div class="card">
+          <div class="label">Latency</div>
+          <div>p50: 3160ms -> 5578ms</div><div>p95: 6971ms -> 14395ms</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Decision Metrics</h2>
+      <table>
+        <tbody>
+          <tr><th>Overall risk</th><td>41.5%</td></tr>
+          <tr><th>Candidate failure rate</th><td>46.7%</td></tr>
+          <tr>
+            <th>Candidate regression rate</th>
+            <td>20.0%</td>
+          </tr>
+          <tr>
+            <th>High-criticality failure rate</th>
+            <td>45.5%</td>
+          </tr>
+          <tr><th>Schema break rate</th><td>0.0%</td></tr>
+          <tr>
+            <th>Judged prompts</th>
+            <td>2/2</td>
+          </tr>
+          <tr>
+            <th>Escalated prompts</th>
+            <td>0</td>
+          </tr>
+          <tr><th>Judge worse rate</th><td>0.0%</td></tr>
+          <tr><th>Judge average confidence</th><td>90%</td></tr>
+          <tr><th>Latency p50 ratio</th><td>1.77x</td></tr>
+          <tr><th>Latency p95 ratio</th><td>2.06x</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section><h2>Thresholds</h2><table><tbody><tr><th>High-criticality stop</th><td>20%</td></tr><tr><th>Schema stop</th><td>25%</td></tr><tr><th>Proceed risk</th><td>&lt;= 8%</td></tr><tr><th>Latency p50 threshold</th><td>1.50x</td></tr><tr><th>Latency p95 threshold</th><td>2.00x</td></tr><tr><th>Tiered escalation threshold</th><td>60%</td></tr></tbody></table></section>
+
+    <section>
+      <h2>Failure Archetypes</h2>
+      <ul><li>overlong_output: 3</li><li>json_invalid: 2</li><li>missing_required_content: 2</li></ul>
+    </section>
+
+    <section><h2>Category Scorecards</h2><table><thead><tr><th>Category</th><th>Prompts</th><th>Risk</th><th>Failure rate</th><th>High-crit fail</th><th>Judge worse</th><th>Latency p95</th><th>Top archetypes</th></tr></thead><tbody><tr><td>summarization</td><td>3</td><td>58.7%</td><td>66.7%</td><td>100.0%</td><td>0.0%</td><td>1.52x</td><td>missing_required_content x1, overlong_output x1</td></tr><tr><td>customer_support</td><td>3</td><td>53.0%</td><td>66.7%</td><td>66.7%</td><td>0.0%</td><td>2.00x</td><td>missing_required_content x1, overlong_output x1</td></tr><tr><td>code_generation</td><td>3</td><td>50.0%</td><td>66.7%</td><td>66.7%</td><td>0.0%</td><td>2.31x</td><td>json_invalid x2</td></tr><tr><td>classification</td><td>3</td><td>27.8%</td><td>33.3%</td><td>0.0%</td><td>0.0%</td><td>2.58x</td><td>overlong_output x1</td></tr><tr><td>extraction</td><td>3</td><td>6.7%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td><td>1.48x</td><td>none</td></tr></tbody></table></section>
+
+    <section><h2>Examples</h2><table><thead><tr><th>Prompt</th><th>Category</th><th>Criticality</th><th>Candidate issues</th><th>Candidate output</th></tr></thead><tbody><tr><td>cod-001</td><td>code_generation</td><td>high</td><td>Output is not valid JSON | Archetypes: json_invalid</td><td><pre>Here&#x27;s a solution for parsing CSV rows with proper handling of quoted fields and escaped quotes:
+
+```python
+def parse_csv_row(line: str) -&gt; list[str]:
+    fields = []
+    current_field = []
+    in_quotes = False
+    i = 0
+    
+    while i &lt; len(line):
+        char = line[i]
+        
+        if char == &#x27;&quot;&#x27;:
+            # Check for escaped quote (two double quotes)
+            if i + 1 &lt; len(line) and line[i+1] == &#x27;&quot;&#x27;:
+                current_field.append(&#x27;&quot;&#x27;)
+                i += 2
+            elif in_quotes:
+                # End of quoted field
+                in_quotes = False
+                i += 1
+            else:
+                # Start of quoted field
+                in_quotes = True
+                i += 1
+        
+        elif char == &#x27;,&#x27; and not in_quotes:
+            # Field sepa</pre></td></tr><tr><td>cod-004</td><td>code_generation</td><td>high</td><td>Output is not valid JSON | Archetypes: json_invalid</td><td><pre>Here&#x27;s a Python implementation of the `retry` function with the specified requirements:
+
+```python
+import time
+import json
+import traceback
+
+def retry(fn, *, attempts: int = 3, base_delay: float = 0.5):
+    &quot;&quot;&quot;
+    Retry a function with exponential backoff.
+    
+    :param fn: Function to be called
+    :param attempts: Maximum number of attempts (default 3)
+    :param base_delay: Initial delay between retries (default 0.5 seconds)
+    :return: JSON with result details
+    &quot;&quot;&quot;
+    last_exception = None
+    
+    for attempt in range(1, attempts + 1):
+        try:
+            result = fn()
+            
+            # Successful execution
+            return json.dumps({
+                &quot;code&quot;: 0,
+                &quot;explanation&quot;: f&quot;Success on attempt {attempt}&quot;
+            })
+        
+        exce</pre></td></tr><tr><td>cus-001</td><td>customer_support</td><td>high</td><td>Missing required content: investigate | Archetypes: missing_required_content</td><td><pre>Here&#x27;s a draft response:
+
+Subject: Immediate Resolution for Order #4521 Duplicate Charge
+
+Dear [Customer Name],
+
+I sincerely apologize for the ongoing issue with the duplicate charge for order #4521 and the frustration this has caused you. We clearly have not met our standard of customer service, and I want to assure you that we are taking immediate action.
+
+I am personally escalating this refund to our finance team with instructions to process the $89.99 refund within the next 48 hours. You will receive an email confirmation of the refund, and the credit should appear on your statement within 3-5 business days.
+
+As a gesture of goodwill for the inconvenience, I am also applying a 20% store credit to your account, which you can use on a future purchase.
+
+If you do not see the refund or hav</pre></td></tr><tr><td>cus-002</td><td>customer_support</td><td>high</td><td>Output length 1233 exceeds max_output_chars=1200 | Archetypes: overlong_output</td><td><pre>Here&#x27;s a draft response:
+
+Subject: Re: Missing CSV Export Functionality - Immediate Workaround and Feature Restoration Plan
+
+Dear [Customer Name],
+
+I apologize for the disruption this has caused to your workflow, especially with a critical deadline approaching. We take these workflow interruptions seriously.
+
+Immediate Workaround:
+While our team investigates the removed export feature, you can currently export your data by:
+1. Using the &quot;Advanced Export&quot; menu under [specific location]
+2. Selecting CSV as the file type
+3. Choosing your desired columns
+
+Escalation Steps:
+• I&#x27;ve logged a high-priority ticket for our product team to restore the direct CSV export button
+• Our engineering lead will personally review this within 24 hours
+• We aim to have a permanent fix in our next patch release
+</pre></td></tr><tr><td>sum-006</td><td>summarization</td><td>high</td><td>Missing required content: internal | Archetypes: missing_required_content</td><td><pre>Here&#x27;s a plain language translation that preserves the legal meaning:
+
+You are allowed to use this software only for your own company&#x27;s work. This permission can be taken away at any time. You cannot:
+- Share the software with other companies
+- Sell the software
+- Rent out the software
+- Give the software to anyone else
+
+If you want to do any of these things, you must first get written permission from the software owner.</pre></td></tr><tr><td>cla-003</td><td>classification</td><td>medium</td><td>Output length 462 exceeds max_output_chars=80 | Archetypes: overlong_output</td><td><pre>This email appears to be not_spam. Here&#x27;s why:
+
+1. The language sounds professional and genuine
+2. It references a previous conversation and a business context (partnership proposal)
+3. The sender mentions a previously sent deck and offers to discuss it
+4. The tone is polite and straightforward
+5. There are no suspicious links, urgent demands, or typical spam language
+6. It appears to be a legitimate business communication follow-up
+
+Classification: not_spam</pre></td></tr><tr><td>sum-004</td><td>summarization</td><td>medium</td><td>Output length 846 exceeds max_output_chars=800 | Archetypes: overlong_output</td><td><pre>Themes from Customer Feedback:
+1. Positive UI/UX Perception (Intuitiveness, Design)
+2. Performance Issues (Loading, Crashes)
+3. Mobile Experience Concerns
+4. Feature Requests (Dark Mode, PDF Export)
+
+Summary:
+The customer feedback reveals a generally positive reception of the dashboard, with users appreciating its intuitive design and aesthetic appeal. However, the product is experiencing technical challenges that are impacting user satisfaction, including slow loading times, occasional system crashes, and mobile usability concerns. Users are expressing specific desires for improvements such as a dark mode and reliable PDF export functionality. While some customers are completely satisfied with the platform&#x27;s speed and appearance, others are highlighting critical areas that need technical </pre></td></tr><tr><td>cla-002</td><td>classification</td><td>high</td><td>No deterministic failures</td><td><pre>p1</pre></td></tr></tbody></table></section>
+  </main>
+</body>
+</html>

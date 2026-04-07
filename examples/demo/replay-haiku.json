@@ -1,0 +1,433 @@
+{
+  "format_version": 1,
+  "records": [
+    {
+      "id": "cla-002",
+      "category": "classification",
+      "prompt": "Classify this support ticket by priority. Use exactly one of: p1, p2, p3, p4. p1 means full outage, p2 means major degradation, p3 means single user blocker, p4 means cosmetic. Ticket: \"Our entire production database is returning connection timeouts. All customer-facing services are down. Started 5 minutes ago. Multiple enterprise customers are reporting it on Twitter.\"",
+      "criticality": "high",
+      "expected_output_type": "labels",
+      "notes": "Expected: p1",
+      "required_substrings": [
+        "p1"
+      ],
+      "forbidden_substrings": [
+        "p2",
+        "p3",
+        "p4"
+      ],
+      "json_required_keys": [],
+      "max_output_chars": 80,
+      "baseline": {
+        "output": "p1",
+        "latency_ms": 2012.9,
+        "cost_usd": 0.00024750000000000005,
+        "error": null
+      },
+      "candidate": {
+        "output": "p1",
+        "latency_ms": 2593.3,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "cla-004",
+      "category": "classification",
+      "prompt": "Classify the sentiment of each numbered sentence as positive, negative, or neutral, and return as a JSON object mapping the sentence number (string) to the sentiment: \"1. The food was incredible and the wine list was thoughtful. 2. Service was painfully slow, we waited 40 minutes for water. 3. The ambiance almost made up for the wait. 4. Overpriced for the portion sizes.\"",
+      "criticality": "medium",
+      "expected_output_type": "json",
+      "notes": "Expected: 1=positive 2=negative 3=positive 4=negative",
+      "required_substrings": [],
+      "forbidden_substrings": [],
+      "json_required_keys": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "max_output_chars": 400,
+      "baseline": {
+        "output": "```json\n{\n  \"1\": \"positive\",\n  \"2\": \"negative\",\n  \"3\": \"neutral\",\n  \"4\": \"negative\"\n}\n```",
+        "latency_ms": 1896.1,
+        "cost_usd": 0.00057,
+        "error": null
+      },
+      "candidate": {
+        "output": "{\n    \"1\": \"positive\",\n    \"2\": \"negative\", \n    \"3\": \"neutral\",\n    \"4\": \"negative\"\n}",
+        "latency_ms": 3415.9,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "cla-003",
+      "category": "classification",
+      "prompt": "Classify this email as spam or not_spam: \"Hi, just following up on our conversation last week about the partnership proposal. Let me know when you have time to review the deck I sent on Monday — happy to walk you through it on a call.\"",
+      "criticality": "medium",
+      "expected_output_type": "labels",
+      "notes": "Expected: not_spam",
+      "required_substrings": [
+        "not_spam"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [],
+      "max_output_chars": 80,
+      "baseline": {
+        "output": "not_spam",
+        "latency_ms": 1899.9,
+        "cost_usd": 0.00018,
+        "error": null
+      },
+      "candidate": {
+        "output": "This email appears to be not_spam. Here's why:\n\n1. The language sounds professional and genuine\n2. It references a previous conversation and a business context (partnership proposal)\n3. The sender mentions a previously sent deck and offers to discuss it\n4. The tone is polite and straightforward\n5. There are no suspicious links, urgent demands, or typical spam language\n6. It appears to be a legitimate business communication follow-up\n\nClassification: not_spam",
+        "latency_ms": 5352.8,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "cod-004",
+      "category": "code_generation",
+      "prompt": "Write a Python function `retry(fn, *, attempts: int = 3, base_delay: float = 0.5)` that calls `fn()` and retries on exception with exponential backoff (delay doubles each attempt) up to `attempts` total tries. It must re-raise the last exception if all attempts fail and must use `time.sleep`. Return JSON with keys \"code\" and \"explanation\".",
+      "criticality": "high",
+      "expected_output_type": "json",
+      "notes": "Must return code and explanation keys",
+      "required_substrings": [
+        "retry",
+        "sleep"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [
+        "code",
+        "explanation"
+      ],
+      "max_output_chars": 2000,
+      "baseline": {
+        "output": "To implement the `retry` function with exponential backoff, you can follow these steps. The function will attempt to invoke the provided function `fn()` up to a specified number of attempts. If an exception occurs during any invocation, the function will wait for a delay that doubles with each subsequent attempt. If all attempts fail, the last exception will be re-raised. Finally, the function will return a JSON object with keys \"code\" and \"explanation\" indicating the outcome.\n\nHere's how you can implement this:\n\n```python\nimport time\nimport json\n\ndef retry(fn, *, attempts: int = 3, base_delay: float = 0.5):\n    last_exception = None\n    for attempt in range(1, attempts + 1):\n        try:\n            fn()\n            return json.dumps({\"code\": \"success\", \"explanation\": \"Function executed successfully without exceptions.\"})\n        except Exception as e:\n            last_exception = e\n            if attempt == attempts:\n                return json.dumps({\"code\": \"failure\", \"explanation\": f\"All {attempts} attempts failed.\"})\n            delay = base_delay * (2 ** (attempt - 1))\n            time.sleep(delay)\n\n    if last_exception is not None:\n        raise last_exception\n\n# Example usage:\n# Assume you have a function `unreliable_function()` that may raise an exception\n# retry(unreliable_function)\n```\n\n### Explanation:\n\n- **Function Parameters**:\n  - `fn`: The function to be called, which may raise exceptions.\n  - `attempts`: The total number of attempts to try calling `fn`.\n  - `base_delay`: The starting delay between retries, which will be doubled with each failed attempt.\n\n- **Mechanism**:\n  - The function uses a `for` loop to attempt the execution of `fn` for a specified number of `attempts`.\n  - If `fn` executes without raising an exception, it returns a JSON object indicating success.\n  - If an exception is raised, it checks if the current attempt is the last one. If so, it returns a JSON object indicating all attempts have failed.\n  - Otherwise, it calculates and waits for the next delay using `time.sleep()` with exponential backoff (`base_delay * 2^(attempt - 1)`).\n  - If all attempts fail, it raises the last caught exception, although in practice, due to returning a JSON object on failure, the exception raising part after the loop is effectively unreachable in this pattern but included for completeness.",
+        "latency_ms": 6965.7,
+        "cost_usd": 0.0054,
+        "error": null
+      },
+      "candidate": {
+        "output": "Here's a Python implementation of the `retry` function with the specified requirements:\n\n```python\nimport time\nimport json\nimport traceback\n\ndef retry(fn, *, attempts: int = 3, base_delay: float = 0.5):\n    \"\"\"\n    Retry a function with exponential backoff.\n    \n    :param fn: Function to be called\n    :param attempts: Maximum number of attempts (default 3)\n    :param base_delay: Initial delay between retries (default 0.5 seconds)\n    :return: JSON with result details\n    \"\"\"\n    last_exception = None\n    \n    for attempt in range(1, attempts + 1):\n        try:\n            result = fn()\n            \n            # Successful execution\n            return json.dumps({\n                \"code\": 0,\n                \"explanation\": f\"Success on attempt {attempt}\"\n            })\n        \n        except Exception as e:\n            last_exception = e\n            \n            # Calculate exponential backoff delay\n            delay = base_delay * (2 ** (attempt - 1))\n            \n            # Create error explanation\n            error_explanation = (\n                f\"Attempt {attempt} failed: {str(e)}\\n\"\n                f\"Retrying in {delay:.2f} seconds\"\n            )\n            \n            # Log the error (optional)\n            print(error_explanation)\n            print(traceback.format_exc())\n            \n            # Sleep before next retry\n            time.sleep(delay)\n    \n    # All attempts failed\n    return json.dumps({\n        \"code\": 1,\n        \"explanation\": f\"All {attempts} attempts failed: {str(last_exception)}\"\n    })\n\n# Example usage\ndef example_function():\n    # Simulating a potentially failing function\n    import random\n    if random.random() < 0.7:  # 70% chance of failure\n        raise ValueError(\"Random failure\")\n    return \"Success!\"\n\n# Test the retry mechanism\nprint(retry(example_function))\n```\n\nThis implementation has several key features:\n\n1. Uses `attempts` parameter to control max retry count (default 3)\n2. Uses `base_delay` to set initial retry delay (default 0.5 seconds)\n3. Implements exponential backoff (delay doubles each attempt)\n4. Returns JSON with \"code\" and \"explanation\"\n   - Code 0 for success\n   - Code 1 for complete failure\n5. Prints traceback and error details\n6. Re-raises the last exception implicitly by returning a failure JSON\n7. Uses `time.sleep()` for delay between attempts\n\nExample scenarios:\n```python\n# Successful function\ndef always_works():\n    return \"Always succeeds\"\nprint(retry(always_works))  # Likely returns success\n\n# Function that eventually succeeds\ndef sometimes_works():\n    import random\n    if random.random() < 0.7:\n        raise ValueError(\"Intermittent failure\")\n    return \"Success!\"\nprint(retry(sometimes_works))  # Might succeed after retries\n\n# Function that always fails\ndef always_fails():\n    raise RuntimeError(\"Permanent failure\")\nprint(retry(always_fails))  # Will return failure JSON\n```\n\nThe function meets all specified requirements:\n- Retries function call\n- Uses exponential backoff\n- Limits total attempts\n- Returns JSON result\n- Uses `time.sleep()`\n- Re-raises/reports final exception\n- Flexible default parameters",
+        "latency_ms": 16391.6,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "cod-001",
+      "category": "code_generation",
+      "prompt": "Write a Python function `parse_csv_row(line: str) -> list[str]` that splits a single CSV line into fields. It must handle quoted fields containing commas and escaped double quotes (two double quotes in a row inside a quoted field represent a single literal double quote). Return JSON with keys \"code\" (the function source) and \"explanation\" (one paragraph explaining your approach).",
+      "criticality": "high",
+      "expected_output_type": "json",
+      "notes": "Must return code and explanation keys",
+      "required_substrings": [
+        "parse_csv_row"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [
+        "code",
+        "explanation"
+      ],
+      "max_output_chars": 2500,
+      "baseline": {
+        "output": "```json\n{\n  \"code\": \"def parse_csv_row(line: str) -> list[str]:\\n    import re\\n    # A CSV field may be quoted or unquoted.\\n    # - Unquoted fields contain no commas or quotes.\\n    # - Quoted fields start and end with quotes; intervening quotes are represented by two consecutive quotes.\\n    pattern = r'(?:(?<=,)|^)(?:\\\"((?:[^\\\"]|\\\"\\\")*)\\\"|([^\\\",]*))(?=,|$)'\\n    # Compile the pattern for better performance on multiple rows.\\n    regex = re.compile(pattern)\\n\\n    fields = []\\n    for match in regex.finditer(line):\\n        quoted_field, unquoted_field = match.groups()\\n        if quoted_field is not None:\\n            # Handle quoted field: replace double quotes with a single quote.\\n            fields.append(quoted_field.replace('\\\"\\\"', '\\\"'))\\n        else:\\n            # Handle unquoted field: no transformation needed.\\n            fields.append(unquoted_field)\\n\\n    return fields\\n\",\n  \"explanation\": \"The `parse_csv_row` function processes each line of CSV input by utilizing regular expressions to correctly parse fields. CSV fields can be either quoted or unquoted. Quoted fields allow for the inclusion of commas and escaped double quotes, whereas unquoted fields do not. The core of this function is a regular expression designed to match either quoted or unquoted fields while properly respecting CSV rules. The regular expression captures two groups: one for quoted content, which is processed to replace doubled quotes inside quotes with single quotes, and another for unquoted content, which is taken as is. This approach ensures that quoted fields containing commas or embedded quotes are handled correctly, yielding an accurate list of fields when applied to each CSV line.\"  \n}\n```",
+        "latency_ms": 6983.4,
+        "cost_usd": 0.004085,
+        "error": null
+      },
+      "candidate": {
+        "output": "Here's a solution for parsing CSV rows with proper handling of quoted fields and escaped quotes:\n\n```python\ndef parse_csv_row(line: str) -> list[str]:\n    fields = []\n    current_field = []\n    in_quotes = False\n    i = 0\n    \n    while i < len(line):\n        char = line[i]\n        \n        if char == '\"':\n            # Check for escaped quote (two double quotes)\n            if i + 1 < len(line) and line[i+1] == '\"':\n                current_field.append('\"')\n                i += 2\n            elif in_quotes:\n                # End of quoted field\n                in_quotes = False\n                i += 1\n            else:\n                # Start of quoted field\n                in_quotes = True\n                i += 1\n        \n        elif char == ',' and not in_quotes:\n            # Field separator outside of quotes\n            fields.append(''.join(current_field))\n            current_field = []\n            i += 1\n        \n        else:\n            # Regular character\n            current_field.append(char)\n            i += 1\n    \n    # Add last field\n    fields.append(''.join(current_field))\n    \n    return fields\n```\n\nThe explanation in JSON:\n\n```json\n{\n    \"code\": \"def parse_csv_row(line: str) -> list[str]:\\n    fields = []\\n    current_field = []\\n    in_quotes = False\\n    i = 0\\n    \\n    while i < len(line):\\n        char = line[i]\\n        \\n        if char == '\\\"':\\n            # Check for escaped quote (two double quotes)\\n            if i + 1 < len(line) and line[i+1] == '\\\"':\\n                current_field.append('\\\"')\\n                i += 2\\n            elif in_quotes:\\n                # End of quoted field\\n                in_quotes = False\\n                i += 1\\n            else:\\n                # Start of quoted field\\n                in_quotes = True\\n                i += 1\\n        \\n        elif char == ',' and not in_quotes:\\n            # Field separator outside of quotes\\n            fields.append(''.join(current_field))\\n            current_field = []\\n            i += 1\\n        \\n        else:\\n            # Regular character\\n            current_field.append(char)\\n            i += 1\\n    \\n    # Add last field\\n    fields.append(''.join(current_field))\\n    \\n    return fields\",\n    \n    \"explanation\": \"This CSV parsing function uses a character-by-character state machine approach to handle complex CSV parsing scenarios. It tracks whether the parser is currently inside a quoted field, carefully managing escaped quotes (represented by two consecutive double quotes) and field separators. The function builds each field character by character, switching between fields when a comma is encountered outside of quoted sections, and properly handling nested quotes and escaped quote characters.\"\n}\n```\n\nThis implementation can handle CSV rows with:\n- Quoted fields containing commas\n- Escaped quotes within quoted fields\n- Standard unquoted fields\n- Fields with mixed quoted and unquoted content\n\nExample usage:\n```python\n# Basic unquoted field\nprint(parse_csv_row('hello,world'))  # ['hello', 'world']\n\n# Quoted field with comma\nprint(parse_csv_row('\"hello, world\",test'))  # ['hello, world', 'test']\n\n# Escaped quote\nprint(parse_csv_row('\"hello \"\"quote\"\" world\",test'))  # ['hello \"quote\" world', 'test']\n```",
+        "latency_ms": 13538.6,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "cod-003",
+      "category": "code_generation",
+      "prompt": "Write a SQL query for PostgreSQL that returns the top 5 customers by total revenue in the last 30 days. Tables: `customers(id, name, signup_date)` and `orders(id, customer_id, amount_cents, created_at)`. The result must include customer name and total revenue in dollars (not cents). Return JSON with keys \"code\" (the SQL) and \"explanation\".",
+      "criticality": "high",
+      "expected_output_type": "json",
+      "notes": "Must return code and explanation keys",
+      "required_substrings": [
+        "SELECT",
+        "JOIN"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [
+        "code",
+        "explanation"
+      ],
+      "max_output_chars": 2000,
+      "baseline": {
+        "output": "Certainly! Below is a SQL query for PostgreSQL that fulfills your requirements, along with an explanation of the query. The final result includes a JSON object containing the SQL code and its explanation.\n\n```json\n{\n  \"code\": \"SELECT c.name, SUM(o.amount_cents) / 100.0 AS total_revenue_dollars FROM customers c JOIN orders o ON c.id = o.customer_id WHERE o.created_at >= NOW() - INTERVAL '30 days' GROUP BY c.id, c.name ORDER BY total_revenue_dollars DESC LIMIT 5;\",\n  \"explanation\": \"This query retrieves the top 5 customers by total revenue in the last 30 days. It joins the 'customers' table with the 'orders' table on the 'customer_id'. It filters the orders made in the past 30 days using 'WHERE o.created_at >= NOW() - INTERVAL '30 days''. The SUM function aggregates 'amount_cents' for each customer, and the amount is divided by 100 to convert from cents to dollars. The results are grouped by customer ID and name. Finally, the results are ordered by total revenue in descending order, with a LIMIT of 5 to return only the top 5 customers.\"\n}\n```\n\n### Explanation:\n- **Tables Used**: The query involves two tables, `customers` and `orders`.\n- **JOIN Operation**: It uses an inner join (`JOIN`) between the `customers` table and the `orders` table based on the customer ID (`c.id = o.customer_id`) to link each order to the corresponding customer.\n- **Date Filter**: The `WHERE` clause filters orders to include only those created in the last 30 days compared to the current timestamp (`NOW()`).\n- **Aggregation**: The `SUM(o.amount_cents)` function calculates the total revenue (in cents) for each customer over the specified period.\n- **Conversion**: The total amount in cents is converted to dollars by dividing it by 100 (`/ 100.0`).\n- **Grouping**: The results are grouped by customer ID and name (`GROUP BY c.id, c.name`) to ensure that the sum is correctly calculated for each customer.\n- **Ordering**: The results are sorted in descending order of total revenue to find the top customers (`ORDER BY total_revenue_dollars DESC`).\n- **Limitation**: The `LIMIT` clause restricts the output to the top 5 customers by revenue.",
+        "latency_ms": 6020.4,
+        "cost_usd": 0.0052625,
+        "error": null
+      },
+      "candidate": {
+        "output": "{\n    \"code\": \"SELECT\\n    c.name AS customer_name,\\n    ROUND(SUM(o.amount_cents) / 100.0, 2) AS total_revenue_dollars\\nFROM\\n    customers c\\n    JOIN orders o ON c.id = o.customer_id\\nWHERE\\n    o.created_at >= NOW() - INTERVAL '30 days'\\nGROUP BY\\n    c.id, c.name\\nORDER BY\\n    total_revenue_dollars DESC\\nLIMIT 5;\",\n    \"explanation\": \"This query does the following:\\n1. Joins the customers and orders tables on customer ID\\n2. Filters orders to only those from the last 30 days using NOW() - INTERVAL\\n3. Groups results by customer to calculate total revenue\\n4. Converts amount from cents to dollars by dividing by 100.0\\n5. Rounds revenue to 2 decimal places\\n6. Orders results by total revenue in descending order\\n7. Limits result to top 5 customers\"\n}",
+        "latency_ms": 6184.8,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "cus-002",
+      "category": "customer_support",
+      "prompt": "A customer writes: \"Your latest update broke my workflow. The export-to-CSV button is gone and I have a client deliverable due tomorrow.\" Draft a support response that does not gaslight the customer, offers an immediate workaround if one exists, and escalates the missing feature.",
+      "criticality": "high",
+      "expected_output_type": "free_text",
+      "notes": "Must offer a workaround and escalate",
+      "required_substrings": [
+        "workaround",
+        "export"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [],
+      "max_output_chars": 1200,
+      "baseline": {
+        "output": "Subject: Re: Urgent: Export-to-CSV Feature Missing\n\nDear [Customer's Name],\n\nThank you for reaching out to us, and I’m truly sorry to hear about the inconvenience caused by the latest update. I understand how important the export-to-CSV functionality is for your workflow, especially with a client deliverable due soon.\n\nAs an immediate workaround, you may still be able to export your data to CSV by [describe alternative method, if available, such as using a different menu option, keyboard shortcut, or another tool within the application]. Please let me know if you need detailed instructions on how to do this.\n\nRest assured, I have escalated this issue to our development team as a high priority so we can address the missing feature promptly. We are committed to resolving this matter and minimizing any disruption to your work.\n\nAgain, I apologize for the inconvenience and appreciate your patience and understanding. If there's anything else I can do to assist you right now, please don't hesitate to let me know.\n\nThank you for your understanding.\n\nBest regards,\n\n[Your Name]  \n[Your Position]  \n[Company Name]  \n[Contact Information]",
+        "latency_ms": 4505.3,
+        "cost_usd": 0.0024600000000000004,
+        "error": null
+      },
+      "candidate": {
+        "output": "Here's a draft response:\n\nSubject: Re: Missing CSV Export Functionality - Immediate Workaround and Feature Restoration Plan\n\nDear [Customer Name],\n\nI apologize for the disruption this has caused to your workflow, especially with a critical deadline approaching. We take these workflow interruptions seriously.\n\nImmediate Workaround:\nWhile our team investigates the removed export feature, you can currently export your data by:\n1. Using the \"Advanced Export\" menu under [specific location]\n2. Selecting CSV as the file type\n3. Choosing your desired columns\n\nEscalation Steps:\n• I've logged a high-priority ticket for our product team to restore the direct CSV export button\n• Our engineering lead will personally review this within 24 hours\n• We aim to have a permanent fix in our next patch release\n\nIn the meantime, can you confirm the workaround works for your needs? If not, I'm happy to explore alternative export methods or provide a manual data extraction process.\n\nWould you be willing to share more details about how you typically use the CSV export? This will help us ensure the restored feature meets your workflow requirements.\n\nSincerely,\n[Support Representative Name]\n\nWould you like me to modify anything in the draft?",
+        "latency_ms": 9169.7,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "cus-001",
+      "category": "customer_support",
+      "prompt": "A customer writes: \"I was charged twice for order #4521 last week. The duplicate charge of $89.99 still hasn't been refunded. This is the third time I've contacted you about this.\" Draft a professional support response that acknowledges the failure, commits to a concrete next step, and provides a realistic timeline.",
+      "criticality": "high",
+      "expected_output_type": "free_text",
+      "notes": "Must acknowledge failure and give concrete next step",
+      "required_substrings": [
+        "refund",
+        "investigate"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [],
+      "max_output_chars": 1200,
+      "baseline": {
+        "output": "Subject: Resolution for Duplicate Charge on Order #4521\n\nDear [Customer's Name],\n\nThank you for reaching out again, and I sincerely apologize for the inconvenience and frustration this issue has caused. We take these matters seriously, and I regret that our previous responses have not resolved your concern regarding the duplicate charge for order #4521.\n\nI have reviewed your case, and the duplicate charge of $89.99 stands out clearly on your account. We are committed to rectifying this as a priority.\n\nTo address this promptly, I have escalated your case to our billing department. You can expect a confirmation email regarding the refund within 24 hours. The refund should reflect in your account within 3-5 business days, depending on your bank’s processing time.\n\nPlease feel free to contact me directly at [Your Email Address] or [Your Phone Number] should you need further assistance or have any questions. We value your patience and understanding, and are dedicated to resolving this to your satisfaction.\n\nThank you once again for bringing this to our attention.\n\nWarm regards,\n\n[Your Full Name]  \n[Your Position]  \n[Company Name]  \n[Contact Information]",
+        "latency_ms": 4420.1,
+        "cost_usd": 0.0025075,
+        "error": null
+      },
+      "candidate": {
+        "output": "Here's a draft response:\n\nSubject: Immediate Resolution for Order #4521 Duplicate Charge\n\nDear [Customer Name],\n\nI sincerely apologize for the ongoing issue with the duplicate charge for order #4521 and the frustration this has caused you. We clearly have not met our standard of customer service, and I want to assure you that we are taking immediate action.\n\nI am personally escalating this refund to our finance team with instructions to process the $89.99 refund within the next 48 hours. You will receive an email confirmation of the refund, and the credit should appear on your statement within 3-5 business days.\n\nAs a gesture of goodwill for the inconvenience, I am also applying a 20% store credit to your account, which you can use on a future purchase.\n\nIf you do not see the refund or have any further questions, please reply directly to this email, and I will personally follow up.\n\nSincerely,\n[Your Name]\nCustomer Support Team\n\nWould you like me to modify anything in the draft?",
+        "latency_ms": 7475.6,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "cus-005",
+      "category": "customer_support",
+      "prompt": "A customer writes: \"My team has been waiting two weeks for an answer on whether your API supports webhooks. Why is this so hard to get a clear answer from your sales team?\" Draft a response that takes responsibility, gives a direct yes/no on webhooks (assume yes, on Pro plan and above), and proposes a 15-minute call this week.",
+      "criticality": "high",
+      "expected_output_type": "free_text",
+      "notes": "Must answer yes and propose a call",
+      "required_substrings": [
+        "webhook",
+        "call"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [],
+      "max_output_chars": 1200,
+      "baseline": {
+        "output": "Dear [Customer's Name],\n\nThank you for reaching out and bringing this to our attention. I sincerely apologize for the delay in our response and any inconvenience it may have caused your team.\n\nTo address your question directly: Yes, our API does support webhooks, but this feature is available on our Pro plan and above.\n\nTo ensure we provide you with all the information you need and to answer any further questions, I would like to propose a 15-minute call this week at your convenience. Please let me know a time that works best for you, and I will make the necessary arrangements.\n\nThank you for your patience and understanding. I look forward to speaking with you soon.\n\nBest regards,\n\n[Your Name]  \n[Your Position]  \n[Your Contact Information]",
+        "latency_ms": 3159.6,
+        "cost_usd": 0.0017325,
+        "error": null
+      },
+      "candidate": {
+        "output": "Here's a draft response:\n\nSubject: Re: API Webhook Support - Direct Answer + Next Steps\n\nHi [Customer Name],\n\nI apologize for the delay and confusion in getting you a clear answer about our API's webhook capabilities. You absolutely deserve a straightforward response.\n\nYes, webhooks are supported for all Pro and Enterprise plan customers. Specifically, our API can send real-time event notifications to an endpoint of your choosing when certain actions occur.\n\nTo ensure we address all your technical questions, I'd like to schedule a brief 15-minute call this week. I have availability Wednesday at 10am or Thursday at 2pm PST. Would either of those times work for you?\n\nI'm committed to providing you with a quick, transparent resolution.\n\nBest regards,\n[Your Name]\n[Your Title]\n[Company Name]\n\nKey elements:\n- Direct \"yes\" on webhook support\n- Clear plan details\n- Accountability for communication gap\n- Specific call-to-action with concrete time slots\n- Apologetic but confident tone",
+        "latency_ms": 7330.7,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "ext-002",
+      "category": "extraction",
+      "prompt": "Parse this invoice text and return JSON with keys \"invoice_number\", \"date\", \"bill_to\", \"line_items\", \"subtotal\", \"tax\", \"total\": \"Invoice #INV-2026-0312 dated April 2, 2026. Bill to: TechStart Ltd, 42 Innovation Drive, London EC1A 1BB. Items: 3x Widget A at $50.00 each, 1x Widget B at $120.00, 2x Service Hour at $85.00 each. Subtotal: $440.00. Tax (20%): $88.00. Total: $528.00.\"",
+      "criticality": "high",
+      "expected_output_type": "json",
+      "notes": "Must return all 7 invoice fields",
+      "required_substrings": [],
+      "forbidden_substrings": [],
+      "json_required_keys": [
+        "invoice_number",
+        "date",
+        "bill_to",
+        "line_items",
+        "subtotal",
+        "tax",
+        "total"
+      ],
+      "max_output_chars": 1500,
+      "baseline": {
+        "output": "```json\n{\n  \"invoice_number\": \"INV-2026-0312\",\n  \"date\": \"April 2, 2026\",\n  \"bill_to\": \"TechStart Ltd, 42 Innovation Drive, London EC1A 1BB\",\n  \"line_items\": [\n    {\n      \"description\": \"Widget A\",\n      \"quantity\": 3,\n      \"unit_price\": 50.00,\n      \"total\": 150.00\n    },\n    {\n      \"description\": \"Widget B\",\n      \"quantity\": 1,\n      \"unit_price\": 120.00,\n      \"total\": 120.00\n    },\n    {\n      \"description\": \"Service Hour\",\n      \"quantity\": 2,\n      \"unit_price\": 85.00,\n      \"total\": 170.00\n    }\n  ],\n  \"subtotal\": 440.00,\n  \"tax\": 88.00,\n  \"total\": 528.00\n}\n```",
+        "latency_ms": 3075.3,
+        "cost_usd": 0.0024025,
+        "error": null
+      },
+      "candidate": {
+        "output": "{\n    \"invoice_number\": \"INV-2026-0312\",\n    \"date\": \"April 2, 2026\",\n    \"bill_to\": {\n        \"name\": \"TechStart Ltd\",\n        \"address\": \"42 Innovation Drive, London EC1A 1BB\"\n    },\n    \"line_items\": [\n        {\n            \"description\": \"Widget A\",\n            \"quantity\": 3,\n            \"unit_price\": 50.00,\n            \"total\": 150.00\n        },\n        {\n            \"description\": \"Widget B\",\n            \"quantity\": 1,\n            \"unit_price\": 120.00,\n            \"total\": 120.00\n        },\n        {\n            \"description\": \"Service Hour\",\n            \"quantity\": 2,\n            \"unit_price\": 85.00,\n            \"total\": 170.00\n        }\n    ],\n    \"subtotal\": 440.00,\n    \"tax\": 88.00,\n    \"total\": 528.00\n}",
+        "latency_ms": 5577.8,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "ext-006",
+      "category": "extraction",
+      "prompt": "Parse this job posting and return JSON with keys \"title\", \"company\", \"location\", \"remote\", \"experience_years\", \"required_skills\" (list), \"salary_min\", \"salary_max\", \"currency\", \"benefits\" (list): \"Senior Backend Engineer at CloudScale. Remote (US only). 5+ years experience. Required: Python, Go, PostgreSQL, Kubernetes. $180,000 to $220,000. Benefits: health insurance, 401k match, unlimited PTO, home office stipend.\"",
+      "criticality": "high",
+      "expected_output_type": "json",
+      "notes": "Must return all 10 job fields",
+      "required_substrings": [],
+      "forbidden_substrings": [],
+      "json_required_keys": [
+        "title",
+        "company",
+        "location",
+        "remote",
+        "experience_years",
+        "required_skills",
+        "salary_min",
+        "salary_max",
+        "currency",
+        "benefits"
+      ],
+      "max_output_chars": 1500,
+      "baseline": {
+        "output": "```json\n{\n    \"title\": \"Senior Backend Engineer\",\n    \"company\": \"CloudScale\",\n    \"location\": \"Remote (US only)\",\n    \"remote\": true,\n    \"experience_years\": \"5+\",\n    \"required_skills\": [\n        \"Python\",\n        \"Go\",\n        \"PostgreSQL\",\n        \"Kubernetes\"\n    ],\n    \"salary_min\": 180000,\n    \"salary_max\": 220000,\n    \"currency\": \"USD\",\n    \"benefits\": [\n        \"health insurance\",\n        \"401k match\",\n        \"unlimited PTO\",\n        \"home office stipend\"\n    ]\n}\n```",
+        "latency_ms": 3721.9,
+        "cost_usd": 0.00162,
+        "error": null
+      },
+      "candidate": {
+        "output": "{\n    \"title\": \"Senior Backend Engineer\",\n    \"company\": \"CloudScale\",\n    \"location\": \"Remote (US only)\",\n    \"remote\": true,\n    \"experience_years\": 5,\n    \"required_skills\": [\n        \"Python\",\n        \"Go\", \n        \"PostgreSQL\", \n        \"Kubernetes\"\n    ],\n    \"salary_min\": 180000,\n    \"salary_max\": 220000,\n    \"currency\": \"USD\",\n    \"benefits\": [\n        \"health insurance\",\n        \"401k match\", \n        \"unlimited PTO\",\n        \"home office stipend\"\n    ]\n}",
+        "latency_ms": 4072.7,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "ext-001",
+      "category": "extraction",
+      "prompt": "Extract all person names, organizations, and locations from this text and return JSON with keys \"people\", \"organizations\", \"locations\": \"Maria Rossi from Acme Corp met with Dr. John Chen and Aisha Patel at the Berlin office last Tuesday to finalize the Q3 partnership with Globex Industries and Initech Labs. The follow-up will happen in Milan next month.\"",
+      "criticality": "high",
+      "expected_output_type": "json",
+      "notes": "Must return three lists",
+      "required_substrings": [],
+      "forbidden_substrings": [],
+      "json_required_keys": [
+        "people",
+        "organizations",
+        "locations"
+      ],
+      "max_output_chars": 800,
+      "baseline": {
+        "output": "```json\n{\n  \"people\": [\n    \"Maria Rossi\",\n    \"Dr. John Chen\",\n    \"Aisha Patel\"\n  ],\n  \"organizations\": [\n    \"Acme Corp\",\n    \"Globex Industries\",\n    \"Initech Labs\"\n  ],\n  \"locations\": [\n    \"Berlin\",\n    \"Milan\"\n  ]\n}\n```",
+        "latency_ms": 2802.0,
+        "cost_usd": 0.0009225,
+        "error": null
+      },
+      "candidate": {
+        "output": "{\n  \"people\": [\n    \"Maria Rossi\",\n    \"John Chen\",\n    \"Aisha Patel\"\n  ],\n  \"organizations\": [\n    \"Acme Corp\",\n    \"Globex Industries\",\n    \"Initech Labs\"\n  ],\n  \"locations\": [\n    \"Berlin\",\n    \"Milan\"\n  ]\n}",
+        "latency_ms": 3305.8,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "sum-006",
+      "category": "summarization",
+      "prompt": "Translate this legal clause into plain language a non-lawyer can act on. Preserve the legal meaning: \"The Licensor hereby grants to the Licensee a non-exclusive, non-transferable, revocable license to use the Software solely for the Licensee's internal business purposes, subject to the terms and conditions set forth herein. The Licensee shall not sublicense, sell, lease, or otherwise distribute the Software to any third party without the prior written consent of the Licensor.\"",
+      "criticality": "high",
+      "expected_output_type": "free_text",
+      "notes": "Must preserve internal-only and no-resale",
+      "required_substrings": [
+        "internal"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [],
+      "max_output_chars": 1000,
+      "baseline": {
+        "output": "The owner of the software (Licensor) is giving you (Licensee) permission to use it for your own business needs. However, this permission is not exclusive to you, cannot be transferred to someone else, and can be taken back. You must follow the rules in this agreement. You are not allowed to let anyone else use the software, sell it, rent it, or give it away without first getting written permission from the owner.",
+        "latency_ms": 2665.0,
+        "cost_usd": 0.0011450000000000002,
+        "error": null
+      },
+      "candidate": {
+        "output": "Here's a plain language translation that preserves the legal meaning:\n\nYou are allowed to use this software only for your own company's work. This permission can be taken away at any time. You cannot:\n- Share the software with other companies\n- Sell the software\n- Rent out the software\n- Give the software to anyone else\n\nIf you want to do any of these things, you must first get written permission from the software owner.",
+        "latency_ms": 4071.9,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "sum-002",
+      "category": "summarization",
+      "prompt": "Summarize the key decisions from these meeting notes as a markdown bullet list. Each bullet must be one decision and must include the owner if specified: \"The team discussed three topics. First, we decided to postpone the v2.0 release from March to April to allow more testing time, owned by Sarah. Second, the Q2 marketing budget was approved at $45K, down from the requested $60K, with Tom adjusting the campaign plan. Third, we decided to hire two additional backend engineers focused on distributed systems, owned by Priya in recruiting.\"",
+      "criticality": "medium",
+      "expected_output_type": "markdown",
+      "notes": "Must capture all 3 decisions with owners",
+      "required_substrings": [
+        "Sarah",
+        "Tom",
+        "Priya"
+      ],
+      "forbidden_substrings": [],
+      "json_required_keys": [],
+      "max_output_chars": 800,
+      "baseline": {
+        "output": "- Postpone the v2.0 release from March to April to allow more testing time, owned by Sarah.\n- Approve the Q2 marketing budget at $45K, down from the requested $60K, with Tom adjusting the campaign plan.\n- Hire two additional backend engineers focused on distributed systems, owned by Priya in recruiting.",
+        "latency_ms": 2404.0,
+        "cost_usd": 0.0009925000000000001,
+        "error": null
+      },
+      "candidate": {
+        "output": "- Postpone v2.0 release from March to April for additional testing (Owner: Sarah)\n- Approve Q2 marketing budget of $45K, reduced from $60K request (Owner: Tom to adjust campaign plan)\n- Hire two backend engineers specializing in distributed systems (Owner: Priya)",
+        "latency_ms": 4021.8,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    },
+    {
+      "id": "sum-004",
+      "category": "summarization",
+      "prompt": "Group this customer feedback into themes and write a 1-paragraph summary that names each theme: \"User A: Love the new dashboard but loading time is terrible. User B: Dashboard looks great, very intuitive, but crashed twice today. User C: Can you add dark mode? Charts are hard to read on mobile. User D: Finally a decent analytics view, but PDF export is broken. User E: Fast and beautiful. No complaints.\"",
+      "criticality": "medium",
+      "expected_output_type": "free_text",
+      "notes": "Should name multiple themes",
+      "required_substrings": [],
+      "forbidden_substrings": [],
+      "json_required_keys": [],
+      "max_output_chars": 800,
+      "baseline": {
+        "output": "The customer feedback can be grouped into the following themes: **Interface Design**, **Performance and Stability**, and **Feature Requests**. In terms of Interface Design, users appreciate the new dashboard, with several comments highlighting its attractive and intuitive layout. Performance and Stability emerge as a concern, as users report issues like slow loading times, dashboard crashes, and problems with PDF export functionality, which hinder the overall user experience. Lastly, under Feature Requests, users suggest improvements to the product, such as the addition of a dark mode to enhance readability, especially on mobile devices. While some users have no complaints and find the product both fast and beautiful, addressing the highlighted areas could further enhance satisfaction.",
+        "latency_ms": 3727.6,
+        "cost_usd": 0.0016025000000000002,
+        "error": null
+      },
+      "candidate": {
+        "output": "Themes from Customer Feedback:\n1. Positive UI/UX Perception (Intuitiveness, Design)\n2. Performance Issues (Loading, Crashes)\n3. Mobile Experience Concerns\n4. Feature Requests (Dark Mode, PDF Export)\n\nSummary:\nThe customer feedback reveals a generally positive reception of the dashboard, with users appreciating its intuitive design and aesthetic appeal. However, the product is experiencing technical challenges that are impacting user satisfaction, including slow loading times, occasional system crashes, and mobile usability concerns. Users are expressing specific desires for improvements such as a dark mode and reliable PDF export functionality. While some customers are completely satisfied with the platform's speed and appearance, others are highlighting critical areas that need technical refinement to enhance overall user experience.",
+        "latency_ms": 5648.4,
+        "cost_usd": 0.0,
+        "error": null
+      }
+    }
+  ]
+}

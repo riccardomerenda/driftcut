@@ -1,0 +1,55 @@
+# ---------------------------------------------------------
+# Driftcut demo — Migration 1
+# Baseline:  openai/gpt-4o
+# Candidate: openai/gpt-4o-mini
+#
+# The relatable cost-reduction migration: can the smaller,
+# 20x cheaper OpenAI model handle a real product workload?
+#
+# Run with:
+#   driftcut run --config examples/demo/migration-mini.yaml
+# ---------------------------------------------------------
+
+name: "GPT-4o to GPT-4o-mini cost reduction"
+description: "Can we cut model cost ~95% by swapping GPT-4o for GPT-4o-mini on a mixed product workload?"
+
+models:
+  baseline:
+    provider: openrouter
+    model: openai/gpt-4o
+  candidate:
+    provider: openrouter
+    model: openai/gpt-4o-mini
+
+corpus:
+  file: prompts.csv
+
+sampling:
+  batch_size_per_category: 3
+  max_batches: 5
+  min_batches: 2
+
+risk:
+  high_criticality_weight: 2.0
+  stop_on_schema_break_rate: 0.25
+  stop_on_high_criticality_failure_rate: 0.20
+  proceed_if_overall_risk_below: 0.08
+
+evaluation:
+  judge_strategy: tiered
+  judge_model_light: openrouter/openai/gpt-4.1-mini
+  judge_model_heavy: openrouter/openai/gpt-4.1
+  tiered_escalation_threshold: 0.6
+  detect_failure_archetypes: true
+
+latency:
+  track: true
+  regression_threshold_p50: 1.5
+  regression_threshold_p95: 2.0
+
+output:
+  save_json: true
+  save_html: true
+  save_examples: true
+  show_thresholds: true
+  show_confidence: true

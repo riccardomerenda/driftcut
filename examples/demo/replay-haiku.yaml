@@ -1,0 +1,55 @@
+# ---------------------------------------------------------
+# Driftcut demo — Replay config for migration-haiku
+#
+# Reproduces the gpt-4o vs claude-3.5-haiku STOP decision
+# from the captured replay-haiku.json without spending any
+# API credits or requiring an API key.
+#
+# Run with:
+#   driftcut replay --config examples/demo/replay-haiku.yaml \
+#     --input examples/demo/replay-haiku.json
+#
+# Note: judge_strategy is "none" so this is reproducible
+# without keys. The STOP decision is driven by deterministic
+# checks alone (high-crit failure rate >= 20%).
+# ---------------------------------------------------------
+
+name: "Replay: GPT-4o to Claude 3.5 Haiku migration"
+description: "Replay of the live migration-haiku run; reproduces the STOP decision from deterministic checks alone."
+
+models:
+  baseline:
+    provider: openrouter
+    model: openai/gpt-4o
+  candidate:
+    provider: openrouter
+    model: anthropic/claude-3.5-haiku
+
+sampling:
+  batch_size_per_category: 3
+  max_batches: 5
+  min_batches: 1
+
+risk:
+  high_criticality_weight: 2.0
+  stop_on_schema_break_rate: 0.25
+  stop_on_high_criticality_failure_rate: 0.20
+  proceed_if_overall_risk_below: 0.08
+
+evaluation:
+  judge_strategy: none
+  judge_model_light: openrouter/openai/gpt-4.1-mini
+  judge_model_heavy: openrouter/openai/gpt-4.1
+  detect_failure_archetypes: true
+
+latency:
+  track: true
+  regression_threshold_p50: 1.5
+  regression_threshold_p95: 2.0
+
+output:
+  save_json: true
+  save_html: true
+  save_examples: true
+  show_thresholds: true
+  show_confidence: true

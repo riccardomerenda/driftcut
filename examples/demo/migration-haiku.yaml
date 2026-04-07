@@ -1,0 +1,56 @@
+# ---------------------------------------------------------
+# Driftcut demo — Migration 2
+# Baseline:  openai/gpt-4o
+# Candidate: anthropic/claude-3.5-haiku
+#
+# The cross-provider alternative: same baseline, different
+# candidate. Run alongside migration-mini.yaml so you can
+# `driftcut diff` the two and pick the better cost cut.
+#
+# Run with:
+#   driftcut run --config examples/demo/migration-haiku.yaml
+# ---------------------------------------------------------
+
+name: "GPT-4o to Claude 3.5 Haiku migration"
+description: "Cross-provider alternative to gpt-4o-mini: is Claude 3.5 Haiku a safer or worse cost cut from GPT-4o?"
+
+models:
+  baseline:
+    provider: openrouter
+    model: openai/gpt-4o
+  candidate:
+    provider: openrouter
+    model: anthropic/claude-3.5-haiku
+
+corpus:
+  file: prompts.csv
+
+sampling:
+  batch_size_per_category: 3
+  max_batches: 5
+  min_batches: 2
+
+risk:
+  high_criticality_weight: 2.0
+  stop_on_schema_break_rate: 0.25
+  stop_on_high_criticality_failure_rate: 0.20
+  proceed_if_overall_risk_below: 0.08
+
+evaluation:
+  judge_strategy: tiered
+  judge_model_light: openrouter/openai/gpt-4.1-mini
+  judge_model_heavy: openrouter/openai/gpt-4.1
+  tiered_escalation_threshold: 0.6
+  detect_failure_archetypes: true
+
+latency:
+  track: true
+  regression_threshold_p50: 1.5
+  regression_threshold_p95: 2.0
+
+output:
+  save_json: true
+  save_html: true
+  save_examples: true
+  show_thresholds: true
+  show_confidence: true

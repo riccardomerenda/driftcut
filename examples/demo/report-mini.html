@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    GPT-4o to GPT-4o-mini cost reduction - Driftcut report
+  </title>
+  <style>
+    :root {
+      --bg: #0b0e11;
+      --panel: #121821;
+      --line: #263243;
+      --text: #e5edf5;
+      --muted: #9aa9bb;
+      --accent: #ff4747;
+      --good: #2dd4a8;
+      --warn: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #0b0e11 0%, #101722 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    main { max-width: 1100px; margin: 0 auto; padding: 32px 20px 48px; }
+    h1, h2 { margin: 0 0 12px; }
+    section {
+      background: rgba(18, 24, 33, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .mode-badge {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 71, 71, 0.28);
+      background: rgba(255, 71, 71, 0.12);
+      color: var(--text);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .mode-note {
+      color: var(--muted);
+      margin-top: 10px;
+      margin-bottom: 0;
+    }
+    .decision {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    pre {
+      white-space: pre-wrap;
+      margin: 0;
+      font-family: "Cascadia Code", monospace;
+      color: #dce7f3;
+    }
+    ul { margin: 0; padding-left: 18px; }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <div class="hero">
+        <div>
+          <div class="mode-badge">Live mode</div>
+          <div class="label">Run</div>
+          <h1>GPT-4o to GPT-4o-mini cost reduction</h1>
+          <div class="decision">STOP</div>
+          <p>Candidate exceeded the high-criticality failure threshold (64% &gt;= 20%). Most affected category: code_generation (high-crit 100%; json_invalid x3).</p>
+          <p><strong>Confidence:</strong> 59%</p>
+          
+        </div>
+        <div class="card">
+          <div class="label">Coverage</div>
+          <div>15 prompts across 1 batches</div>
+          <div>Total cost: $0.0303</div>
+          
+          <div>Stopped early: yes</div>
+        </div>
+        <div class="card">
+          <div class="label">Latency</div>
+          <div>p50: 2956ms -> 4056ms</div><div>p95: 6269ms -> 12965ms</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Decision Metrics</h2>
+      <table>
+        <tbody>
+          <tr><th>Overall risk</th><td>45.4%</td></tr>
+          <tr><th>Candidate failure rate</th><td>66.7%</td></tr>
+          <tr>
+            <th>Candidate regression rate</th>
+            <td>6.7%</td>
+          </tr>
+          <tr>
+            <th>High-criticality failure rate</th>
+            <td>63.6%</td>
+          </tr>
+          <tr><th>Schema break rate</th><td>0.0%</td></tr>
+          <tr>
+            <th>Judged prompts</th>
+            <td>3/3</td>
+          </tr>
+          <tr>
+            <th>Escalated prompts</th>
+            <td>0</td>
+          </tr>
+          <tr><th>Judge worse rate</th><td>0.0%</td></tr>
+          <tr><th>Judge average confidence</th><td>90%</td></tr>
+          <tr><th>Latency p50 ratio</th><td>1.37x</td></tr>
+          <tr><th>Latency p95 ratio</th><td>2.07x</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section><h2>Thresholds</h2><table><tbody><tr><th>High-criticality stop</th><td>20%</td></tr><tr><th>Schema stop</th><td>25%</td></tr><tr><th>Proceed risk</th><td>&lt;= 8%</td></tr><tr><th>Latency p50 threshold</th><td>1.50x</td></tr><tr><th>Latency p95 threshold</th><td>2.00x</td></tr><tr><th>Tiered escalation threshold</th><td>60%</td></tr></tbody></table></section>
+
+    <section>
+      <h2>Failure Archetypes</h2>
+      <ul><li>json_invalid: 7</li><li>missing_required_content: 2</li><li>overlong_output: 1</li></ul>
+    </section>
+
+    <section><h2>Category Scorecards</h2><table><thead><tr><th>Category</th><th>Prompts</th><th>Risk</th><th>Failure rate</th><th>High-crit fail</th><th>Judge worse</th><th>Latency p95</th><th>Top archetypes</th></tr></thead><tbody><tr><td>code_generation</td><td>3</td><td>66.7%</td><td>100.0%</td><td>100.0%</td><td>0.0%</td><td>1.74x</td><td>json_invalid x3</td></tr><tr><td>extraction</td><td>3</td><td>61.3%</td><td>100.0%</td><td>100.0%</td><td>0.0%</td><td>1.93x</td><td>json_invalid x3</td></tr><tr><td>customer_support</td><td>3</td><td>18.0%</td><td>33.3%</td><td>33.3%</td><td>0.0%</td><td>1.06x</td><td>missing_required_content x1</td></tr><tr><td>summarization</td><td>3</td><td>12.6%</td><td>33.3%</td><td>0.0%</td><td>0.0%</td><td>1.12x</td><td>overlong_output x1</td></tr><tr><td>classification</td><td>3</td><td>11.1%</td><td>66.7%</td><td>0.0%</td><td>0.0%</td><td>0.83x</td><td>json_invalid x1, missing_required_content x1</td></tr></tbody></table></section>
+
+    <section><h2>Examples</h2><table><thead><tr><th>Prompt</th><th>Category</th><th>Criticality</th><th>Candidate issues</th><th>Candidate output</th></tr></thead><tbody><tr><td>cod-001</td><td>code_generation</td><td>high</td><td>Output is not valid JSON | Archetypes: json_invalid</td><td><pre>```python
+import json
+import re
+
+def parse_csv_row(line: str) -&gt; list[str]:
+    # Regular expression to match CSV fields
+    pattern = re.compile(r&#x27;&#x27;&#x27;
+        # Match an optional quoted field
+        &quot;([^&quot;]|&quot;&quot;)*&quot;         # Quoted field (may contain escaped quotes)
+        |                     # or
+        [^,&quot;]+               # Non-quoted field (not containing commas or quotes)
+    &#x27;&#x27;&#x27;, re.VERBOSE)
+    
+    # Find all matches according to the pattern
+    matches = pattern.findall(line)
+    
+    # Clean the matches to remove surrounding quotes and handle escaped quotes
+    cleaned_fields = []
+    for match in matches:
+        if match.startswith(&#x27;&quot;&#x27;) and match.endswith(&#x27;&quot;&#x27;):
+            # Remove enclosing quotes and replace doubled quotes with a single quote
+            cleaned = match[1:-</pre></td></tr><tr><td>cod-003</td><td>code_generation</td><td>high</td><td>Output is not valid JSON | Archetypes: json_invalid</td><td><pre>```json
+{
+  &quot;code&quot;: &quot;SELECT c.name, SUM(o.amount_cents) / 100.0 AS total_revenue\nFROM customers c\nJOIN orders o ON c.id = o.customer_id\nWHERE o.created_at &gt;= NOW() - INTERVAL &#x27;30 days&#x27;\nGROUP BY c.id, c.name\nORDER BY total_revenue DESC\nLIMIT 5;&quot;,
+  &quot;explanation&quot;: &quot;This query retrieves the top 5 customers by total revenue in the last 30 days. It joins the &#x27;customers&#x27; table with the &#x27;orders&#x27; table on the customer ID. It filters the orders to those created within the last 30 days using the &#x27;NOW() - INTERVAL &#x27;30 days&#x27;&#x27; condition. Then, it groups the results by customer ID and name, calculating the total revenue (in dollars) by summing the &#x27;amount_cents&#x27; and converting it to dollars by dividing by 100. Finally, it orders the results by total revenue in descending order and limits the outpu</pre></td></tr><tr><td>cod-004</td><td>code_generation</td><td>high</td><td>Output is not valid JSON | Archetypes: json_invalid</td><td><pre>You can implement the `retry` function as described using the `time.sleep` function to create the exponential backoff. Below is the implementation of the function:
+
+```python
+import time
+import json
+
+def retry(fn, *, attempts: int = 3, base_delay: float = 0.5):
+    last_exception = None
+    for attempt in range(attempts):
+        try:
+            result = fn()
+            # If the function call is successful, return the result as JSON
+            return json.dumps({&quot;code&quot;: &quot;success&quot;, &quot;explanation&quot;: result})
+        except Exception as e:
+            last_exception = e
+            # Calculate the backoff delay
+            delay = base_delay * (2 ** attempt)
+            time.sleep(delay)
+    
+    # If we exhausted all attempts, re-raise the last exception
+    raise last_exception
+
+# Example </pre></td></tr><tr><td>cus-001</td><td>customer_support</td><td>high</td><td>Missing required content: investigate | Archetypes: missing_required_content</td><td><pre>Subject: Apologies for the Inconvenience Regarding Your Order #4521
+
+Dear [Customer&#x27;s Name],
+
+Thank you for reaching out and bringing this to our attention. I sincerely apologize for the inconvenience you&#x27;ve experienced with the duplicate charge for your order #4521. I understand how frustrating this must be, especially since you&#x27;ve contacted us multiple times regarding this issue.
+
+We take matters like this very seriously, and I want to assure you that we are committed to resolving this for you as quickly as possible. I have escalated your case to our billing department, and they will process the refund for the duplicate charge of $89.99. 
+
+You can expect the refund to be completed within 3-5 business days. Once processed, you will receive a confirmation email for your records.
+
+Thank you</pre></td></tr><tr><td>ext-001</td><td>extraction</td><td>high</td><td>Output is not valid JSON | Archetypes: json_invalid</td><td><pre>```json
+{
+  &quot;people&quot;: [
+    &quot;Maria Rossi&quot;,
+    &quot;Dr. John Chen&quot;,
+    &quot;Aisha Patel&quot;
+  ],
+  &quot;organizations&quot;: [
+    &quot;Acme Corp&quot;,
+    &quot;Globex Industries&quot;,
+    &quot;Initech Labs&quot;
+  ],
+  &quot;locations&quot;: [
+    &quot;Berlin&quot;,
+    &quot;Milan&quot;
+  ]
+}
+```</pre></td></tr><tr><td>ext-002</td><td>extraction</td><td>high</td><td>Output is not valid JSON | Archetypes: json_invalid</td><td><pre>Here is the JSON representation of the parsed invoice text:
+
+```json
+{
+  &quot;invoice_number&quot;: &quot;INV-2026-0312&quot;,
+  &quot;date&quot;: &quot;April 2, 2026&quot;,
+  &quot;bill_to&quot;: &quot;TechStart Ltd, 42 Innovation Drive, London EC1A 1BB&quot;,
+  &quot;line_items&quot;: [
+    {
+      &quot;description&quot;: &quot;Widget A&quot;,
+      &quot;quantity&quot;: 3,
+      &quot;unit_price&quot;: 50.00,
+      &quot;total_price&quot;: 150.00
+    },
+    {
+      &quot;description&quot;: &quot;Widget B&quot;,
+      &quot;quantity&quot;: 1,
+      &quot;unit_price&quot;: 120.00,
+      &quot;total_price&quot;: 120.00
+    },
+    {
+      &quot;description&quot;: &quot;Service Hour&quot;,
+      &quot;quantity&quot;: 2,
+      &quot;unit_price&quot;: 85.00,
+      &quot;total_price&quot;: 170.00
+    }
+  ],
+  &quot;subtotal&quot;: 440.00,
+  &quot;tax&quot;: 88.00,
+  &quot;total&quot;: 528.00
+}
+``` 
+
+This JSON structure captures all the relevant details from the invoice text.</pre></td></tr><tr><td>ext-006</td><td>extraction</td><td>high</td><td>Output is not valid JSON | Archetypes: json_invalid</td><td><pre>```json
+{
+  &quot;title&quot;: &quot;Senior Backend Engineer&quot;,
+  &quot;company&quot;: &quot;CloudScale&quot;,
+  &quot;location&quot;: &quot;Remote (US only)&quot;,
+  &quot;remote&quot;: true,
+  &quot;experience_years&quot;: 5,
+  &quot;required_skills&quot;: [&quot;Python&quot;, &quot;Go&quot;, &quot;PostgreSQL&quot;, &quot;Kubernetes&quot;],
+  &quot;salary_min&quot;: 180000,
+  &quot;salary_max&quot;: 220000,
+  &quot;currency&quot;: &quot;USD&quot;,
+  &quot;benefits&quot;: [&quot;health insurance&quot;, &quot;401k match&quot;, &quot;unlimited PTO&quot;, &quot;home office stipend&quot;]
+}
+```</pre></td></tr><tr><td>cla-003</td><td>classification</td><td>medium</td><td>Missing required content: not_spam | Archetypes: missing_required_content</td><td><pre>Not Spam</pre></td></tr></tbody></table></section>
+  </main>
+</body>
+</html>

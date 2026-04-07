@@ -1,0 +1,975 @@
+{
+  "version": "0.11.0",
+  "run_id": "run-a7b8d0f4e2ab",
+  "name": "GPT-4o to GPT-4o-mini cost reduction",
+  "started_at": "2026-04-07T10:32:10.311950+00:00",
+  "completed_at": "2026-04-07T10:32:25.187993+00:00",
+  "mode": "live",
+  "baseline_model": "openrouter/openai/gpt-4o",
+  "candidate_model": "openrouter/openai/gpt-4o-mini",
+  "memory_backend": "disabled",
+  "total_prompts": 15,
+  "total_batches": 1,
+  "stopped_early": true,
+  "cache": {
+    "baseline_hits": 0,
+    "baseline_misses": 0
+  },
+  "cost": {
+    "baseline_usd": 0.030310000000000004,
+    "candidate_usd": 0.0,
+    "judge_usd": 0.0,
+    "judge_light_usd": 0.0,
+    "judge_heavy_usd": 0.0,
+    "baseline_cache_saved_usd": 0.0,
+    "total_usd": 0.030310000000000004
+  },
+  "decision": {
+    "outcome": "STOP",
+    "reason": "Candidate exceeded the high-criticality failure threshold (64% >= 20%). Most affected category: code_generation (high-crit 100%; json_invalid x3).",
+    "metrics": {
+      "prompts_evaluated": 15,
+      "batches_evaluated": 1,
+      "structured_prompts": 9,
+      "high_criticality_prompts": 11,
+      "ambiguous_prompts": 3,
+      "judged_prompts": 3,
+      "escalated_prompts": 0,
+      "candidate_failure_rate": 0.6667,
+      "candidate_regression_rate": 0.0667,
+      "schema_break_rate": 0.0,
+      "high_criticality_failure_rate": 0.6364,
+      "judge_worse_rate": 0.0,
+      "judge_equivalent_rate": 1.0,
+      "judge_better_rate": 0.0,
+      "judge_average_confidence": 0.9,
+      "overall_risk": 0.4543,
+      "latency_p50_ratio": 1.372,
+      "latency_p95_ratio": 2.0681,
+      "archetypes": {
+        "json_invalid": 7,
+        "missing_required_content": 2,
+        "overlong_output": 1
+      },
+      "category_scores": [
+        {
+          "category": "code_generation",
+          "prompts_evaluated": 3,
+          "structured_prompts": 3,
+          "high_criticality_prompts": 3,
+          "ambiguous_prompts": 0,
+          "judged_prompts": 0,
+          "candidate_failure_rate": 1.0,
+          "candidate_regression_rate": 0.0,
+          "schema_break_rate": 0.0,
+          "high_criticality_failure_rate": 1.0,
+          "judge_worse_rate": 0.0,
+          "judge_average_confidence": 0.0,
+          "overall_risk": 0.6667,
+          "latency_p50_ratio": 2.3317,
+          "latency_p95_ratio": 1.7383,
+          "archetypes": {
+            "json_invalid": 3
+          }
+        },
+        {
+          "category": "extraction",
+          "prompts_evaluated": 3,
+          "structured_prompts": 3,
+          "high_criticality_prompts": 3,
+          "ambiguous_prompts": 0,
+          "judged_prompts": 0,
+          "candidate_failure_rate": 1.0,
+          "candidate_regression_rate": 0.0,
+          "schema_break_rate": 0.0,
+          "high_criticality_failure_rate": 1.0,
+          "judge_worse_rate": 0.0,
+          "judge_average_confidence": 0.0,
+          "overall_risk": 0.613,
+          "latency_p50_ratio": 1.4251,
+          "latency_p95_ratio": 1.9312,
+          "archetypes": {
+            "json_invalid": 3
+          }
+        },
+        {
+          "category": "customer_support",
+          "prompts_evaluated": 3,
+          "structured_prompts": 0,
+          "high_criticality_prompts": 3,
+          "ambiguous_prompts": 2,
+          "judged_prompts": 2,
+          "candidate_failure_rate": 0.3333,
+          "candidate_regression_rate": 0.0,
+          "schema_break_rate": 0.0,
+          "high_criticality_failure_rate": 0.3333,
+          "judge_worse_rate": 0.0,
+          "judge_average_confidence": 0.9,
+          "overall_risk": 0.18,
+          "latency_p50_ratio": 1.0983,
+          "latency_p95_ratio": 1.062,
+          "archetypes": {
+            "missing_required_content": 1
+          }
+        },
+        {
+          "category": "summarization",
+          "prompts_evaluated": 3,
+          "structured_prompts": 0,
+          "high_criticality_prompts": 1,
+          "ambiguous_prompts": 1,
+          "judged_prompts": 1,
+          "candidate_failure_rate": 0.3333,
+          "candidate_regression_rate": 0.3333,
+          "schema_break_rate": 0.0,
+          "high_criticality_failure_rate": 0.0,
+          "judge_worse_rate": 0.0,
+          "judge_average_confidence": 0.9,
+          "overall_risk": 0.1264,
+          "latency_p50_ratio": 1.0596,
+          "latency_p95_ratio": 1.1241,
+          "archetypes": {
+            "overlong_output": 1
+          }
+        },
+        {
+          "category": "classification",
+          "prompts_evaluated": 3,
+          "structured_prompts": 3,
+          "high_criticality_prompts": 1,
+          "ambiguous_prompts": 0,
+          "judged_prompts": 0,
+          "candidate_failure_rate": 0.6667,
+          "candidate_regression_rate": 0.0,
+          "schema_break_rate": 0.0,
+          "high_criticality_failure_rate": 0.0,
+          "judge_worse_rate": 0.0,
+          "judge_average_confidence": 0.0,
+          "overall_risk": 0.1111,
+          "latency_p50_ratio": 0.8304,
+          "latency_p95_ratio": 0.8342,
+          "archetypes": {
+            "json_invalid": 1,
+            "missing_required_content": 1
+          }
+        }
+      ]
+    },
+    "confidence": 0.59
+  },
+  "decision_history": [
+    {
+      "outcome": "STOP",
+      "reason": "Candidate exceeded the high-criticality failure threshold (64% >= 20%). Most affected category: code_generation (high-crit 100%; json_invalid x3).",
+      "metrics": {
+        "prompts_evaluated": 15,
+        "batches_evaluated": 1,
+        "structured_prompts": 9,
+        "high_criticality_prompts": 11,
+        "ambiguous_prompts": 3,
+        "judged_prompts": 3,
+        "escalated_prompts": 0,
+        "candidate_failure_rate": 0.6667,
+        "candidate_regression_rate": 0.0667,
+        "schema_break_rate": 0.0,
+        "high_criticality_failure_rate": 0.6364,
+        "judge_worse_rate": 0.0,
+        "judge_equivalent_rate": 1.0,
+        "judge_better_rate": 0.0,
+        "judge_average_confidence": 0.9,
+        "overall_risk": 0.4543,
+        "latency_p50_ratio": 1.372,
+        "latency_p95_ratio": 2.0681,
+        "archetypes": {
+          "json_invalid": 7,
+          "missing_required_content": 2,
+          "overlong_output": 1
+        },
+        "category_scores": [
+          {
+            "category": "code_generation",
+            "prompts_evaluated": 3,
+            "structured_prompts": 3,
+            "high_criticality_prompts": 3,
+            "ambiguous_prompts": 0,
+            "judged_prompts": 0,
+            "candidate_failure_rate": 1.0,
+            "candidate_regression_rate": 0.0,
+            "schema_break_rate": 0.0,
+            "high_criticality_failure_rate": 1.0,
+            "judge_worse_rate": 0.0,
+            "judge_average_confidence": 0.0,
+            "overall_risk": 0.6667,
+            "latency_p50_ratio": 2.3317,
+            "latency_p95_ratio": 1.7383,
+            "archetypes": {
+              "json_invalid": 3
+            }
+          },
+          {
+            "category": "extraction",
+            "prompts_evaluated": 3,
+            "structured_prompts": 3,
+            "high_criticality_prompts": 3,
+            "ambiguous_prompts": 0,
+            "judged_prompts": 0,
+            "candidate_failure_rate": 1.0,
+            "candidate_regression_rate": 0.0,
+            "schema_break_rate": 0.0,
+            "high_criticality_failure_rate": 1.0,
+            "judge_worse_rate": 0.0,
+            "judge_average_confidence": 0.0,
+            "overall_risk": 0.613,
+            "latency_p50_ratio": 1.4251,
+            "latency_p95_ratio": 1.9312,
+            "archetypes": {
+              "json_invalid": 3
+            }
+          },
+          {
+            "category": "customer_support",
+            "prompts_evaluated": 3,
+            "structured_prompts": 0,
+            "high_criticality_prompts": 3,
+            "ambiguous_prompts": 2,
+            "judged_prompts": 2,
+            "candidate_failure_rate": 0.3333,
+            "candidate_regression_rate": 0.0,
+            "schema_break_rate": 0.0,
+            "high_criticality_failure_rate": 0.3333,
+            "judge_worse_rate": 0.0,
+            "judge_average_confidence": 0.9,
+            "overall_risk": 0.18,
+            "latency_p50_ratio": 1.0983,
+            "latency_p95_ratio": 1.062,
+            "archetypes": {
+              "missing_required_content": 1
+            }
+          },
+          {
+            "category": "summarization",
+            "prompts_evaluated": 3,
+            "structured_prompts": 0,
+            "high_criticality_prompts": 1,
+            "ambiguous_prompts": 1,
+            "judged_prompts": 1,
+            "candidate_failure_rate": 0.3333,
+            "candidate_regression_rate": 0.3333,
+            "schema_break_rate": 0.0,
+            "high_criticality_failure_rate": 0.0,
+            "judge_worse_rate": 0.0,
+            "judge_average_confidence": 0.9,
+            "overall_risk": 0.1264,
+            "latency_p50_ratio": 1.0596,
+            "latency_p95_ratio": 1.1241,
+            "archetypes": {
+              "overlong_output": 1
+            }
+          },
+          {
+            "category": "classification",
+            "prompts_evaluated": 3,
+            "structured_prompts": 3,
+            "high_criticality_prompts": 1,
+            "ambiguous_prompts": 0,
+            "judged_prompts": 0,
+            "candidate_failure_rate": 0.6667,
+            "candidate_regression_rate": 0.0,
+            "schema_break_rate": 0.0,
+            "high_criticality_failure_rate": 0.0,
+            "judge_worse_rate": 0.0,
+            "judge_average_confidence": 0.0,
+            "overall_risk": 0.1111,
+            "latency_p50_ratio": 0.8304,
+            "latency_p95_ratio": 0.8342,
+            "archetypes": {
+              "json_invalid": 1,
+              "missing_required_content": 1
+            }
+          }
+        ]
+      },
+      "confidence": 0.59
+    }
+  ],
+  "batches": [
+    {
+      "batch_number": 1,
+      "size": 15,
+      "total_cost_usd": 0.030310000000000004,
+      "results": [
+        {
+          "prompt_id": "cla-002",
+          "category": "classification",
+          "criticality": "high",
+          "expected_output_type": "labels",
+          "baseline": {
+            "latency_ms": 1759.3,
+            "retry_count": 0,
+            "cost_usd": 0.00024750000000000005,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "p1"
+          },
+          "candidate": {
+            "latency_ms": 1461.0,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "p1"
+          },
+          "evaluation": {
+            "candidate_failed": false,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": true,
+            "candidate_passed": true,
+            "baseline_reasons": [],
+            "candidate_reasons": [],
+            "failure_archetype": null,
+            "failure_archetypes": []
+          },
+          "prompt_text": "Classify this support ticket by priority. Use exactly one of: p1, p2, p3, p4. p1 means full outage, p2 means major degradation, p3 means single user blocker, p4 means cosmetic. Ticket: \"Our entire production database is returning connection timeouts. All customer-facing services are down. Started 5 minutes ago. Multiple enterprise customers are reporting it on Twitter.\""
+        },
+        {
+          "prompt_id": "cla-004",
+          "category": "classification",
+          "criticality": "medium",
+          "expected_output_type": "json",
+          "baseline": {
+            "latency_ms": 2245.2,
+            "retry_count": 0,
+            "cost_usd": 0.00057,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "```json\n{\n  \"1\": \"positive\",\n  \"2\": \"negative\",\n  \"3\": \"neutral\",\n  \"4\": \"negative\"\n}\n```"
+          },
+          "candidate": {
+            "latency_ms": 1873.8,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "```json\n{\n    \"1\": \"positive\",\n    \"2\": \"negative\",\n    \"3\": \"neutral\",\n    \"4\": \"negative\"\n}\n```"
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": false,
+            "baseline_reasons": [
+              "Output is not valid JSON"
+            ],
+            "candidate_reasons": [
+              "Output is not valid JSON"
+            ],
+            "failure_archetype": "json_invalid",
+            "failure_archetypes": [
+              "json_invalid"
+            ]
+          },
+          "prompt_text": "Classify the sentiment of each numbered sentence as positive, negative, or neutral, and return as a JSON object mapping the sentence number (string) to the sentiment: \"1. The food was incredible and the wine list was thoughtful. 2. Service was painfully slow, we waited 40 minutes for water. 3. The ambiance almost made up for the wait. 4. Overpriced for the portion sizes.\""
+        },
+        {
+          "prompt_id": "cla-003",
+          "category": "classification",
+          "criticality": "medium",
+          "expected_output_type": "labels",
+          "baseline": {
+            "latency_ms": 1707.4,
+            "retry_count": 0,
+            "cost_usd": 0.00043000000000000004,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "The email can be classified as not_spam. It appears to be a legitimate follow-up message regarding a previous conversation about a partnership proposal."
+          },
+          "candidate": {
+            "latency_ms": 1460.9,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "Not Spam"
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": false,
+            "baseline_reasons": [
+              "Output length 152 exceeds max_output_chars=80"
+            ],
+            "candidate_reasons": [
+              "Missing required content: not_spam"
+            ],
+            "failure_archetype": "missing_required_content",
+            "failure_archetypes": [
+              "missing_required_content"
+            ]
+          },
+          "prompt_text": "Classify this email as spam or not_spam: \"Hi, just following up on our conversation last week about the partnership proposal. Let me know when you have time to review the deck I sent on Monday \u2014 happy to walk you through it on a call.\""
+        },
+        {
+          "prompt_id": "cod-004",
+          "category": "code_generation",
+          "criticality": "high",
+          "expected_output_type": "json",
+          "baseline": {
+            "latency_ms": 8701.9,
+            "retry_count": 0,
+            "cost_usd": 0.006390000000000001,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "To implement the `retry` function with exponential backoff strategy in Python, we need to handle retries with a doubling delay for each failed attempt. We will import the `time` module to use `time.sleep` for handling delays. Additionally, the function should catch exceptions and, if all retries fail, it will re-raise the last exception encountered.\n\nHere's a step-by-step approach for the implementation:\n\n1. Define the function `retry(fn, *, attempts: int = 3, base_delay: float = 0.5)`.\n2. Use a loop to attempt calling the function `fn`.\n3. Add a try-except block within the loop to catch exceptions.\n4. Implement exponential backoff using `time.sleep` where the delay doubles after each failed attempt.\n5. Ensure that after exhausting all attempts, the last exception is re-raised.\n6. Return a JSON object indicating success if there is no exception, or let the exception propagate as needed.\n\nBelow is the complete implementation of the `retry` function:\n\n```python\nimport time\nimport json\n\ndef retry(fn, *, attempts: int = 3, base_delay: float = 0.5):\n    last_exception = None\n    delay = base_delay\n    \n    for attempt in range(attempts):\n        try:\n            result = fn()\n            return json.dumps({\"code\": \"success\", \"explanation\": \"Function executed successfully.\"})\n        except Exception as e:\n            last_exception = e\n            if attempt < attempts - 1:\n                time.sleep(delay)\n                delay *= 2  # Exponential backoff\n            else:\n                break  # On the last attempt, fall through to raise the exception\n    \n    # If we're here, all attempts have failed\n    raise last_exception\n\n# Example usage\ndef my_function():\n    # This is a placeholder function to demonstrate retry(), it will always fail here\n    raise ValueError(\"An error occurred.\")\n\ntry:\n    result = retry(my_function, attempts=3, base_delay=0.5)\n    print(result)  # In a real case, if success, it would print the success JSON\nexcept Exception as e:\n    print(json.dumps({\"code\": \"error\", \"explanation\": str(e)}))\n```\n\n### Explanation:\n\n- **Function Signature**: The function `retry` takes a callable `fn`, an integer `attempts` for the number of retries, and a float `base_delay` for the initial delay duration.\n- **Exponential Backoff**: We start with `base_delay` and double it on each retry.\n- **Exception Handling**: An exception during a call to `fn()` is caught, and the retry mechanism initiates, incrementing the delay until all attempts fail.\n- **Return Value**: On success, the function outputs a JSON string indicating success. On failure, after all retries are exhausted, the latest exception will be re-raised.\n\nYou can test this functionality with different functions and configurations to see the retry operation in action."
+          },
+          "candidate": {
+            "latency_ms": 12187.1,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "You can implement the `retry` function as described using the `time.sleep` function to create the exponential backoff. Below is the implementation of the function:\n\n```python\nimport time\nimport json\n\ndef retry(fn, *, attempts: int = 3, base_delay: float = 0.5):\n    last_exception = None\n    for attempt in range(attempts):\n        try:\n            result = fn()\n            # If the function call is successful, return the result as JSON\n            return json.dumps({\"code\": \"success\", \"explanation\": result})\n        except Exception as e:\n            last_exception = e\n            # Calculate the backoff delay\n            delay = base_delay * (2 ** attempt)\n            time.sleep(delay)\n    \n    # If we exhausted all attempts, re-raise the last exception\n    raise last_exception\n\n# Example usage\ndef example_function():\n    # Simulating a function that may fail\n    raise ValueError(\"An example error\")\n\ntry:\n    print(retry(example_function))\nexcept Exception as e:\n    print(f\"Final exception: {e}\")\n```\n\n### Explanation:\n\n1. The `retry` function takes a callable `fn` and two keyword arguments: `attempts` (default is 3) and `base_delay` (default is 0.5 seconds).\n2. It attempts to call `fn()` in a loop according to the specified number of attempts.\n3. If `fn()` raises an exception, it catches that exception and records it as `last_exception`.\n4. It calculates the delay for the next attempt using exponential backoff by multiplying the `base_delay` by `2` raised to the power of the current attempt number.\n5. The function sleeps for the calculated delay before retrying.\n6. If all attempts fail, it re-raises the last exception to signal that all retries were unsuccessful.\n7. If the function succeeds, it returns the result in JSON format with the keys \"code\" indicating success and \"explanation\" containing the result. \n\nYou can test the `retry` function with a function that consistently raises an error, as shown in the example usage."
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": false,
+            "baseline_reasons": [
+              "Output is not valid JSON"
+            ],
+            "candidate_reasons": [
+              "Output is not valid JSON"
+            ],
+            "failure_archetype": "json_invalid",
+            "failure_archetypes": [
+              "json_invalid"
+            ]
+          },
+          "prompt_text": "Write a Python function `retry(fn, *, attempts: int = 3, base_delay: float = 0.5)` that calls `fn()` and retries on exception with exponential backoff (delay doubles each attempt) up to `attempts` total tries. It must re-raise the last exception if all attempts fail and must use `time.sleep`. Return JSON with keys \"code\" and \"explanation\"."
+        },
+        {
+          "prompt_id": "cod-001",
+          "category": "code_generation",
+          "criticality": "high",
+          "expected_output_type": "json",
+          "baseline": {
+            "latency_ms": 3878.7,
+            "retry_count": 0,
+            "cost_usd": 0.0025050000000000003,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "```json\n{\n  \"code\": \"def parse_csv_row(line: str) -> list[str]:\\n    import csv\\n    from io import StringIO\\n\\n    # Use StringIO to simulate a file object\\n    f = StringIO(line)\\n    reader = csv.reader(f, quoting=csv.QUOTE_MINIMAL)\\n\\n    # Read the first (and only) row\\n    return next(reader)\",\n  \"explanation\": \"The `parse_csv_row` function utilizes Python's built-in `csv` module to correctly parse a single line of CSV formatted text. Since CSV parsing requires handling complex cases like quoted fields, embedded commas, and escaped double quotes, writing a parser manually can be error-prone. The function uses `StringIO` to treat the input string as a file-like object, which the `csv.reader` can process. The `csv.reader` is configured to use minimal quoting, ensuring it properly interprets quoted fields and correctly handles escaped double quotes. The function reads and returns the first line from the reader, which splits the input CSV row into a list of field values.\"\n}\n```"
+          },
+          "candidate": {
+            "latency_ms": 14781.4,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "```python\nimport json\nimport re\n\ndef parse_csv_row(line: str) -> list[str]:\n    # Regular expression to match CSV fields\n    pattern = re.compile(r'''\n        # Match an optional quoted field\n        \"([^\"]|\"\")*\"         # Quoted field (may contain escaped quotes)\n        |                     # or\n        [^,\"]+               # Non-quoted field (not containing commas or quotes)\n    ''', re.VERBOSE)\n    \n    # Find all matches according to the pattern\n    matches = pattern.findall(line)\n    \n    # Clean the matches to remove surrounding quotes and handle escaped quotes\n    cleaned_fields = []\n    for match in matches:\n        if match.startswith('\"') and match.endswith('\"'):\n            # Remove enclosing quotes and replace doubled quotes with a single quote\n            cleaned = match[1:-1].replace('\"\"', '\"')\n            cleaned_fields.append(cleaned)\n        else:\n            cleaned_fields.append(match)\n    \n    return cleaned_fields\n\n# Preparing the JSON response\nfunction_source = '''import json\nimport re\n\ndef parse_csv_row(line: str) -> list[str]:\n    pattern = re.compile(r'''\n        \"([^\"]|\"\")*\" | [^,\"]+  # Regular expression to match CSV fields\n    ''', re.VERBOSE)\n    matches = pattern.findall(line)\n    cleaned_fields = []\n    for match in matches:\n        if match.startswith('\"') and match.endswith('\"'):\n            cleaned = match[1:-1].replace('\"\"', '\"')\n            cleaned_fields.append(cleaned)\n        else:\n            cleaned_fields.append(match)\n    return cleaned_fields\n'''\n\nexplanation = (\"The function uses a regular expression to match fields in a CSV row, recognizing both quoted fields (which may contain commas and escaped double quotes) as well as unquoted fields. It processes these matches, removing the outer quotes from quoted fields and replacing double quotes inside with single ones. After processing, it returns a list of cleaned field values.\")\n\nresponse = {\n    \"code\": function_source,\n    \"explanation\": explanation\n}\n\n# Outputting the result in JSON format\nprint(json.dumps(response, indent=4))\n```\n\nThis code defines a `parse_csv_row` function and includes a JSON output highlighting the function's source code and an explanation of how it operates. The regular expression manages CSV-specific cases effectively and provides a list of fields extracted from the input line."
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": false,
+            "baseline_reasons": [
+              "Output is not valid JSON"
+            ],
+            "candidate_reasons": [
+              "Output is not valid JSON"
+            ],
+            "failure_archetype": "json_invalid",
+            "failure_archetypes": [
+              "json_invalid"
+            ]
+          },
+          "prompt_text": "Write a Python function `parse_csv_row(line: str) -> list[str]` that splits a single CSV line into fields. It must handle quoted fields containing commas and escaped double quotes (two double quotes in a row inside a quoted field represent a single literal double quote). Return JSON with keys \"code\" (the function source) and \"explanation\" (one paragraph explaining your approach)."
+        },
+        {
+          "prompt_id": "cod-003",
+          "category": "code_generation",
+          "criticality": "high",
+          "expected_output_type": "json",
+          "baseline": {
+            "latency_ms": 5226.7,
+            "retry_count": 0,
+            "cost_usd": 0.0042825,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "Certainly! Here's the SQL query along with a JSON explanation:\n\n```json\n{\n  \"code\": \"SELECT customers.name, SUM(orders.amount_cents) / 100 AS total_revenue_dollars\\nFROM customers\\nJOIN orders ON customers.id = orders.customer_id\\nWHERE orders.created_at >= NOW() - INTERVAL '30 days'\\nGROUP BY customers.id, customers.name\\nORDER BY total_revenue_dollars DESC\\nLIMIT 5;\",\n  \"explanation\": \"This SQL query retrieves the top 5 customers in terms of total revenue generated from their orders in the last 30 days. We first join the 'customers' and 'orders' tables using 'customer_id'. We apply a condition to ensure only orders from the last 30 days are considered by comparing the 'created_at' timestamp with the current time minus 30 days. We then sum the 'amount_cents' for each customer and divide by 100 to convert from cents to dollars. Finally, we group the results by customer ID and name, order by total revenue in descending order, and limit the output to the top 5 customers.\"\n}\n```\n\n### Explanation:\n- **Table Join**: We join `customers` with `orders` on `customer_id` to associate each order with the corresponding customer.\n- **Date Filtering**: We use `NOW() - INTERVAL '30 days'` to filter orders that have been created in the past 30 days.\n- **Revenue Calculation**: We sum up `amount_cents` and divide by 100 to convert the amount from cents to dollars.\n- **Grouping**: We group the results by `customer.id` and `customer.name` to compute total revenue for each customer.\n- **Sorting and Limiting**: The results are ordered in descending order of `total_revenue_dollars` and limited to the top 5 customers. \n\nThis query provides a clear view of who the top contributors to revenue are in the most recent 30-day period."
+          },
+          "candidate": {
+            "latency_ms": 5120.9,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "```json\n{\n  \"code\": \"SELECT c.name, SUM(o.amount_cents) / 100.0 AS total_revenue\\nFROM customers c\\nJOIN orders o ON c.id = o.customer_id\\nWHERE o.created_at >= NOW() - INTERVAL '30 days'\\nGROUP BY c.id, c.name\\nORDER BY total_revenue DESC\\nLIMIT 5;\",\n  \"explanation\": \"This query retrieves the top 5 customers by total revenue in the last 30 days. It joins the 'customers' table with the 'orders' table on the customer ID. It filters the orders to those created within the last 30 days using the 'NOW() - INTERVAL '30 days'' condition. Then, it groups the results by customer ID and name, calculating the total revenue (in dollars) by summing the 'amount_cents' and converting it to dollars by dividing by 100. Finally, it orders the results by total revenue in descending order and limits the output to the top 5 customers.\"\n}\n```"
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": false,
+            "baseline_reasons": [
+              "Output is not valid JSON"
+            ],
+            "candidate_reasons": [
+              "Output is not valid JSON"
+            ],
+            "failure_archetype": "json_invalid",
+            "failure_archetypes": [
+              "json_invalid"
+            ]
+          },
+          "prompt_text": "Write a SQL query for PostgreSQL that returns the top 5 customers by total revenue in the last 30 days. Tables: `customers(id, name, signup_date)` and `orders(id, customer_id, amount_cents, created_at)`. The result must include customer name and total revenue in dollars (not cents). Return JSON with keys \"code\" (the SQL) and \"explanation\"."
+        },
+        {
+          "prompt_id": "cus-002",
+          "category": "customer_support",
+          "criticality": "high",
+          "expected_output_type": "free_text",
+          "baseline": {
+            "latency_ms": 5110.6,
+            "retry_count": 0,
+            "cost_usd": 0.0025,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "Subject: Re: Issue with Export-to-CSV Feature\n\nHi [Customer's Name],\n\nThank you for reaching out to us. I\u2019m sorry to hear about the disruption the latest update has caused. I completely understand how important the export-to-CSV feature is for your workflow, especially with a deliverable due tomorrow.\n\nIn the meantime, as a workaround, you might consider using the [alternative method or tool, if available, such as] copying data directly from the application and pasting it into a spreadsheet program like Microsoft Excel or Google Sheets, which can then save the file in CSV format. I realize this isn't as convenient as the dedicated button, but it should serve as a temporary solution.\n\nI've forwarded your concern to our development team, and they are looking into the missing export-to-CSV feature as a top priority. I will keep you updated with any progress or timelines regarding its restoration.\n\nThank you for your patience and understanding while we work to resolve this issue. If you need further assistance or have any more questions, feel free to reach out.\n\nBest regards,\n\n[Your Name]  \n[Your Position]  \n[Company Name]  \n[Contact Information]"
+          },
+          "candidate": {
+            "latency_ms": 5409.9,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "Subject: Immediate Assistance with CSV Export\n\nHi [Customer's Name],\n\nThank you for reaching out and sharing your concerns about the recent update. I understand how crucial the export-to-CSV functionality is for your workflow, especially with a deadline approaching.\n\nWhile the feature is currently unavailable, I want to assist you as best as I can. One possible workaround is to [provide alternative method, e.g., \"copy the data directly from the application and paste it into a spreadsheet program like Excel or Google Sheets. This may allow you to maintain the necessary formatting.\u201d]. I hope this can help you meet your client deliverable.\n\nI've also escalated your feedback regarding the missing export-to-CSV feature to our development team. We take user feedback seriously, and I want to assure you that we're working on a solution to restore this functionality as quickly as possible.\n\nPlease let me know if you need further assistance or if there's anything else I can do to support you during this time.\n\nBest regards,  \n[Your Name]  \n[Your Position]  \n[Company Name]  \n[Contact Information]  "
+          },
+          "evaluation": {
+            "candidate_failed": false,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": true,
+            "baseline_passed": true,
+            "candidate_passed": true,
+            "baseline_reasons": [],
+            "candidate_reasons": [],
+            "failure_archetype": null,
+            "failure_archetypes": [],
+            "judge": {
+              "model": "openrouter/openai/gpt-4.1-mini",
+              "verdict": "equivalent",
+              "confidence": 0.9,
+              "rationale": "Both responses acknowledge the customer's issue empathetically without gaslighting, provide a workaround involving copying data into a spreadsheet for export, and escalate the missing feature to the development team. The candidate response is slightly more concise but equally effective and addresses the critical requirements of offering a workaround and escalation, making it equally suitable for migration purposes.",
+              "latency_ms": 2454.5,
+              "cost_usd": 0.0,
+              "cost_error": "This model isn't mapped yet. model=gpt-4.1-mini-2025-04-14, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+              "error": null,
+              "tier": "light",
+              "escalated": false
+            }
+          },
+          "prompt_text": "A customer writes: \"Your latest update broke my workflow. The export-to-CSV button is gone and I have a client deliverable due tomorrow.\" Draft a support response that does not gaslight the customer, offers an immediate workaround if one exists, and escalates the missing feature."
+        },
+        {
+          "prompt_id": "cus-001",
+          "category": "customer_support",
+          "criticality": "high",
+          "expected_output_type": "free_text",
+          "baseline": {
+            "latency_ms": 4350.1,
+            "retry_count": 0,
+            "cost_usd": 0.0024375000000000004,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "Subject: Resolution for Duplicate Charge on Order #4521\n\nDear [Customer's Name],\n\nI hope this message finds you well. I sincerely apologize for the inconvenience and frustration you have experienced due to the duplicate charge for order #4521. We strive to provide a seamless experience for our customers, and I apologize that we have not met these expectations in this instance.\n\nTo address this issue, I have escalated your case to our billing department for immediate review. We are committed to resolving this matter promptly, and I will ensure that your refund of $89.99 is processed as a priority. You can expect the refund to be issued within 3-5 business days.\n\nI want to assure you that we are also reviewing our internal processes to prevent such occurrences in the future. We truly value your patience and understanding.\n\nPlease feel free to reach out to me directly at [Your Email] should you have any further questions or concerns.\n\nThank you for your understanding and for giving us the opportunity to resolve this issue.\n\nWarm regards,\n\n[Your Full Name]  \n[Your Position]  \n[Company Name]  \n[Contact Information]"
+          },
+          "candidate": {
+            "latency_ms": 4777.9,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "Subject: Apologies for the Inconvenience Regarding Your Order #4521\n\nDear [Customer's Name],\n\nThank you for reaching out and bringing this to our attention. I sincerely apologize for the inconvenience you've experienced with the duplicate charge for your order #4521. I understand how frustrating this must be, especially since you've contacted us multiple times regarding this issue.\n\nWe take matters like this very seriously, and I want to assure you that we are committed to resolving this for you as quickly as possible. I have escalated your case to our billing department, and they will process the refund for the duplicate charge of $89.99. \n\nYou can expect the refund to be completed within 3-5 business days. Once processed, you will receive a confirmation email for your records.\n\nThank you for your patience while we work to rectify this situation. If you have any further questions or require additional assistance, please don\u2019t hesitate to reach out.\n\nBest regards,\n\n[Your Name]  \n[Your Job Title]  \n[Your Company]  \n[Your Contact Information]"
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": false,
+            "baseline_reasons": [
+              "Missing required content: investigate"
+            ],
+            "candidate_reasons": [
+              "Missing required content: investigate"
+            ],
+            "failure_archetype": "missing_required_content",
+            "failure_archetypes": [
+              "missing_required_content"
+            ]
+          },
+          "prompt_text": "A customer writes: \"I was charged twice for order #4521 last week. The duplicate charge of $89.99 still hasn't been refunded. This is the third time I've contacted you about this.\" Draft a professional support response that acknowledges the failure, commits to a concrete next step, and provides a realistic timeline."
+        },
+        {
+          "prompt_id": "cus-005",
+          "category": "customer_support",
+          "criticality": "high",
+          "expected_output_type": "free_text",
+          "baseline": {
+            "latency_ms": 4223.3,
+            "retry_count": 0,
+            "cost_usd": 0.0021425000000000003,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "Subject: Apologies for the Delay and Clarification on Webhooks Support\n\nHi [Customer's Name],\n\nI hope this message finds you well. First and foremost, I want to sincerely apologize for the delay in providing you with the information you need. We understand how important timely communication is and take full responsibility for the lapse.\n\nTo address your question directly: Yes, our API does support webhooks, but this feature is available on our Pro plan and above.\n\nWe would love the opportunity to discuss any further questions or details you might need. Could we schedule a 15-minute call this week to ensure you have all the information required to make an informed decision? Please let me know your available times, and we will do our best to accommodate.\n\nThank you for your patience and understanding. We look forward to the opportunity to better assist you and your team.\n\nWarm regards,\n\n[Your Name]  \n[Your Position]  \n[Your Company]  \n[Your Contact Information]"
+          },
+          "candidate": {
+            "latency_ms": 4409.9,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "Subject: Apologies for the Delay \u2013 Let\u2019s Connect!\n\nDear [Customer's Name],\n\nThank you for your patience and for bringing this to our attention. I sincerely apologize for the delay in getting a clear answer regarding our API support for webhooks. \n\nTo clarify, our API does support webhooks, but this feature is available on our Pro plan and above. I understand how important timely communication is, and I\u2019m committed to ensuring you receive the support you need.\n\nWould you be available for a quick 15-minute call this week? I\u2019d love to discuss your needs in more detail and answer any other questions you might have.\n\nThank you again for your understanding. Looking forward to speaking with you soon!\n\nBest regards,\n\n[Your Name]  \n[Your Position]  \n[Your Company]  \n[Your Contact Information]"
+          },
+          "evaluation": {
+            "candidate_failed": false,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": true,
+            "baseline_passed": true,
+            "candidate_passed": true,
+            "baseline_reasons": [],
+            "candidate_reasons": [],
+            "failure_archetype": null,
+            "failure_archetypes": [],
+            "judge": {
+              "model": "openrouter/openai/gpt-4.1-mini",
+              "verdict": "equivalent",
+              "confidence": 0.9,
+              "rationale": "Both baseline and candidate responses explicitly acknowledge and take responsibility for the delay, clearly confirm that webhooks are supported on the Pro plan and above, and propose a 15-minute call this week. The wording and tone differ slightly but are equally professional and appropriate, meeting all critical task requirements and constraints.",
+              "latency_ms": 2295.3,
+              "cost_usd": 0.0,
+              "cost_error": "This model isn't mapped yet. model=gpt-4.1-mini-2025-04-14, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+              "error": null,
+              "tier": "light",
+              "escalated": false
+            }
+          },
+          "prompt_text": "A customer writes: \"My team has been waiting two weeks for an answer on whether your API supports webhooks. Why is this so hard to get a clear answer from your sales team?\" Draft a response that takes responsibility, gives a direct yes/no on webhooks (assume yes, on Pro plan and above), and proposes a 15-minute call this week."
+        },
+        {
+          "prompt_id": "ext-002",
+          "category": "extraction",
+          "criticality": "high",
+          "expected_output_type": "json",
+          "baseline": {
+            "latency_ms": 2956.1,
+            "retry_count": 0,
+            "cost_usd": 0.0024025,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "```json\n{\n  \"invoice_number\": \"INV-2026-0312\",\n  \"date\": \"April 2, 2026\",\n  \"bill_to\": \"TechStart Ltd, 42 Innovation Drive, London EC1A 1BB\",\n  \"line_items\": [\n    {\n      \"description\": \"Widget A\",\n      \"quantity\": 3,\n      \"unit_price\": 50.00,\n      \"total\": 150.00\n    },\n    {\n      \"description\": \"Widget B\",\n      \"quantity\": 1,\n      \"unit_price\": 120.00,\n      \"total\": 120.00\n    },\n    {\n      \"description\": \"Service Hour\",\n      \"quantity\": 2,\n      \"unit_price\": 85.00,\n      \"total\": 170.00\n    }\n  ],\n  \"subtotal\": 440.00,\n  \"tax\": 88.00,\n  \"total\": 528.00\n}\n```"
+          },
+          "candidate": {
+            "latency_ms": 5868.9,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "Here is the JSON representation of the parsed invoice text:\n\n```json\n{\n  \"invoice_number\": \"INV-2026-0312\",\n  \"date\": \"April 2, 2026\",\n  \"bill_to\": \"TechStart Ltd, 42 Innovation Drive, London EC1A 1BB\",\n  \"line_items\": [\n    {\n      \"description\": \"Widget A\",\n      \"quantity\": 3,\n      \"unit_price\": 50.00,\n      \"total_price\": 150.00\n    },\n    {\n      \"description\": \"Widget B\",\n      \"quantity\": 1,\n      \"unit_price\": 120.00,\n      \"total_price\": 120.00\n    },\n    {\n      \"description\": \"Service Hour\",\n      \"quantity\": 2,\n      \"unit_price\": 85.00,\n      \"total_price\": 170.00\n    }\n  ],\n  \"subtotal\": 440.00,\n  \"tax\": 88.00,\n  \"total\": 528.00\n}\n``` \n\nThis JSON structure captures all the relevant details from the invoice text."
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": false,
+            "baseline_reasons": [
+              "Output is not valid JSON"
+            ],
+            "candidate_reasons": [
+              "Output is not valid JSON"
+            ],
+            "failure_archetype": "json_invalid",
+            "failure_archetypes": [
+              "json_invalid"
+            ]
+          },
+          "prompt_text": "Parse this invoice text and return JSON with keys \"invoice_number\", \"date\", \"bill_to\", \"line_items\", \"subtotal\", \"tax\", \"total\": \"Invoice #INV-2026-0312 dated April 2, 2026. Bill to: TechStart Ltd, 42 Innovation Drive, London EC1A 1BB. Items: 3x Widget A at $50.00 each, 1x Widget B at $120.00, 2x Service Hour at $85.00 each. Subtotal: $440.00. Tax (20%): $88.00. Total: $528.00.\""
+        },
+        {
+          "prompt_id": "ext-006",
+          "category": "extraction",
+          "criticality": "high",
+          "expected_output_type": "json",
+          "baseline": {
+            "latency_ms": 2845.9,
+            "retry_count": 0,
+            "cost_usd": 0.00147,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "```json\n{\n  \"title\": \"Senior Backend Engineer\",\n  \"company\": \"CloudScale\",\n  \"location\": \"Remote (US only)\",\n  \"remote\": true,\n  \"experience_years\": 5,\n  \"required_skills\": [\"Python\", \"Go\", \"PostgreSQL\", \"Kubernetes\"],\n  \"salary_min\": 180000,\n  \"salary_max\": 220000,\n  \"currency\": \"USD\",\n  \"benefits\": [\"health insurance\", \"401k match\", \"unlimited PTO\", \"home office stipend\"]\n}\n```"
+          },
+          "candidate": {
+            "latency_ms": 4055.6,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "```json\n{\n  \"title\": \"Senior Backend Engineer\",\n  \"company\": \"CloudScale\",\n  \"location\": \"Remote (US only)\",\n  \"remote\": true,\n  \"experience_years\": 5,\n  \"required_skills\": [\"Python\", \"Go\", \"PostgreSQL\", \"Kubernetes\"],\n  \"salary_min\": 180000,\n  \"salary_max\": 220000,\n  \"currency\": \"USD\",\n  \"benefits\": [\"health insurance\", \"401k match\", \"unlimited PTO\", \"home office stipend\"]\n}\n```"
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": false,
+            "baseline_reasons": [
+              "Output is not valid JSON"
+            ],
+            "candidate_reasons": [
+              "Output is not valid JSON"
+            ],
+            "failure_archetype": "json_invalid",
+            "failure_archetypes": [
+              "json_invalid"
+            ]
+          },
+          "prompt_text": "Parse this job posting and return JSON with keys \"title\", \"company\", \"location\", \"remote\", \"experience_years\", \"required_skills\" (list), \"salary_min\", \"salary_max\", \"currency\", \"benefits\" (list): \"Senior Backend Engineer at CloudScale. Remote (US only). 5+ years experience. Required: Python, Go, PostgreSQL, Kubernetes. $180,000 to $220,000. Benefits: health insurance, 401k match, unlimited PTO, home office stipend.\""
+        },
+        {
+          "prompt_id": "ext-001",
+          "category": "extraction",
+          "criticality": "high",
+          "expected_output_type": "json",
+          "baseline": {
+            "latency_ms": 2397.7,
+            "retry_count": 0,
+            "cost_usd": 0.0009225,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "```json\n{\n  \"people\": [\n    \"Maria Rossi\",\n    \"Dr. John Chen\",\n    \"Aisha Patel\"\n  ],\n  \"organizations\": [\n    \"Acme Corp\",\n    \"Globex Industries\",\n    \"Initech Labs\"\n  ],\n  \"locations\": [\n    \"Berlin\",\n    \"Milan\"\n  ]\n}\n```"
+          },
+          "candidate": {
+            "latency_ms": 2457.3,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "```json\n{\n  \"people\": [\n    \"Maria Rossi\",\n    \"Dr. John Chen\",\n    \"Aisha Patel\"\n  ],\n  \"organizations\": [\n    \"Acme Corp\",\n    \"Globex Industries\",\n    \"Initech Labs\"\n  ],\n  \"locations\": [\n    \"Berlin\",\n    \"Milan\"\n  ]\n}\n```"
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": false,
+            "baseline_reasons": [
+              "Output is not valid JSON"
+            ],
+            "candidate_reasons": [
+              "Output is not valid JSON"
+            ],
+            "failure_archetype": "json_invalid",
+            "failure_archetypes": [
+              "json_invalid"
+            ]
+          },
+          "prompt_text": "Extract all person names, organizations, and locations from this text and return JSON with keys \"people\", \"organizations\", \"locations\": \"Maria Rossi from Acme Corp met with Dr. John Chen and Aisha Patel at the Berlin office last Tuesday to finalize the Q3 partnership with Globex Industries and Initech Labs. The follow-up will happen in Milan next month.\""
+        },
+        {
+          "prompt_id": "sum-006",
+          "category": "summarization",
+          "criticality": "high",
+          "expected_output_type": "free_text",
+          "baseline": {
+            "latency_ms": 2807.6,
+            "retry_count": 0,
+            "cost_usd": 0.001265,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "The Licensor is giving the Licensee permission to use the Software, but only for their own business activities. This permission is not exclusive, which means others can also have the same permission. The Licensee cannot let anyone else use it, sell it, rent it out, or share it in any way without getting written permission from the Licensor first. This permission can be taken away by the Licensor at any time, and it\u2019s important for the Licensee to follow all the rules mentioned here."
+          },
+          "candidate": {
+            "latency_ms": 2801.7,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "The Licensor gives the Licensee permission to use the Software just for their own internal business needs. This permission is not exclusive, meaning others can also use it, and the Licensee cannot transfer this permission to anyone else or allow others to use the Software. If the Licensee wants to sell, lease, or share the Software with someone else, they must get written approval from the Licensor first."
+          },
+          "evaluation": {
+            "candidate_failed": false,
+            "candidate_regressed": false,
+            "candidate_improved": true,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": false,
+            "candidate_passed": true,
+            "baseline_reasons": [
+              "Missing required content: internal"
+            ],
+            "candidate_reasons": [],
+            "failure_archetype": null,
+            "failure_archetypes": []
+          },
+          "prompt_text": "Translate this legal clause into plain language a non-lawyer can act on. Preserve the legal meaning: \"The Licensor hereby grants to the Licensee a non-exclusive, non-transferable, revocable license to use the Software solely for the Licensee's internal business purposes, subject to the terms and conditions set forth herein. The Licensee shall not sublicense, sell, lease, or otherwise distribute the Software to any third party without the prior written consent of the Licensor.\""
+        },
+        {
+          "prompt_id": "sum-002",
+          "category": "summarization",
+          "criticality": "medium",
+          "expected_output_type": "markdown",
+          "baseline": {
+            "latency_ms": 2382.7,
+            "retry_count": 0,
+            "cost_usd": 0.0010825000000000001,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "- The v2.0 release has been postponed from March to April to allow more testing time. **Owner:** Sarah\n- The Q2 marketing budget was approved at $45K, reduced from the originally requested $60K, with Tom tasked with adjusting the campaign plan. \n- Decision made to hire two additional backend engineers focused on distributed systems. **Owner:** Priya in recruiting"
+          },
+          "candidate": {
+            "latency_ms": 2974.9,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "- Postpone the v2.0 release from March to April to allow more testing time (Owner: Sarah).\n- Approve the Q2 marketing budget at $45K, down from the requested $60K, with campaign plan adjustments (Owner: Tom).\n- Hire two additional backend engineers focused on distributed systems (Owner: Priya)."
+          },
+          "evaluation": {
+            "candidate_failed": false,
+            "candidate_regressed": false,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": true,
+            "baseline_passed": true,
+            "candidate_passed": true,
+            "baseline_reasons": [],
+            "candidate_reasons": [],
+            "failure_archetype": null,
+            "failure_archetypes": [],
+            "judge": {
+              "model": "openrouter/openai/gpt-4.1-mini",
+              "verdict": "equivalent",
+              "confidence": 0.9,
+              "rationale": "Both outputs capture all three key decisions and their respective owners clearly and concisely. The candidate uses a slightly more concise and active phrasing style, while the baseline uses fuller sentences and more detailed wording. Neither output omits any critical information, and both are within the character limit. The minor stylistic differences do not impact the overall usefulness or completeness.",
+              "latency_ms": 2406.8,
+              "cost_usd": 0.0,
+              "cost_error": "This model isn't mapped yet. model=gpt-4.1-mini-2025-04-14, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+              "error": null,
+              "tier": "light",
+              "escalated": false
+            }
+          },
+          "prompt_text": "Summarize the key decisions from these meeting notes as a markdown bullet list. Each bullet must be one decision and must include the owner if specified: \"The team discussed three topics. First, we decided to postpone the v2.0 release from March to April to allow more testing time, owned by Sarah. Second, the Q2 marketing budget was approved at $45K, down from the requested $60K, with Tom adjusting the campaign plan. Third, we decided to hire two additional backend engineers focused on distributed systems, owned by Priya in recruiting.\""
+        },
+        {
+          "prompt_id": "sum-004",
+          "category": "summarization",
+          "criticality": "medium",
+          "expected_output_type": "free_text",
+          "baseline": {
+            "latency_ms": 3431.6,
+            "retry_count": 0,
+            "cost_usd": 0.0016625000000000001,
+            "cost_error": null,
+            "error": null,
+            "cache_hit": false,
+            "output": "The customer feedback can be grouped into three main themes: Dashboard Design and Functionality, Performance Issues, and Feature Requests. Under Dashboard Design and Functionality, users A, B, and E all appreciated the new dashboard's aesthetics and intuitive layout, highlighting its visual appeal and ease of use. Performance Issues were noted by users A and B, who experienced problems with loading times and crashes, and user D, who encountered issues with the PDF export feature. Lastly, Feature Requests were mentioned by user C, who asked for a dark mode option and noted difficulty in reading charts on mobile devices. Overall, while the dashboard's design is well-received, there are notable concerns about its performance and suggestions for additional features."
+          },
+          "candidate": {
+            "latency_ms": 3877.6,
+            "retry_count": 0,
+            "cost_usd": 0.0,
+            "cost_error": "This model isn't mapped yet. model=gpt-4o-mini, custom_llm_provider=openrouter. Add it here - https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json.",
+            "error": null,
+            "cache_hit": false,
+            "output": "The customer feedback can be grouped into four main themes: **User Experience**, **Performance**, **Feature Requests**, and **Aesthetic Appeal**. Users appreciate the new dashboard's intuitive design and visual appeal, with User A mentioning that they \u201clove\u201d the dashboard\u2019s look (Aesthetic Appeal). However, there are concerns about Performance, highlighted by User A's mention of terrible loading times and User B's experience with crashes. User C's request for dark mode and feedback on the readability of charts on mobile falls under Feature Requests, indicating a desire for enhanced usability. Lastly, User D points out a practical issue with the PDF export function, emphasizing the need for reliable functionality in the reporting features. Overall, while the feedback is largely positive regarding design and usability, it underscores significant areas for improvement regarding performance and feature enhancements."
+          },
+          "evaluation": {
+            "candidate_failed": true,
+            "candidate_regressed": true,
+            "candidate_improved": false,
+            "schema_break": false,
+            "needs_judge": false,
+            "baseline_passed": true,
+            "candidate_passed": false,
+            "baseline_reasons": [],
+            "candidate_reasons": [
+              "Output length 925 exceeds max_output_chars=800"
+            ],
+            "failure_archetype": "overlong_output",
+            "failure_archetypes": [
+              "overlong_output"
+            ]
+          },
+          "prompt_text": "Group this customer feedback into themes and write a 1-paragraph summary that names each theme: \"User A: Love the new dashboard but loading time is terrible. User B: Dashboard looks great, very intuitive, but crashed twice today. User C: Can you add dark mode? Charts are hard to read on mobile. User D: Finally a decent analytics view, but PDF export is broken. User E: Fast and beautiful. No complaints.\""
+        }
+      ]
+    }
+  ],
+  "archetype_names": [
+    "json_invalid",
+    "missing_required_content",
+    "overlong_output"
+  ]
+}
