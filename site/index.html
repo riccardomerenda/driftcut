@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>driftcut — Sample or replay before full eval</title>
-<meta name="description" content="Driftcut is a v0.11.0 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, richer failure archetypes, category scorecards, run comparison, optional Redis memory, and STOP/CONTINUE/PROCEED decisions.">
+<meta name="description" content="Driftcut is a v0.11.1 alpha CLI for LLM migration canaries with live runs, historical replay, deterministic checks, richer failure archetypes, category scorecards, run comparison, optional Redis memory, and STOP/CONTINUE/PROCEED decisions.">
 <meta property="og:title" content="driftcut — Sample or replay before full eval">
 <meta property="og:description" content="Validate a prompt corpus or replay historical paired outputs, sample representative batches, compare baseline and candidate models, judge ambiguous prompts, and decide whether to stop, continue, or proceed.">
 <meta property="og:type" content="website">
@@ -443,7 +443,7 @@
 <section class="hero">
   <div class="container hero-grid">
     <div class="hero-content">
-      <div class="version-badge">v0.11.0 Alpha</div>
+      <div class="version-badge">v0.11.1 Alpha</div>
 
       <h1>Sample or replay<br>before <em>full eval.</em></h1>
 
@@ -553,6 +553,7 @@
           <li><code>driftcut init</code> scaffolding for instant project setup</li>
           <li><code>driftcut bootstrap</code> to classify raw prompts into a structured corpus</li>
           <li><code>driftcut diff</code> to compare two runs and see what changed</li>
+          <li>Public benchmark demo with offline replay (<code>examples/demo/</code>)</li>
         </ul>
       </div>
 
@@ -560,8 +561,8 @@
         <div class="card-badge planned">Planned Next</div>
         <h3>What sharpens the wedge further</h3>
         <ul class="card-list">
-          <li>Public benchmark demos and report polish</li>
-          <li>More production examples and benchmark-backed validation</li>
+          <li>More production examples and case studies</li>
+          <li>Sequential hypothesis testing for formal confidence (if demand)</li>
         </ul>
       </div>
     </div>
@@ -636,7 +637,7 @@
         <tr>
           <td>Next milestone</td>
           <td>More benchmarks and scoring</td>
-          <td>Benchmark demos, packaging, and polish</td>
+          <td>Real-world case studies and packaging polish</td>
         </tr>
         <tr>
           <td>Output shape</td>
@@ -668,7 +669,7 @@
       </div>
       <div class="faq">
         <h3>What is implemented right now?</h3>
-        <p>Validation, scaffolding, corpus bootstrap from raw prompts, run comparison, sampling, paired model execution, canonical replay loading, deterministic checks, tiered judging (light with heavy escalation) for ambiguous prompts, latency tracking, cost tracking, optional Redis-backed baseline caching, decision output, JSON export, and HTML reporting.</p>
+        <p>Validation, scaffolding, corpus bootstrap from raw prompts, run comparison, sampling, paired model execution, canonical replay loading, deterministic checks, tiered judging (light with heavy escalation) for ambiguous prompts, latency tracking, cost tracking, optional Redis-backed baseline caching, decision output, JSON export, and HTML reporting. Want to see it on a real cost-cut decision? The <a href="https://github.com/riccardomerenda/driftcut/tree/main/examples/demo">examples/demo</a> walkthrough reproduces a <code>gpt-4o</code> migration against two cheaper candidates with offline replay.</p>
       </div>
       <div class="faq">
         <h3>What does a run cost?</h3>
@@ -681,7 +682,7 @@
 <!-- ── FOOTER ── -->
 <footer>
   <div class="container footer-wrap">
-    <span>driftcut &mdash; v0.11.0 alpha CLI for LLM migration canaries</span>
+    <span>driftcut &mdash; v0.11.1 alpha CLI for LLM migration canaries</span>
     <span>
       <a href="https://github.com/riccardomerenda/driftcut">GitHub</a> &middot;
       <a href="https://docs.driftcut.dev/getting-started/">Docs</a> &middot;

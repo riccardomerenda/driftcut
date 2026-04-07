@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Early-stop decision gating for LLM model migrations.</strong><br>
-  v0.11.0 alpha CLI for sampling migration candidates before you commit to a full evaluation.
+  v0.11.1 alpha CLI for sampling migration candidates before you commit to a full evaluation.
 </p>
 
 <p align="center">
@@ -63,10 +63,6 @@ Today, Driftcut can:
 - Bootstrap a structured corpus from raw prompts with `driftcut bootstrap` (LLM-powered classification)
 - Compare two runs with `driftcut diff` to see what changed between migration attempts
 
-Still planned next:
-
-- Public benchmark demo
-
 ## Quickstart
 
 ### Install from PyPI
@@ -74,6 +70,8 @@ Still planned next:
 ```bash
 pip install driftcut
 ```
+
+Want to see what Driftcut actually tells you? The [`examples/demo/`](examples/demo/) walkthrough reproduces a real `gpt-4o` cost-cut decision against two cheaper candidates, fully offline and without an API key.
 
 For Redis-backed memory support:
 
@@ -503,7 +501,7 @@ Driftcut aims to save budget, so the judge cannot consume all of it.
 - [x] `driftcut init` scaffolding command
 - [x] `driftcut bootstrap` corpus generator
 - [x] `driftcut diff` run comparison
-- [ ] Public benchmark demo
+- [x] Public benchmark demo (`examples/demo/`)
 
 Full roadmap: [docs.driftcut.dev/roadmap](https://docs.driftcut.dev/roadmap/)
 

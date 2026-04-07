@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1] - 2026-04-07
+
+### Added
+
+- Public benchmark demo under `examples/demo/`: a real cost-cut migration walkthrough comparing `gpt-4o-mini` and `claude-3.5-haiku` against `gpt-4o`, with offline replay configs that reproduce both `STOP` decisions without an API key
+
+### Fixed
+
+- `driftcut diff` crashed on Windows because the diff printer used unicode arrows (`→`) and em-dashes (`—`) that the legacy cp1252 console cannot encode; replaced with ASCII equivalents
+
 ## [0.11.0] - 2026-04-04
 
 ### Added
