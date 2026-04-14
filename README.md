@@ -29,6 +29,12 @@ You just burned budget to learn something you could have known in the first 10-2
 
 **Driftcut is the test you run before the full evaluation.** It samples strategically, compares baseline and candidate on a representative slice, runs deterministic checks first, sends only ambiguous prompts to a judge model, and tells you whether to `STOP`, `CONTINUE`, or `PROCEED`.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/riccardomerenda/driftcut/main/assets/report-preview.png" alt="Driftcut HTML report — STOP decision on GPT-4o to GPT-4o-mini migration" width="900">
+  <br>
+  <em>HTML report from a real migration test: GPT-4o → GPT-4o-mini (15 prompts, $0.03, stopped in 1 batch)</em>
+</p>
+
 ## What it is (and what it is not)
 
 Driftcut is **not** a generic eval framework. It does not replace Promptfoo, DeepEval, or your internal eval suite. It sits one step earlier in the workflow: the filter that decides whether a full evaluation is worth the money.
