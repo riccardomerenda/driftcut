@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1350px;
+    background: linear-gradient(180deg, #0b0e11 0%, #101722 100%);
+    color: #e5edf5;
+    font-family: 'Inter', sans-serif;
+    padding: 80px;
+    overflow: hidden;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: absolute;
+    bottom: -200px;
+    left: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,71,71,0.14) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 2;
+  }
+  .logo {
+    width: 48px;
+    height: 48px;
+    background: #FF4747;
+    border-radius: 10px;
+    position: relative;
+  }
+  .logo::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 19px;
+    width: 5px;
+    height: 36px;
+    background: #0B0E11;
+    border-radius: 3px;
+    transform: rotate(24deg);
+  }
+  .brand {
+    font-size: 24px;
+    font-weight: 800;
+  }
+  h2 {
+    font-size: 72px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 2;
+  }
+  .sub {
+    font-size: 24px;
+    color: #9aa9bb;
+    margin-bottom: 46px;
+    position: relative;
+    z-index: 2;
+  }
+  .terminal {
+    background: #121821;
+    border: 1px solid #263243;
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 36px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    line-height: 1.9;
+    position: relative;
+    z-index: 2;
+  }
+  .term-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .dot.r { background: #ff5f56; }
+  .dot.y { background: #ffbd2e; }
+  .dot.g { background: #27c93f; }
+  .prompt { color: #2dd4a8; }
+  .cmd { color: #e5edf5; }
+  .comment { color: #9aa9bb; font-style: italic; }
+  .highlight { color: #ff4747; font-weight: 600; }
+
+  .features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 2;
+  }
+  .feat {
+    background: rgba(18, 24, 33, 0.7);
+    border: 1px solid #263243;
+    border-radius: 12px;
+    padding: 18px 20px;
+    font-size: 19px;
+    color: #e5edf5;
+  }
+  .feat .check {
+    color: #2dd4a8;
+    font-weight: 700;
+    margin-right: 10px;
+  }
+  .cta {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 28px;
+    background: rgba(255, 71, 71, 0.08);
+    border: 1px solid rgba(255, 71, 71, 0.3);
+    border-radius: 16px;
+  }
+  .cta-url {
+    font-size: 36px;
+    font-weight: 800;
+    color: #ff4747;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+  .cta-note {
+    font-size: 18px;
+    color: #9aa9bb;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"></div>
+    <div class="brand">Driftcut</div>
+  </div>
+
+  <h2>Try it today.</h2>
+  <div class="sub">Alpha, open source, CLI-first.</div>
+
+  <div class="terminal">
+    <div class="term-header">
+      <div class="dot r"></div>
+      <div class="dot y"></div>
+      <div class="dot g"></div>
+    </div>
+    <div><span class="prompt">$</span> <span class="cmd">pip install driftcut</span></div>
+    <div><span class="prompt">$</span> <span class="cmd">driftcut init</span></div>
+    <div><span class="prompt">$</span> <span class="cmd">driftcut run --config migration.yaml</span></div>
+    <div class="comment"># → STOP / CONTINUE / PROCEED</div>
+  </div>
+
+  <div class="features">
+    <div class="feat"><span class="check">✓</span>Works with any LLM via LiteLLM</div>
+    <div class="feat"><span class="check">✓</span>Offline replay mode</div>
+    <div class="feat"><span class="check">✓</span>JSON + HTML reports</div>
+    <div class="feat"><span class="check">✓</span>Apache 2.0 open source</div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-url">driftcut.dev</div>
+    <div class="cta-note">github.com/riccardomerenda/driftcut</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1350px;
+    background: linear-gradient(180deg, #0b0e11 0%, #101722 100%);
+    color: #e5edf5;
+    font-family: 'Inter', sans-serif;
+    padding: 70px 70px 60px 70px;
+    overflow: hidden;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .logo {
+    width: 44px;
+    height: 44px;
+    background: #FF4747;
+    border-radius: 10px;
+    position: relative;
+  }
+  .logo::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 17px;
+    width: 5px;
+    height: 33px;
+    background: #0B0E11;
+    border-radius: 3px;
+    transform: rotate(24deg);
+  }
+  .brand {
+    font-size: 22px;
+    font-weight: 800;
+  }
+  h2 {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    margin-bottom: 16px;
+  }
+  .intro {
+    font-size: 22px;
+    color: #9aa9bb;
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .step {
+    background: rgba(18, 24, 33, 0.94);
+    border: 1px solid #263243;
+    border-radius: 16px;
+    padding: 22px 26px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .num {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 71, 71, 0.12);
+    border: 1px solid rgba(255, 71, 71, 0.4);
+    color: #ff4747;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+  }
+  .step-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .step-desc {
+    font-size: 19px;
+    color: #9aa9bb;
+    line-height: 1.45;
+  }
+  .decisions {
+    margin-top: 28px;
+    display: flex;
+    gap: 14px;
+  }
+  .badge {
+    flex: 1;
+    padding: 18px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    border: 1px solid;
+  }
+  .stop {
+    background: rgba(255, 71, 71, 0.12);
+    border-color: rgba(255, 71, 71, 0.45);
+    color: #ff4747;
+  }
+  .cont {
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.45);
+    color: #fbbf24;
+  }
+  .go {
+    background: rgba(45, 212, 168, 0.12);
+    border-color: rgba(45, 212, 168, 0.45);
+    color: #2dd4a8;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"></div>
+    <div class="brand">Driftcut</div>
+  </div>
+
+  <h2>How it works</h2>
+  <div class="intro">Sample smart. Spend less. Decide faster.</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <div>
+        <div class="step-title">Stratified sampling</div>
+        <div class="step-desc">Pick high-criticality prompts first. Catch the breaking ones before the easy ones.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <div>
+        <div class="step-title">Deterministic checks — free</div>
+        <div class="step-desc">JSON validity, required keys, format, length. Most regressions surface here.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <div>
+        <div class="step-title">Judge only when ambiguous</div>
+        <div class="step-desc">Escalate to a judge model only for prompts where deterministic checks pass but outputs diverge.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">4</div>
+      <div>
+        <div class="step-title">Decision after every batch</div>
+        <div class="step-desc">Risk thresholds, latency ratios, failure archetypes — all folded into one verdict.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="decisions">
+    <div class="badge stop">STOP</div>
+    <div class="badge cont">CONTINUE</div>
+    <div class="badge go">PROCEED</div>
+  </div>
+</body>
+</html>

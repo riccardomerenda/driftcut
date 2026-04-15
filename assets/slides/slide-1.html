@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1080px;
+    height: 1350px;
+    background: linear-gradient(180deg, #0b0e11 0%, #101722 100%);
+    color: #e5edf5;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 80px;
+    overflow: hidden;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,71,71,0.18) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 2;
+  }
+  .logo {
+    width: 56px;
+    height: 56px;
+    background: #FF4747;
+    border-radius: 12px;
+    position: relative;
+  }
+  .logo::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 22px;
+    width: 6px;
+    height: 42px;
+    background: #0B0E11;
+    border-radius: 3px;
+    transform: rotate(24deg);
+    transform-origin: center;
+  }
+  .brand {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .tag {
+    display: inline-block;
+    padding: 10px 20px;
+    background: rgba(255, 71, 71, 0.12);
+    border: 1px solid rgba(255, 71, 71, 0.35);
+    border-radius: 999px;
+    color: #ff4747;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    position: relative;
+    z-index: 2;
+  }
+  .main {
+    position: relative;
+    z-index: 2;
+  }
+  h1 {
+    font-size: 110px;
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -3px;
+    margin-bottom: 28px;
+  }
+  .accent { color: #ff4747; }
+  .sub {
+    font-size: 30px;
+    line-height: 1.45;
+    color: #9aa9bb;
+    font-weight: 400;
+    max-width: 850px;
+  }
+  .footer {
+    font-size: 22px;
+    color: #9aa9bb;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer .arrow {
+    color: #ff4747;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo"></div>
+    <div class="brand">Driftcut</div>
+  </div>
+
+  <div class="main">
+    <div class="tag">LLM Migrations</div>
+    <h1>Stop burning<br>eval budget<span class="accent">.</span></h1>
+    <div class="sub">
+      Hundreds of API calls to discover your candidate model fails on the prompts that matter most.
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>There's a better way →</div>
+    <div>driftcut.dev</div>
+  </div>
+</body>
+</html>
